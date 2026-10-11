@@ -258,6 +258,8 @@ describe('routes: 真 HTTP 服务面', () => {
     assert.equal(claimsCorePath('/data/resource-manifest.json', { dataFiles }), false, '没有同名核心文件 ⇒ 不是抢');
     assert.equal(claimsCorePath('/data/chess.json', { dataFiles }), true, '有同名核心文件 ⇒ 抢');
     assert.equal(claimsCorePath('/i18n/anything.json', { dataFiles }), true, '其余命名空间按前缀判（那里没有「作者新表」的用法）');
+    assert.equal(claimsCorePath('/data', { dataFiles }), true, '裸 `/data` 就是引擎的挂载点');
+    assert.equal(claimsCorePath('/datajs/x.json', { dataFiles }), false, '`/data` 的前缀不该把 `/datajs` 也罩进去');
     assert.equal(claimsCorePath('/sp-own.json', { dataFiles }), false, '包自己的顶层路径不受影响');
 
     // 3) 真服务器：这一格原来会被包整张顶掉（探针实测：官方 1,875,834 字节的表换成 43 字节，还带 public 缓存一天）。

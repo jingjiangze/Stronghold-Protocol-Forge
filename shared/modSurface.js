@@ -213,7 +213,9 @@ export const MOD_SURFACE = Object.freeze([
       '只有 GET / HEAD；缓存只有 `no-store` / `no-cache`（没有 `public`）；响应体有上限（64 KB）',
       '回调必须**同步**返回 JSON 可序列化的值（`Promise` 点名拒绝并回 500 —— 单进程事件循环，这一格不做每请求隔离）',
       '认证口径与引擎其余 HTTP 面逐字一致：**没有认证**，所以 `host.route` 不是私有通道（要私有数据落 `host.io`）',
-      '静态 `pack.json.routes` 通道仍然按「声明过的路径就是声明过的路径」行事；保留路径表本批只施加在动态通道上（§28.35 记了这条不对称）',
+      '两条通道的保留路径判据现在都在，但**形状不同**（§28.40）：动态这一格按前缀 + `/mod/<包id>/` 命名空间；'
+      + '静态 `pack.json.routes` 那一半判「真的冲突」（`/data/<name>.json` 只在核心目录真有同名文件时才算被抢），'
+      + '因为「把一个包内 `.json` 挂到一个 URL」正是静态通道的用途，按前缀一刀切会把它自己打死',
     ],
     files: ['server/http/routeMount.js', 'server/http/static.js', 'server/modModules.js', 'server/index.js'],
     tests: ['test/packServerSurface.test.js'],
@@ -265,8 +267,13 @@ export const MOD_SURFACE = Object.freeze([
     layer: 'B',
     decl: 'pack.json.routes = [{ path, cache }]',
     anchors: [{ symbol: 'ROUTE_CACHE_POLICIES' }, { symbol: 'PACK_FIELDS', members: ['routes'] }],
-    requires: ['路径与缓存策略都要在允许集合内（没有「包自己发明的缓存语义」）'],
-    files: ['shared/workshop.js', 'server/http/routes.js', 'server/http/mods.js'],
+    requires: [
+      '路径与缓存策略都要在允许集合内（没有「包自己发明的缓存语义」）',
+      '路径**不许是引擎已经在服务的东西**（DESIGN §28.40）：`/data/<name>.json` 只在核心 `data/<name>.json` 真存在时算冲突，'
+      + '其余命名空间（`/i18n` `/sim` `/shared` `/mods` `/workshop-*` `/media` `/packs` `/assets` `/fonts` `/room-data` '
+      + '`/healthz` `/data.js`，以及裸 `/data`）按前缀算；被拒的那一条不登记并在启动日志点名',
+    ],
+    files: ['shared/workshop.js', 'server/http/routes.js', 'server/http/mods.js', 'server/http/workshop.js', 'server/http/static.js'],
     tests: ['test/modRoutes.test.js'],
     spec: '§28.13',
   },

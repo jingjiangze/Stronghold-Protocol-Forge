@@ -66,11 +66,11 @@
 | `server.modules` | `server.modules = { module, uses[] }` | 只用 `SERVER_MODULE_USES` 里的钩子；源码过静态确定性扫描（**2026-10-11 起真的实现了**：`import()` 之前跑 `stripComments`+`mentionsIdentifier`，取 `SERVER_CODE_FORBIDDEN_GLOBALS` = `process`/`globalThis`/`require`/`eval`/`new Function` **去掉 `globalThis`**（承诺逐字是那三个名字；仓库里有一个能用的 server.modules 模块用 `globalThis` 与同进程测试通信，判死它会裁掉那个合法包）。`uses` 含 `matchClass`（⇒ 必须 `combat: true`）时，子类的 `handlePackMsg(playerId, msg)` 会在 `pack.msg` **限流之后、转发之前**被调到一次：返回 `true` / `{ consumed: true }` = 已消费（不再转发），其余返回值与抛错都按未消费继续转发 | §28.14 |
 | `server.transport` | `server.transport = { deflate, threshold?, level?, memLevel?, concurrencyLimit?, … }` | **只是声明**，包永远不能注入代码改 `wss`；`deflate` 必填、其余是闭集 + 上下界；进程级，多包声明时包 id 小的赢、其余点名；`welcome.transport` 报的是**生效值**而不是声明值 | §28.33 |
 | `server.modules.metrics` | `server.modules[].uses` 含 `"metrics"` ⇒ `host.metrics()` | **是值不是句柄**（深冻结标量快照，没有 `process`/直方图/定时器/函数）；惰性启用；样本过期 ⇒ `loopP*` 全 `null` + `state: "stale"` + 点名一次。`onBoot` 收到深冻结只读配置快照 `{ port, host, stateDir, env }`，`env` 只带 `BOOT_CONFIG_ENV_KEYS` 白名单 —— 包只能观察不能设值，也不能声明启动变量 | §28.34 |
-| `server.modules.route` | `server.modules[].uses` 含 `"route"` ⇒ `host.route(path, fn, { cache? }?)` | 路径必须在 `/mod/<包id>/…` 里并再判一遍核心保留路径表；只有 GET/HEAD；缓存只有 `no-store`/`no-cache`；回调必须**同步**返回 JSON 可序列化的值（`Promise` 点名拒并回 500）；体积 ≤ 64 KB；**没有认证**（与引擎其余 HTTP 面一致 ⇒ 不是私有通道） | §28.35 |
+| `server.modules.route` | `server.modules[].uses` 含 `"route"` ⇒ `host.route(path, fn, { cache? }?)` | 路径必须在 `/mod/<包id>/…` 里并再判一遍核心保留路径表；只有 GET/HEAD；缓存只有 `no-store`/`no-cache`；回调必须**同步**返回 JSON 可序列化的值（`Promise` 点名拒并回 500）；体积 ≤ 64 KB；**没有认证**（与引擎其余 HTTP 面一致 ⇒ 不是私有通道）；静态 `routes` 那一半的同类判据形状不同，判「真冲突」（§28.40） | §28.35 |
 | `server.battle` | `server.battle = { module }` | `combat: true`；两端跑同一段字节；只能 import `@battle/` 与 `@sim/` | §28.17 |
 | `server.room` | `server.room = { module }` | **不**要 `combat: true`：只读观察面（快照/访问器/订阅），返回值被忽略 ⇒ 改不了谁在玩、装了什么、这一局的结果；import 只走 `@sim/` | §28.20 |
 | `kits.relativeImports` | `kits/<id>.js` 里的 `./…`（含 `kits/_shared.js` 这类辅助文件） | 只许**向下**相对（`..`/绝对/`%`/反斜杠/非 `.js` 仍拒）；按「出现 import 的那个文件」自己的目录解析，两端同一文件；辅助文件字节进身份哈希（`kits/**/*.js` 递归） | §28.18 |
-| `routes` | `routes = [{ path, cache }]` | 路径与缓存策略都在允许集合内 | §28.13 |
+| `routes` | `routes = [{ path, cache }]` | 路径与缓存策略都在允许集合内；路径**不许是引擎已经在服务的东西**（`/data/<name>.json` 只在核心真有同名文件时算冲突，其余命名空间按前缀；被拒的那条不登记并在启动日志点名） | §28.13 · §28.40 |
 | `assets` | `assets = { container, algorithm, digest, file, server }` | 装载期核对摘要；`server: serve \| cache-only` | §28.13 |
 
 ### C 层：客户端界面

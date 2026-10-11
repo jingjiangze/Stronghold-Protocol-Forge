@@ -273,7 +273,9 @@ export function coreDataFiles(dataDir) {
  */
 export function claimsCorePath(pathname, { dataFiles = null } = {}) {
   if (typeof pathname !== 'string' || !pathname.startsWith('/')) return false;
-  if (pathname === '/data' || !pathname.startsWith('/data/')) {
+  // 裸的 `/data` 本身就是引擎的挂载点，不是「作者新增一张表」的写法 ⇒ 直接算冲突。
+  if (pathname === '/data') return true;
+  if (!pathname.startsWith('/data/')) {
     return RESERVED_ROUTE_PREFIXES.some((prefix) => prefix !== '/data' && (pathname === prefix || pathname.startsWith(prefix + '/')));
   }
   return !!dataFiles && dataFiles.has(pathname);

@@ -2540,7 +2540,8 @@ GET /data/chess.json → HTTP 200 · 实际送出的字节: 43 · Cache-Control:
 |---|---|---|
 | `/data/<name>.json` | `data/<name>.json` 在核心目录里**真的存在** | 不登记 + 启动日志点名 |
 | `/data/resource-manifest.json` | 核心没有这个文件 | **照旧服务**（文档用法没被误伤） |
-| `/i18n/…` `/sim/…` `/shared/…` `/mods/…` `/workshop-*` `/media` `/packs` `/assets` `/fonts` `/room-data` `/healthz` `/data.js` | 前缀命中（这些挂载点没有「作者新增一张表」的用法） | 不登记 + 点名 |
+| `/i18n/…` `/sim/…` `/shared/…` `/mods/…` `/workshop-*` `/media` `/packs` `/assets` `/fonts` `/room-data` `/healthz` `/data.js`，以及**裸的 `/data`**（那是挂载点本身） | 前缀命中（这些挂载点没有「作者新增一张表」的用法） | 不登记 + 点名 |
+| `/datajs/x.json` | 谁都不碰（`/data` 的前缀判据不吃 `/datajs`） | 照旧服务 |
 | `/sp-own.json` | 谁都不碰 | 照旧服务 |
 
 核心目录的文件名集合由 `coreDataFiles(dataDir)` 在**启动时读一次**（判据要的是真值，不是每请求 `stat`）。

@@ -14,6 +14,7 @@
 import { describe, test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -294,3 +295,30 @@ describe('routes: 真 HTTP 服务面', () => {
     }
   });
 });
+
+describe('作者侧校验器（tools/workshop-validate.mjs）也判 §28.40', () => {
+  test('声明了引擎已经在服务的路径 ⇒ 校验器报 ROUTE_CLASHES_CORE（不许给作者一个绿色的 VALID）', () => {
+    // 判据不抄第二份：校验器 import 的就是服务层那一个 claimsCorePath + coreDataFiles。
+    // 这条用例判的是**作者拿到的那句话** —— 服务器会拒的声明，工具不能闭口不说。
+    const tool = join(ROOT, 'tools', 'workshop-validate.mjs');
+    const r = spawnSync(process.execPath, [tool, wsBad, '--json'], { encoding: 'utf8', timeout: 120_000 });
+    const report = JSON.parse(r.stdout);
+    const pack = report.packs.find((p) => p.pack === 'reserved-claim');
+    assert.ok(pack, '这份包要被扫到：' + JSON.stringify(report.packs.map((p) => p.pack)));
+    const hit = pack.issues.find((i) => i.code === 'ROUTE_CLASHES_CORE');
+    assert.ok(hit, JSON.stringify(pack.issues));
+    assert.equal(hit.severity, 'error', '服务器会整条丢了它，工具这边不能只是提示');
+    assert.match(hit.message, /\/data\/support\.json/);
+    assert.equal(r.status, 1, '有 error 就该非零退出（与既有的校验器口径一致）');
+  });
+
+  test('文档例子那条路径（/data/resource-manifest.json，核心没有同名文件）在校验器里仍然是干净的', () => {
+    const tool = join(ROOT, 'tools', 'workshop-validate.mjs');
+    const r = spawnSync(process.execPath, [tool, wsRoot, '--json'], { encoding: 'utf8', timeout: 120_000 });
+    const report = JSON.parse(r.stdout);
+    const pack = report.packs.find((p) => p.pack === 'manifest-pack');
+    assert.ok(pack, JSON.stringify(report.packs.map((p) => p.pack)));
+    assert.deepEqual(pack.issues.filter((i) => i.field === 'routes'), [], '§1.9.2 举的例子不许被自己的收紧打断');
+  });
+});
+

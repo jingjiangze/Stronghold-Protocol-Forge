@@ -29,6 +29,7 @@ import { validateKit } from '../shared/kitAuthoring.js';
 import { loadData } from '../server/data.js';
 import { WORKSHOP_ASSET_TYPES } from '../server/index.js';
 import { workshopSupportEntries, ART_TABLES } from '../shared/workshop.js';
+import { coreDataFiles, claimsCorePath } from '../server/http/workshop.js';
 import { atlasInfo } from './assets/atlas.mjs';
 import { parseSkel } from './assets/skel.mjs';
 import { roleAnimationNames } from './assets/anim-roles.mjs';
@@ -224,6 +225,32 @@ async function main() {
       issues.push(...pairIssues(judged, file));
     }
     report.packs.push({ pack: pack.id, name: pack.name, files: Object.keys(pack.files), issues });
+  }
+
+  // ---- the routes layer (docs/WORKSHOP.md §1.9.2, DESIGN §28.40). The shape is validated by the loader already
+  // (absolute path, pack-relative .json, cache enum). What only the FILESYSTEM can answer is whether a declared path
+  // is something **this engine already serves** — the server refuses those at boot (server/http/workshop.js
+  // claimsCorePath), and a validator that stayed silent would hand the author a green VALID for a route that never
+  // answers. Same rule, same data: this tool runs inside an engine tree, so data/ is right here.
+  const routeCore = coreDataFiles(DATA_DIR);
+  for (const pack of packs) {
+    const routes = Array.isArray(pack.routes) ? pack.routes : [];
+    if (!routes.length) continue;
+    const entry = report.packs.find((p) => p.pack === pack.id);
+    if (!entry) continue;
+    for (const route of routes) {
+      if (!route || typeof route.path !== 'string') continue;
+      if (claimsCorePath(route.path, { dataFiles: routeCore })) {
+        entry.issues.push({
+          field: 'routes',
+          code: 'ROUTE_CLASHES_CORE',
+          severity: 'error',
+          message: 'path ' + route.path + ' is a path this engine already serves — the server refuses this declaration'
+            + ' at boot (DESIGN §28.40). Pick a path nobody owns, serve the file through pack.json.assets instead,'
+            + ' or compute it at runtime with host.route() under "/mod/<pack id>/…" (§28.35).',
+        });
+      }
+    }
   }
 
   // ---- the voice pack layer (docs/WORKSHOP.md §1.4). The shape is validated by the loader already (slots, char ids,

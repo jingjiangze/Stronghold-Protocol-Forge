@@ -16,6 +16,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { WORKSHOP_MEDIA_PREFIX, WORKSHOP_RESOURCE_PREFIX, byPackId, workshopI18nFiles } from '../../shared/workshop.js';
+import { RESERVED_ROUTE_PREFIXES } from './routeMount.js';
 import { workshopTouchedFiles, readUiLangFile } from '../workshop.js';
 
 /**
@@ -244,10 +245,47 @@ export const ROUTE_CACHE_HEADERS = Object.freeze({
  *
  * @param {{ packs?: Array<{ id: string, dir?: string, routes?: Array<{ path: string, file: string, cache?: string }> }> }} loaded
  * @param {string|null} workshopDir
- * @param {{ log?: object|null }} [opts]
+/**
+ * 核心 `/data/*.json` 的文件名集合（一台服务器读一次；目录读不到就是空集，判据退化成「什么都不抢」）。
+ * @param {string|null} dataDir
+ * @returns {Set<string>} 形如 `/data/chess.json` 的绝对路径集合
+ */
+export function coreDataFiles(dataDir) {
+  const out = new Set();
+  if (typeof dataDir !== 'string' || !dataDir) return out;
+  let names = [];
+  try { names = fs.readdirSync(dataDir); } catch { return out; }
+  for (const n of names) if (typeof n === 'string' && n.endsWith('.json')) out.add('/data/' + n);
+  return out;
+}
+
+/**
+ * 一条 `pack.json.routes` 的 `path` 是不是在**抢**引擎已经在服务的东西（DESIGN §28.40）。
+ *
+ * 判据刻意不是「前缀在不在名单里」—— 那是 `host.route()` 那一格的做法，它有自己的 `/mod/<包id>/` 命名空间，
+ * 前缀规则放宽得起。静态这一格的**文档用法**恰好是 `/data/resource-manifest.json`（docs/WORKSHOP.md §1.9），
+ * 而核心 `data/` 目录里没有这个文件：按 `/data` 前缀一刀切会把这一格存在的理由整个砍掉。所以 `/data` 这一条判**真冲突**
+ * （核心目录里真有同名文件才算），其余命名空间判前缀（那些挂载点没有「作者要新增一张表」这种用法，落进去就是抢）。
+ *
+ * @param {string} pathname 声明里的绝对路径
+ * @param {{ dataFiles?: Set<string>|null }} [core] 由 `coreDataFiles(dataDir)` 在建表前读一次
+ * @returns {boolean}
+ */
+export function claimsCorePath(pathname, { dataFiles = null } = {}) {
+  if (typeof pathname !== 'string' || !pathname.startsWith('/')) return false;
+  if (pathname === '/data' || !pathname.startsWith('/data/')) {
+    return RESERVED_ROUTE_PREFIXES.some((prefix) => prefix !== '/data' && (pathname === prefix || pathname.startsWith(prefix + '/')));
+  }
+  return !!dataFiles && dataFiles.has(pathname);
+}
+
+/**
+ * @param {{ log?: object|null, dataFiles?: Set<string>|null }} [opts]
+ *   `dataFiles`（`coreDataFiles(dataDir)` 的结果）一给，保留命名空间的判据就在服务层生效（DESIGN §28.40）；不给 = 不判，
+ *   与这一格之前逐字节相同 —— 让调用方（`server/index.js`、校验器）自己决定它有没有能力知道核心目录里有什么。
  * @returns {{ routes: Map<string, { file: string, cache: string, pack: string }>, errors: Array<{ pack: string, path: string, reason: string }> }}
  */
-export function workshopRoutesFor(loaded, workshopDir, { log = null } = {}) {
+export function workshopRoutesFor(loaded, workshopDir, { log = null, dataFiles = null } = {}) {
   /** @type {Map<string, { file: string, cache: string, pack: string }>} */
   const routes = new Map();
   /** @type {Array<{ pack: string, path: string, reason: string }>} */
@@ -268,6 +306,12 @@ export function workshopRoutesFor(loaded, workshopDir, { log = null } = {}) {
         || path.isAbsolute(rel) || !rel.endsWith('.json') || segments.some((s) => s === '..' || s === '.');
       if (bad) {
         errors.push({ pack: p.id, path: at, reason: 'not a servable route: an absolute HTTP path and a pack-relative .json file (this channel never serves code or markup)' });
+        continue;
+      }
+      // 第二道判据（DESIGN §28.40）：这条路径正在抢引擎已经服务的东西。形状层判不了它（那要知道核心目录里
+      // 有什么），所以在**服务层**判，并且与其余几条形同一条纪律：点名报告 + 丢这一条，不是静默。
+      if (claimsCorePath(route.path, { dataFiles })) {
+        errors.push({ pack: p.id, path: at, reason: 'the engine already serves this path (DESIGN §28.40) — a pack route may not shadow a core file; claim a path under "/mod/<pack id>/…" with host.route() instead (DESIGN §28.35)' });
         continue;
       }
       const abs = path.join(dir, ...segments);

@@ -20,7 +20,7 @@ import { tmpdir } from 'node:os';
 
 import { ROUTE_CACHE_POLICIES } from '../shared/workshop.js';
 import { loadWorkshop } from '../server/workshop.js';
-import { workshopRoutesFor, ROUTE_CACHE_HEADERS } from '../server/http/workshop.js';
+import { workshopRoutesFor, ROUTE_CACHE_HEADERS, coreDataFiles, claimsCorePath } from '../server/http/workshop.js';
 import { startServer } from '../server/index.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -28,6 +28,7 @@ const quiet = { info() {}, warn() {}, error() {}, debug() {} };
 
 let tmp;
 let wsRoot;
+let wsBad;
 
 const MANIFEST = JSON.stringify({ version: 'v1', files: [{ url: '/a', sha256: 'a'.repeat(64) }] });
 const NOSTORE = JSON.stringify({ n: 1 });
@@ -47,7 +48,18 @@ const PACKS = {
     files: { 'resource-manifest.json': MANIFEST, 'n.json': NOSTORE, 'p.json': PUBLIC },
   },
   'core-claim': {
-    pack: { name: 'CoreClaim', routes: [{ path: '/data/support.json', file: 'support.json', cache: 'no-store' }] },
+    pack: { name: 'CoreClaim', routes: [{ path: '/sp-own-namespace.json', file: 'support.json', cache: 'no-store' }] },
+    files: { 'support.json': JSON.stringify({ from: 'the pack' }) },
+  },
+};
+
+/**
+ * 单独一棵 workshop 根：这份包试图声明**引擎自己的**路径（DESIGN §28.40）。
+ * 它必须整包被拒，所以不能和上面那些好包混在同一棵树里（混在一起会让第一条用例的 `errors` 判据失去意义）。
+ */
+const RESERVED_PACKS = {
+  'reserved-claim': {
+    pack: { name: 'ReservedClaim', routes: [{ path: '/data/support.json', file: 'support.json', cache: 'public' }] },
     files: { 'support.json': JSON.stringify({ from: 'the pack' }) },
   },
 };
@@ -55,12 +67,17 @@ const PACKS = {
 before(() => {
   tmp = fs.mkdtempSync(join(tmpdir(), 'sp-modroutes-'));
   wsRoot = join(tmp, 'ws');
-  for (const [id, pack] of Object.entries(PACKS)) {
-    const dir = join(wsRoot, id);
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(join(dir, 'pack.json'), JSON.stringify({ id, version: '0.1.0', license: 'CC0-1.0', ...pack.pack }));
-    for (const [rel, body] of Object.entries(pack.files)) fs.writeFileSync(join(dir, rel), body);
-  }
+  wsBad = join(tmp, 'ws-reserved');
+  const write = (root, packs) => {
+    for (const [id, pack] of Object.entries(packs)) {
+      const dir = join(root, id);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(join(dir, 'pack.json'), JSON.stringify({ id, version: '0.1.0', license: 'CC0-1.0', ...pack.pack }));
+      for (const [rel, body] of Object.entries(pack.files)) fs.writeFileSync(join(dir, rel), body);
+    }
+  };
+  write(wsRoot, PACKS);
+  write(wsBad, RESERVED_PACKS);
 });
 after(() => { if (tmp) fs.rmSync(tmp, { recursive: true, force: true }); });
 
@@ -74,7 +91,7 @@ describe('routes: 服务面自己的判据（只读 / 只 .json / 越不出去�
   test('声明合法：绝对路径 → 包内文件，cache 缺省 no-cache，三种语义都有对应的 Cache-Control', () => {
     const { routes, errors } = workshopRoutesFor(loadWorkshop(wsRoot, { log: quiet }), wsRoot, { log: quiet });
     assert.deepEqual(errors, [], JSON.stringify(errors));
-    assert.deepEqual([...routes.keys()].sort(), ['/data/resource-manifest.json', '/data/support.json', '/sp-nostore.json', '/sp-public.json']);
+    assert.deepEqual([...routes.keys()].sort(), ['/data/resource-manifest.json', '/sp-nostore.json', '/sp-own-namespace.json', '/sp-public.json']);
     const m = routes.get('/data/resource-manifest.json');
     assert.equal(m.file, join(wsRoot, 'manifest-pack', 'resource-manifest.json'));
     assert.equal(m.cache, 'no-cache');
@@ -132,9 +149,11 @@ describe('routes: 服务面自己的判据（只读 / 只 .json / 越不出去�
   });
 
   test('文件不在时路由**留在表里**（于是 404，而不是悄悄回落到同名核心文件）+ 一条报告', () => {
-    const { routes, errors } = workshopRoutesFor(fakeLoaded([{ path: '/data/chess.json', file: 'gone.json' }]), wsRoot, { log: quiet });
-    assert.ok(routes.has('/data/chess.json'), '声明的路径必须在表里 —— 否则它会回落到核心的 /data/chess.json');
-    assert.equal(routes.get('/data/chess.json').file, join(wsRoot, 'gone.json'));
+    // 这条「声明即占用」的几何原来用 `/data/chess.json` 当靶子；§28.40 起那条路径根本进不了表（保留命名空间），
+    // 所以换一条包自己的路径来钉**没变的那一半**：声明过、文件没了 ⇒ 404，不回落。
+    const { routes, errors } = workshopRoutesFor(fakeLoaded([{ path: '/sp-gone.json', file: 'gone.json' }]), wsRoot, { log: quiet });
+    assert.ok(routes.has('/sp-gone.json'), '声明的路径必须在表里 —— 否则它会回落到别处那份同名内容');
+    assert.equal(routes.get('/sp-gone.json').file, join(wsRoot, 'gone.json'));
     assert.equal(errors.length, 1);
     assert.match(errors[0].reason, /declared in pack\.json but missing/);
   });
@@ -185,8 +204,8 @@ describe('routes: 真 HTTP 服务面', () => {
       assert.equal((await get('/sp-not-declared.js')).status, 404);
       assert.equal((await get('/data/nope.json')).status, 404);
 
-      // 声明的路径没有文件 ⇒ 404（而不是回落到核心同名文件）
-      const claimed = await get('/data/support.json');
+      // 包在**自己的**顶层路径上挂一份文件 ⇒ 命中的就是包那一份（这一条与从前完全一样， §28.40 没动它）
+      const claimed = await get('/sp-own-namespace.json');
       assert.equal(claimed.status, 200, '这条路径有文件，所以是包的文件');
       assert.deepEqual(await claimed.json(), { from: 'the pack' });
 
@@ -221,14 +240,33 @@ describe('routes: 真 HTTP 服务面', () => {
     }
   });
 
-  test('声明的路径抢占核心同名文件时，服务的是包的文件（有意为之：声明过的路径就是声明过的）', async () => {
-    const srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true, workshopDir: wsRoot });
+  test('声明引擎已经在服务的路径 ⇒ 这一条被点名拒掉，核心那份文件照旧是核心的内容（§28.40）', async () => {
+    const dataFiles = coreDataFiles(join(ROOT, 'data'));
+    assert.ok(dataFiles.has('/data/support.json'), '前置：核心目录里真的有这张表（判据的靶子必须在）');
+
+    // 1) 服务层判据本身：包被正常装载，但这条声明进不了表，而且是**点名**报告（不是静默丢掉）。
+    const loaded = loadWorkshop(wsBad, { log: quiet });
+    assert.equal(loaded.packs.length, 1, '形状层没变：这一格的拒绝发生在服务层，不毁整包');
+    const table = workshopRoutesFor(loaded, wsBad, { log: quiet, dataFiles });
+    assert.equal(table.routes.has('/data/support.json'), false, '核心已经在服务的路径不得登记');
+    assert.equal(table.errors.length, 1, JSON.stringify(table.errors));
+    assert.match(table.errors[0].reason, /the engine already serves this path/);
+    assert.equal(table.errors[0].pack, 'reserved-claim');
+
+    // 2) 文档用法不能被误伤：`/data/resource-manifest.json` 是 §1.9 举的那个例子，核心没有这个文件。
+    assert.ok(!dataFiles.has('/data/resource-manifest.json'), '前置：核心目录里没有这张「作者自己要挂的表」');
+    assert.equal(claimsCorePath('/data/resource-manifest.json', { dataFiles }), false, '没有同名核心文件 ⇒ 不是抢');
+    assert.equal(claimsCorePath('/data/chess.json', { dataFiles }), true, '有同名核心文件 ⇒ 抢');
+    assert.equal(claimsCorePath('/i18n/anything.json', { dataFiles }), true, '其余命名空间按前缀判（那里没有「作者新表」的用法）');
+    assert.equal(claimsCorePath('/sp-own.json', { dataFiles }), false, '包自己的顶层路径不受影响');
+
+    // 3) 真服务器：这一格原来会被包整张顶掉（探针实测：官方 1,875,834 字节的表换成 43 字节，还带 public 缓存一天）。
+    const srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true, workshopDir: wsBad });
     try {
       const res = await fetch(`${srv.url}/data/support.json`);
       assert.equal(res.status, 200);
-      assert.deepEqual(await res.json(), { from: 'the pack' });
       const official = JSON.parse(fs.readFileSync(join(ROOT, 'data', 'support.json'), 'utf8'));
-      assert.notDeepEqual(JSON.parse(fs.readFileSync(join(wsRoot, 'core-claim', 'support.json'), 'utf8')), official);
+      assert.deepEqual(await res.json(), official, '送出的还是核心那一份 —— 这条断言就是本次改动的全部内容');
     } finally {
       await srv.close();
     }

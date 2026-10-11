@@ -35,7 +35,7 @@ import { workshopNotices } from './notices.js';
 import { createRoomAssets } from './roomAssets.js';
 import { Match as DefaultMatch } from './match/Match.js';
 import {
-  buildWorkshopDataFiles, workshopKitFilesFor, workshopKitDirsFor, workshopPanelFilesFor, workshopAssetsFor, workshopRoutesFor,
+  buildWorkshopDataFiles, workshopKitFilesFor, workshopKitDirsFor, workshopPanelFilesFor, workshopAssetsFor, workshopRoutesFor, coreDataFiles,
   workshopResourceFilesFor, workshopModAssetsFrom, buildWorkshopI18nFiles, resourceServerPolicy, WORKSHOP_ASSET_PREFIX, WORKSHOP_ASSET_TYPES, workshopBattleFilesFor,
 } from './http/workshop.js';
 import { ROOT, listenAddress, bindCandidates, serveDirs, makeLogger, parseTrustProxy } from './http/config.js';
@@ -55,7 +55,7 @@ export {
   ROOT, WS_MAX_PAYLOAD, DATA_SHIM_JS, MIME, COMPRESSIBLE, BUILD_INPUTS, computeBuildTag, buildTag, resetBuildTag,
   acceptsGzip, parseRange, createStaticHandler, lanUrls, parseTrustProxy,
   // 创意工坊 (docs/WORKSHOP.md): the HTTP helpers live in ./http/workshop.js but stay part of this module's API
-  buildWorkshopDataFiles, workshopKitFilesFor, workshopKitDirsFor, workshopPanelFilesFor, workshopAssetsFor, workshopRoutesFor,
+  buildWorkshopDataFiles, workshopKitFilesFor, workshopKitDirsFor, workshopPanelFilesFor, workshopAssetsFor, workshopRoutesFor, coreDataFiles,
   workshopResourceFilesFor, workshopModAssetsFrom, buildWorkshopI18nFiles, resourceServerPolicy, WORKSHOP_ASSET_PREFIX, WORKSHOP_ASSET_TYPES,
   workshopBattleFilesFor,
   // 客户端 mod 本地缓存 (W-C): the catalogue builder and the routes a browser downloads from (server/modCatalog.js,
@@ -205,7 +205,18 @@ export async function startServer(opts = {}) {
   const roomDataFace = roomAssets ? (digest) => roomAssets.byDigest(digest) : null;
   const workshopAssets = workshopAssetsFor(workshopLoaded, workshopDir);
   // 包声明的只读路由（`pack.json.routes`, DESIGN §28.13）：绝对路径 → 包内 `.json`，带声明的 `Cache-Control`。
-  const workshopRoutes = workshopRoutesFor(workshopLoaded, workshopDir, { log }).routes;
+  // §28.40 还要判「这条路径是不是在抢引擎已经在服务的东西」。判据要看核心目录里真有什么文件
+  // （`/data/resource-manifest.json` 是 §1.9 举的例子、核心没有这个文件 ⇒ 放行；`/data/chess.json` 有 ⇒ 拒），
+  // 所以目录只在启动时读一次，不在每个请求上 stat。
+  const routeTable = workshopRoutesFor(workshopLoaded, workshopDir, { log, dataFiles: coreDataFiles(dataDir) });
+  // 这一类拒绝要在启动日志里点名（其余 errors 的口径与从前一致）：一条被丢掉的「抢核心路径」声明如果不说，
+  // 运维看到的只是「这条路由不存在」。
+  for (const e of routeTable.errors) {
+    if (typeof e.reason === 'string' && e.reason.startsWith('the engine already serves this path')) {
+      log.warn(`[workshop] routes refused: ${e.pack} "${e.path}" — ${e.reason}`);
+    }
+  }
+  const workshopRoutes = routeTable.routes;
   // C 层注册点（`pack.json.client.panels`, DESIGN §28.8）：面板清单（随 `welcome` 推到客户端）与这些模块的服务表。
   // 没有包声明 `client` 时两者都是空的，`welcome` 不多一个字段、`/workshop-panels/` 不服务任何东西。
   const workshopPanels = loadWorkshopPanels(workshopLoaded, { log });

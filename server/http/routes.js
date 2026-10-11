@@ -2,16 +2,21 @@
 // (i18n-ignore-file: the error pages are bilingual by design, 中文 · English — docs/I18N.md)
 //
 //   * a URL longer than 4096 characters → 414; one that does not parse → 400;
-//   * any method but GET / HEAD → 405 with `Allow: GET, HEAD`;
+//   * any method but GET / HEAD → 405 with `Allow: GET, HEAD`, unless a lane claimed that method for that path;
 //   * GET /healthz → JSON status (protocol `version`, release `app`, uptime, the served `build`, sockets, sessions,
 //     rooms, matches), never cached;
+//   * a path inside a host-registered request lane (DESIGN §28.31, httpLanes.js) → that lane, for a method the lane
+//     claimed. No lanes (the default, and the only thing a plain `npm start` has) ⇒ every rule below is exactly as it
+//     was: any method but GET / HEAD 405, everything else the static files;
 //   * everything else → the static files (static.js).
 // A route that throws is logged and answers 500.
 
+import { existsSync } from 'node:fs';
 import { PROTOCOL_VERSION, APP_VERSION } from '../../shared/constants.js';
 import { buildTag } from './buildTag.js';
 import { setSecurityHeaders, sendError, sendJson, splitUrl } from './common.js';
 import { MODS_CATALOG_URL } from './mods.js';
+import { validateHttpLanes, resolveHttpLane } from './httpLanes.js';
 
 const MAX_URL_LENGTH = 4096;
 
@@ -49,15 +54,37 @@ export function healthReport({ startedAt, network, registry, lobby, modHealth = 
  * @param {{ serveStatic: (req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse,
  *             rawPath: string, query: string) => Promise<void>,
  *           health: Parameters<typeof healthReport>[0], log: object,
- *           modsCatalog?: (req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => boolean }} deps
+ *           modsCatalog?: (req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => boolean,
+ *           httpLanes?: readonly import('./httpLanes.js').HttpLane[], publicDir?: string }} deps
  * @returns {(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => void}
  */
-export function createRequestHandler({ serveStatic, health, log, modsCatalog }) {
+export function createRequestHandler({ serveStatic, health, log, modsCatalog, httpLanes, publicDir }) {
+  // A bad table fails at boot, naming every problem — same ruling as the upgrade table (§28.30), same reason: a lane
+  // that silently never answers is worse than a server that refuses to start.
+  const table = validateHttpLanes(httpLanes ?? [], { publicDir, existsSync });
+  if (table.problems.length) throw new Error(`bad http lane table: ${table.problems.join('; ')}`);
+  if (table.lanes.length) log.info(`[http] lanes: ${table.lanes.map((l) => l.prefix + l.methods.join('|')).join(', ')}`);
+
   async function handleRequest(req, res) {
     const url = req.url || '/';
     if (url.length > MAX_URL_LENGTH) { sendError(req, res, 414, '请求地址过长 · URI too long'); return; }
     const parts = splitUrl(url);
     if (!parts) { sendError(req, res, 400, '请求地址无效 · Bad request'); return; }
+    // A lane is asked before anything else, because it is the only rule here that knows about methods the game does
+    // not serve (POST). It cannot reach the engine's own paths: `validateHttpLanes` refuses any prefix that overlaps
+    // them, including `/healthz` and the catalogue, so the order below is untouched for every request a lane does not
+    // claim — including a POST to `/healthz`, which stays the 405 it always was.
+    const lane = resolveHttpLane(req.method || 'GET', parts.rawPath, table.lanes);
+    if (lane) {
+      try {
+        await lane.onRequest(req, res, { rawPath: parts.rawPath, query: parts.query, log, lane });
+      } catch (e) {
+        // Named, and never a fall-through into the game's static space: a half-written lane response stays half-written.
+        log.error(`[http] lane ${lane.id} failed`, e);
+        if (!res.headersSent) sendError(req, res, 500, '玩法服务出错 · Mode error');
+      }
+      return;
+    }
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.setHeader('Allow', 'GET, HEAD');
       sendError(req, res, 405, '不支持的请求方法 · Method not allowed');

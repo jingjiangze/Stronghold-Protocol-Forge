@@ -407,6 +407,11 @@ export const CLIENT_WRAP_MODES = Object.freeze(['wrap', 'replace']);
 /** 面板的字段：四个 + `styles`（这个面板自带的样式表）+ `data`（它要读的数据表）+ `messages`（它要收发的通道）
  *  + `wraps`（它要包裹 / 替换的引擎组件）。 */
 const CLIENT_PANEL_FIELDS = Object.freeze(['id', 'slot', 'module', 'order', 'gate', 'styles', 'data', 'messages', 'wraps']);
+/** Fixed routes the compatibility runtime can replace without modifying the host router. */
+export const CLIENT_SCREEN_ROUTES = Object.freeze(['title', 'lobby', 'room', 'game']);
+/** Closed fields accepted by pack.json.client.screens[]. */
+export const CLIENT_SCREEN_FIELDS = Object.freeze(['id', 'route', 'module', 'order', 'styles', 'data', 'messages']);
+const CLIENT_MAX_SCREEN_STYLES = 8;
 /** 一个面板最多声明几条包通道（上限让「通道」这件事有界；今天没有一个真包用到两条以上）。 */
 const CLIENT_MAX_PANEL_MESSAGES = 8;
 /**
@@ -703,11 +708,11 @@ const isSafeServerModulePath = (p) =>
  */
 function parseClientDecl(raw) {
   if (!isPlainObj(raw)) {
-    return fail('CLIENT_DECL_BAD_SHAPE', 'client must be an object: { panels: [...], requires: [...] }');
+    return fail('CLIENT_DECL_BAD_SHAPE', 'client must be an object: { panels?: [...], screens?: [...], requires?: [...], theme?: { vars } }');
   }
   for (const key of Object.keys(raw)) {
-    if (key !== 'panels' && key !== 'requires' && key !== 'theme') {
-      return fail('CLIENT_UNKNOWN_FIELD', `client: "${key}" is not a declared field (panels, requires, theme)`);
+    if (key !== 'panels' && key !== 'screens' && key !== 'requires' && key !== 'theme') {
+      return fail('CLIENT_UNKNOWN_FIELD', `client: "${key}" is not a declared field (panels, screens, requires, theme)`);
     }
   }
   // `client` 至少要声明**一件能用的东西**：面板，或主题变量。业主裁决 2026-10-10 之后主题可以单独存在 —— 一个只想
@@ -716,8 +721,10 @@ function parseClientDecl(raw) {
   // 「这个包有客户端界面」这句话变成假的）。
   if (raw.panels !== undefined && !Array.isArray(raw.panels)) return fail('CLIENT_BAD_PANELS', 'client.panels must be an array of panel declarations');
   if (Array.isArray(raw.panels) && !raw.panels.length) return fail('CLIENT_BAD_PANELS', 'client.panels must declare at least one panel (drop the key instead of sending [])');
-  if (raw.panels === undefined && raw.theme === undefined) {
-    return fail('CLIENT_BAD_PANELS', 'client must declare at least one of: panels (client interfaces), theme (CSS variables) — a client block that declares neither, or only requires, says nothing at all');
+  if (raw.screens !== undefined && !Array.isArray(raw.screens)) return fail('CLIENT_BAD_SCREENS', 'client.screens must be an array of whole-screen declarations');
+  if (Array.isArray(raw.screens) && !raw.screens.length) return fail('CLIENT_BAD_SCREENS', 'client.screens must declare at least one screen (drop the key instead of sending [])');
+  if (raw.panels === undefined && raw.screens === undefined && raw.theme === undefined) {
+    return fail('CLIENT_BAD_PANELS', 'client must declare at least one of: panels, screens (whole-screen routes), theme (CSS variables) — a client block that declares neither, or only requires, says nothing at all');
   }
   const panels = [];
   const seen = new Set();
@@ -854,6 +861,55 @@ function parseClientDecl(raw) {
     }
     panels.push(clean);
   }
+  const screens = [];
+  const screenRoutes = new Set();
+  for (const [i, screen] of (Array.isArray(raw.screens) ? raw.screens : []).entries()) {
+    if (!isPlainObj(screen)) return fail('CLIENT_BAD_SCREEN', `client.screens[${i}] must be an object: { id, route, module, order?, styles?, data?, messages? }`);
+    for (const key of Object.keys(screen)) {
+      if (!CLIENT_SCREEN_FIELDS.includes(key)) return fail('CLIENT_SCREEN_UNKNOWN_FIELD', `client.screens[${i}]: "${key}" is not a screen field (${CLIENT_SCREEN_FIELDS.join(', ')})`);
+    }
+    if (typeof screen.id !== 'string' || !RECORD_ID_RE.test(screen.id)) return fail('CLIENT_BAD_SCREEN_ID', `client.screens[${i}].id: "${String(screen.id)}" is not a valid screen id`);
+    if (seen.has(screen.id)) return fail('CLIENT_SCREEN_DUPLICATE_ID', `client.screens: "${screen.id}" is already used by a panel or screen (ids share one pack namespace)`);
+    seen.add(screen.id);
+    if (!CLIENT_SCREEN_ROUTES.includes(screen.route)) return fail('CLIENT_BAD_SCREEN_ROUTE', `client.screens["${screen.id}"].route must be one of: ${CLIENT_SCREEN_ROUTES.join(', ')}`);
+    if (screenRoutes.has(screen.route)) return fail('CLIENT_SCREEN_DUPLICATE_ROUTE', `client.screens: route "${screen.route}" is declared twice in one pack (one pack may provide at most one screen per route)`);
+    screenRoutes.add(screen.route);
+    if (!isSafeModulePath(screen.module)) return fail('CLIENT_BAD_SCREEN_MODULE', `client.screens["${screen.id}"].module must be a relative path inside the pack ending in .js (e.g. "screens/lobby.js")`);
+    if (screen.order !== undefined && !Number.isInteger(screen.order)) return fail('CLIENT_BAD_SCREEN_ORDER', `client.screens["${screen.id}"].order must be an integer`);
+    const clean = { id: screen.id, route: screen.route, module: screen.module };
+    if (screen.order !== undefined) clean.order = screen.order;
+    if (screen.styles !== undefined) {
+      if (!Array.isArray(screen.styles) || !screen.styles.length) return fail('CLIENT_BAD_SCREEN_STYLES', `client.screens["${screen.id}"].styles must be a non-empty array of pack-relative .css paths (drop the key instead of sending [])`);
+      if (screen.styles.length > CLIENT_MAX_SCREEN_STYLES) return fail('CLIENT_BAD_SCREEN_STYLES', `client.screens["${screen.id}"].styles: at most ${CLIENT_MAX_SCREEN_STYLES} stylesheets per screen`);
+      const styles = [];
+      for (const style of screen.styles) {
+        if (typeof style !== 'string' || !isSafeRelativePath(style) || !style.endsWith(CLIENT_PANEL_STYLES_EXT) || style.length <= CLIENT_PANEL_STYLES_EXT.length) {
+          return fail('CLIENT_BAD_SCREEN_STYLE', `client.screens["${screen.id}"].styles: "${String(style)}" must be a pack-relative .css path`);
+        }
+        styles.push(style);
+      }
+      if (new Set(styles).size !== styles.length) return fail('CLIENT_DUPLICATE_SCREEN_STYLE', `client.screens["${screen.id}"].styles lists a stylesheet twice`);
+      clean.styles = styles.sort();
+    }
+    if (screen.data !== undefined) {
+      if (!Array.isArray(screen.data) || !screen.data.length || screen.data.length > CLIENT_MAX_PANEL_DATA_TABLES) return fail('CLIENT_BAD_SCREEN_DATA', `client.screens["${screen.id}"].data must be a non-empty list of readable table names`);
+      for (const table of screen.data) {
+        if (!CLIENT_PANEL_DATA_TABLES.includes(table)) return fail('CLIENT_BAD_SCREEN_DATA', `client.screens["${screen.id}"].data: "${String(table)}" is not a readable data table`);
+      }
+      if (new Set(screen.data).size !== screen.data.length) return fail('CLIENT_DUPLICATE_SCREEN_DATA', `client.screens["${screen.id}"].data lists the same table twice`);
+      clean.data = CLIENT_PANEL_DATA_TABLES.filter((name) => screen.data.includes(name));
+    }
+    if (screen.messages !== undefined) {
+      if (!Array.isArray(screen.messages) || !screen.messages.length || screen.messages.length > CLIENT_MAX_PANEL_MESSAGES) return fail('CLIENT_BAD_SCREEN_MESSAGES', `client.screens["${screen.id}"].messages must be a non-empty list of at most ${CLIENT_MAX_PANEL_MESSAGES} pack channels`);
+      for (const channel of screen.messages) {
+        if (typeof channel !== 'string' || !PACK_CHANNEL_RE.test(channel)) return fail('CLIENT_BAD_SCREEN_CHANNEL', `client.screens["${screen.id}"].messages: "${String(channel)}" is not a valid pack channel name`);
+      }
+      if (new Set(screen.messages).size !== screen.messages.length) return fail('CLIENT_DUPLICATE_SCREEN_CHANNEL', `client.screens["${screen.id}"].messages lists the same channel twice`);
+      clean.messages = stableStringList(screen.messages);
+    }
+    screens.push(clean);
+  }
+  screens.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const rawRequires = raw.requires === undefined ? [] : raw.requires;
   if (!Array.isArray(rawRequires)) {
     return fail('CLIENT_BAD_REQUIRES', `client.requires must be an array (one of: ${CLIENT_REQUIRES.join(', ')})`);
@@ -905,7 +961,7 @@ function parseClientDecl(raw) {
     theme = { vars };
   }
   // requires 按闭枚举次序，不按作者书写顺序：同一个包两处写法不同的清单必须是同一份字节（DESIGN §28.2）
-  return { ok: true, decl: { panels, requires: CLIENT_REQUIRES.filter((c) => requires.includes(c)), ...(theme ? { theme } : {}) } };
+  return { ok: true, decl: { panels, ...(raw.screens === undefined ? {} : { screens }), requires: CLIENT_REQUIRES.filter((c) => requires.includes(c)), ...(theme ? { theme } : {}) } };
 }
 
 /**
@@ -2259,13 +2315,13 @@ export function normalizePackManifest(raw, dirName = '', opts = {}) {
   // —— 没有面板声明过的通道，客户端根本发不出来，那是一条「声明了却不可能发生」的声明。
   if (serverParsed) {
     const panelChannels = new Set();
-    for (const panel of (clientParsed ? clientParsed.decl.panels : [])) {
+    for (const panel of [...(clientParsed ? clientParsed.decl.panels : []), ...(clientParsed ? (clientParsed.decl.screens || []) : [])]) {
       for (const channel of (panel.messages || [])) panelChannels.add(channel);
     }
     for (const m of serverParsed.decl.modules || []) {
       for (const channel of m.channels || []) {
         if (!panelChannels.has(channel)) {
-          return fail('MODULES_UNKNOWN_CHANNEL', `server.modules["${m.id}"].channels: "${channel}" is not declared by any of this pack's client.panels[].messages — the engine only lets a pack send the channels its panels declare, so this one could never arrive (add it to a panel's "messages", or drop it here)`);
+          return fail('MODULES_UNKNOWN_CHANNEL', `server.modules["${m.id}"].channels: "${channel}" is not declared by any of this pack's client.panels[].messages or client.screens[].messages — the engine only lets a pack send declared channels, so this one could never arrive (add it to a panel or screen "messages", or drop it here)`);
         }
       }
     }

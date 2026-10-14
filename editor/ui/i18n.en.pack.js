@@ -236,7 +236,9 @@ export const EN_PACK = Object.freeze({
   '真引擎装载': 'Real engine load',
   '干员记录': 'Operator records',
   '外观素材': 'Appearance assets',
-  '语音 (校验)': 'Voice (validation)',
+  // eslint-disable-next-line no-dupe-keys -- 两节都需要「语音→Voice」：L21 是编辑器页签，这里是校验 kind 名；
+  // 同一字面量里该键出现两次（值相同）：对 no-dupe-keys 是违规、对词典一致性检查是必须。
+  '语音': 'Voice',
   '装备图标': 'Item icons',
   '行为层 kit': 'Behaviour kits',
   '怪物': 'Monsters',

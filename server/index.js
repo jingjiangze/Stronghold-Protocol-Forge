@@ -64,6 +64,7 @@ import { createModsRoute, serveMods, MODS_CATALOG_URL, MOD_FILE_PREFIX } from '.
 import { buildModCatalog } from './modCatalog.js';
 import { answerClientError } from './http/common.js';
 import { lanUrls, displayHost, isProcessEntry, runMain } from './http/boot.js';
+import { createHotReload } from './modHotReload.js';   // 工坊目录变更监听 + 重载驱动（本 PR 新增）
 
 // The public API of this module (tests and tools import it from here); the code lives in ./http/.
 export {
@@ -458,7 +459,25 @@ export async function startServer(opts = {}) {
 
   // `accounts` / `records` 也交出来（两份都是 `null` 时表示没开 `SP_ACCOUNTS`）：运维与测试要能确认
   // 「这个进程到底有没有账号」，而不是靠猜 `hello` 的回复。
-  return { port: actualPort, host: boundHost, url, server, wss, lobby, network, registry, packs, accounts, records, traffic, assetIndex, views, close };
+  // ---- 工坊目录热装载驱动（本 PR 新增；**不改上面任何装配步骤**）------------------------------------------
+  // 能力边界写在 server/modHotReload.js 文件头：本引擎装配是一次性的，所以「原地换包」要等第 2 步把装配抽成
+  // 可重入的 applyWorkshop()；这里先交付安全的那一半 —— 监听 + 精确 diff + 可选受监督重启（SP_HOT_RELOAD=restart）。
+  // 默认 report：只报告不动服务；任何异常都只记日志，绝不影响服务器功能。
+  const hotReloadMode = process.env.SP_HOT_RELOAD === 'restart' ? 'restart' : 'report';
+  const hotReload = createHotReload({
+    dir: workshopDir,
+    log,
+    mode: hotReloadMode,
+    onReload: ({ diff }) => log.info(`[hot-reload] packs changed: +${diff.added.length} -${diff.removed.length} ~${diff.changed.length}`
+      + (hotReloadMode === 'restart' ? ' → restarting to apply' : ' (report only; restart to apply)')),
+    restart: async () => {
+      try { await close(); } catch { /* 关不干净也要退，交给 supervisor */ }
+      process.exit(Number(process.env.SP_HOT_RELOAD_EXIT_CODE || 0));
+    },
+  });
+  hotReload.start();
+
+  return { port: actualPort, host: boundHost, url, server, wss, lobby, network, registry, packs, accounts, records, traffic, assetIndex, views, close, hotReload };
 }
 
 // `node server/index.js` / npm start: listen, print the banner, stop on SIGINT / SIGTERM (http/boot.js).

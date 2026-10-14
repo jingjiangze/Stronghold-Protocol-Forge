@@ -236,7 +236,7 @@ export const EN_PACK = Object.freeze({
   '真引擎装载': 'Real engine load',
   '干员记录': 'Operator records',
   '外观素材': 'Appearance assets',
-  '语音': 'Voice',
+  '语音 (校验)': 'Voice (validation)',
   '装备图标': 'Item icons',
   '行为层 kit': 'Behaviour kits',
   '怪物': 'Monsters',

@@ -115,6 +115,7 @@ export function createHotReload({
       packs = scanPacks(dir, { fsImpl, log });
       try {
         watcher = watchImpl(dir, { recursive: true }, () => schedule('change'));
+        watcher.unref?.();   // 不把事件循环吊住（测试/短命进程靠它退出）
         watcher.on?.('error', (e) => { status.lastError = String(e?.message || e).slice(0, 200); log.warn?.(`[hot-reload] watcher error: ${status.lastError}`); });
         status.running = true;
         log.info?.(`[hot-reload] watching ${dir} (${packs.size} pack(s), mode=${mode}, debounce=${debounceMs}ms)`);

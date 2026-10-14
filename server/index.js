@@ -445,6 +445,7 @@ export async function startServer(opts = {}) {
       try { lobby.shutdown('shutdown'); } catch (e) { log.error('[shutdown] lobby', e); }
       // 包的服务端模块的 `onShutdown`（例如停机播报 + 快照留档）：与 `onBoot` 同一条，失败只记日志、不阻塞停机。
       try { modMount.shutdown(); } catch (e) { log.error('[shutdown] mod modules', e); }
+      try { hotReload?.stop(); } catch (e) { log.error('[shutdown] hot-reload', e); }
       network.close();
       assetIndex?.close();
       await new Promise((resolve) => {

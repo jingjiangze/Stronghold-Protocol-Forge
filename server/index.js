@@ -64,7 +64,7 @@ import { createModsRoute, serveMods, MODS_CATALOG_URL, MOD_FILE_PREFIX } from '.
 import { buildModCatalog } from './modCatalog.js';
 import { answerClientError } from './http/common.js';
 import { lanUrls, displayHost, isProcessEntry, runMain } from './http/boot.js';
-import { createHotReload } from './modHotReload.js';   // 工坊目录变更监听 + 重载驱动（本 PR 新增）
+import { createHotReload, resolveHotReloadMode, hotReloadExitCode } from './modHotReload.js';   // 工坊目录变更监听 + 重载驱动（本 PR 新增）
 
 // The public API of this module (tests and tools import it from here); the code lives in ./http/.
 export {
@@ -464,7 +464,9 @@ export async function startServer(opts = {}) {
   // 能力边界写在 server/modHotReload.js 文件头：本引擎装配是一次性的，所以「原地换包」要等第 2 步把装配抽成
   // 可重入的 applyWorkshop()；这里先交付安全的那一半 —— 监听 + 精确 diff + 可选受监督重启（SP_HOT_RELOAD=restart）。
   // 默认 report：只报告不动服务；任何异常都只记日志，绝不影响服务器功能。
-  const hotReloadMode = process.env.SP_HOT_RELOAD === 'restart' ? 'restart' : 'report';
+  // 环境读取都在 modHotReload 里（**刻意**不在本文件 —— §28.14 的反射扫描只看四个核心文件，而这是宿主运维开关，
+  // 不该进包可见的白名单，与 accountConfig 的 SP_ACCOUNTS / SP_RECORDS_FILE 同一政策），这里只调用它的取数小函数。
+  const hotReloadMode = resolveHotReloadMode();
   const hotReload = createHotReload({
     dir: workshopDir,
     log,
@@ -473,7 +475,7 @@ export async function startServer(opts = {}) {
       + (hotReloadMode === 'restart' ? ' → restarting to apply' : ' (report only; restart to apply)')),
     restart: async () => {
       try { await close(); } catch { /* 关不干净也要退，交给 supervisor */ }
-      process.exit(Number(process.env.SP_HOT_RELOAD_EXIT_CODE || 0));
+      process.exit(hotReloadExitCode());
     },
   });
   hotReload.start();

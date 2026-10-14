@@ -19,6 +19,21 @@ import path from 'node:path';
 const noop = { info() {}, warn() {} };
 export const DEFAULT_DEBOUNCE_MS = 300;
 
+/**
+ * 热装载的两个环境开关 —— 读取**刻意放在这个模块里**（§28.14 的反射扫描只看 `server/index.js`、
+ * `server/modModules.js`、`server/match/Match.js`、`server/match/botEmotes.js` 这一组核心文件；
+ * 与 `server/accountConfig.js` 的 `SP_ACCOUNTS` / `SP_RECORDS_FILE` 同一政策）：热装载是**宿主运维开关**，
+ * 不该让包看见、更不许包据此分叉（MOD_SURFACE：同一份摘要 ⇒ 同一份行为）。
+ */
+export function resolveHotReloadMode(env = process.env) {
+  return env.SP_HOT_RELOAD === 'restart' ? 'restart' : 'report';
+}
+
+/** 受监督重启的退出码（supervisor 靠它决定是拉起还是放停）。 */
+export function hotReloadExitCode(env = process.env) {
+  return Number(env.SP_HOT_RELOAD_EXIT_CODE || 0);
+}
+
 /** 扫一个工坊根目录，列出（目录名 → 版本号）。读不到就返回空表（不抛）。 */
 export function scanPacks(dir, { fsImpl = fs, log = noop } = {}) {
   const out = new Map();
@@ -64,7 +79,7 @@ export function diffPacks(before, after) {
  */
 export function createHotReload({
   dir, fsImpl = fs, log = noop, debounceMs = DEFAULT_DEBOUNCE_MS,
-  mode = process.env.SP_HOT_RELOAD === 'restart' ? 'restart' : 'report',
+  mode = resolveHotReloadMode(),
   onReload = null, restart = null, watchImpl = fs.watch,
 } = {}) {
   let watcher = null;

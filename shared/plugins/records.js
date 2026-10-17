@@ -144,19 +144,19 @@ function operator(data, r, pluginId, validateDsl) {
  *     所以这里不做前缀校验 —— 但 `overrides` 那条闸仍然守着"不许悄悄覆盖官方记录"；
  *   * **深拷贝写入**：内容集是不可变的，包的对象不能被外面改到。
  */
-function forgeRecord(data, r) {
+function forgeRecord(data, r, { allowReplace = false } = {}) {
   const map = data[r.file];
   if (!object(map)) fail('PLUGIN_RECORD_TYPE', r.id, `unknown table ${r.file}`);
   if (!object(r.record)) fail('PLUGIN_RECORD_TYPE', r.id, 'forge record must be an object');
-  if (own(map, r.id) && r.replace !== true) {
+  if (own(map, r.id) && r.replace !== true && !allowReplace) {
     fail('PLUGIN_RECORD_EXISTS', r.id, 'this id already exists — the pack must declare it in overrides to replace it');
   }
   map[r.id] = clone(r.record);
 }
 
 /** General records: { file, id, base?, set? | value? }; modes inherit an official base. */
-function record(data, r, pluginId) {
-  if (r.forge === 1) { forgeRecord(data, r); return; }
+function record(data, r, pluginId, opts = {}) {
+  if (r.forge === 1) { forgeRecord(data, r, opts); return; }
   if (r.file === 'choices') {
     const cards = data.choices?.cards?.[r.kind];
     const source = cards?.find(c => c.effectId === r.base);
@@ -214,14 +214,14 @@ function record(data, r, pluginId) {
  * (server/sim/content/dsl/validate.js), needed only by an operator whose kit is `{ dsl }`.
  * @param {any} data @param {any} records @param {{ pluginId?: string | null, validateDsl?: Function | null }} [opts]
  */
-export function expandRecords(data, records, { pluginId = null, validateDsl = null } = {}) {
+export function expandRecords(data, records, { pluginId = null, validateDsl = null, allowForgeReplace = false } = {}) {
   const problems = jsonProblems(records, 'records');
   if (!Array.isArray(records)) problems.push(problem('PLUGIN_RECORD_TYPE', 'records', 'records must be an array'));
   if (!pluginId || !/^[a-z0-9][a-z0-9-]{1,31}$/.test(pluginId)) problems.push(problem('PLUGIN_RECORD_ID', 'pluginId', 'plugin id required'));
   if (problems.length) return { data, problems };
   const out = clone(data);
   for (const [i, r] of records.entries()) {
-    try { if (!matchesSchema(r, RECORD_SCHEMA)) fail('PLUGIN_RECORD_TYPE', `records[${i}]`, 'object required'); if (r.op === 1) operator(out, r, pluginId, validateDsl); else record(out, r, pluginId); }
+    try { if (!matchesSchema(r, RECORD_SCHEMA)) fail('PLUGIN_RECORD_TYPE', `records[${i}]`, 'object required'); if (r.op === 1) operator(out, r, pluginId, validateDsl); else record(out, r, pluginId, { allowReplace: allowForgeReplace }); }
     catch (e) { problems.push(e?.code ? e : problem('PLUGIN_RECORD_TYPE', `records[${i}]`, e.message)); }
   }
   return { data: problems.length ? data : out, problems };

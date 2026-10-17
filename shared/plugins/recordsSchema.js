@@ -23,7 +23,7 @@ export const RECORD_SCHEMA = {
     // 上面只能改已有记录或按 builder 造干员，这一支才表达得了引擎格式的完整记录。
     // 写入口只新建；要覆盖已有 id 必须由该包在 overrides 里点名（records.js 的 forgeRecord 执行）。
     { type: 'object', required: ['file', 'id', 'forge', 'record'], additionalProperties: false, properties: {
-      file: { enum: ['chess', 'enemies', 'waves', 'stages', 'modes', 'items', 'bands', 'garrisons', 'effects', 'choices', 'tokens', 'units', 'bosses', 'factions', 'bonds'] },
+      file: { enum: ['chess', 'enemies', 'waves', 'stages', 'modes', 'items', 'bands', 'garrisons', 'effects', 'choices', 'tokens', 'bonds'] },
       id: { ...str, maxLength: 64, pattern: '^[A-Za-z0-9_.:-]+$' },
       forge: { const: 1 },
       record: { type: 'object' },

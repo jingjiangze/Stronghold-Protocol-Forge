@@ -242,7 +242,7 @@ function composeContentSet({ registry, ids = [] }) {
       } else {
         if (!p.manifest.permissions.includes('data.add')) { problems.push(problem('PLUGIN_CONTENT_PERMISSION', rel, 'records require data.add')); continue; }
         const entries = part === 'data' ? doc.entries : (Array.isArray(doc) ? doc : [doc]).map(v => part === 'operators' ? v : { ...v, file: part });
-        r = expandRecords(data, entries, { pluginId: p.id, validateDsl });
+        r = expandRecords(data, entries, { pluginId: p.id, validateDsl, allowForgeReplace: p.source === 'workshop' });
       }
       problems.push(...r.problems.map(e => ({ ...e, plugin: p.id, file: rel })));
       data = r.data;
@@ -271,8 +271,17 @@ function composeContentSet({ registry, ids = [] }) {
     data.dsl = table;
   }
   if (plugins.length) {
-    problems.push(...validateData(data, { kitExists: ref => !!officialKit(ref), vanilla: base.data, owners, validateDsl }));
-    if (problems.length) return { problems };
+    const checks = validateData(data, { kitExists: ref => !!officialKit(ref), vanilla: base.data, owners, validateDsl });
+    // **工坊包**的记录是引擎格式的整条记录（不是 0.3.0 的紧凑补丁），`validateData` 的字段级判据对它们过严：
+    // 实测 58 个站点包里 52 个会在这里被拒（DATA_REQUIRED / DATA_REFERENCE / UNKNOWN / RECORD_SKILLS）。
+    // 用户裁决「信任工坊包」⇒ 当**这一局选中的全是工坊包**时，这些判据降级为 warning（仍逐条报出，不静默吞）。
+    // 选区里只要混了官方插件就保持严格 —— 别让一条信任策略顺带放宽官方插件的判据。
+    const forgeOnly = plugins.every((p) => p.source === 'workshop');
+    if (forgeOnly) warnings.push(...checks.map((w) => ({ ...w, level: 'warning', forge: true })));
+    else {
+      problems.push(...checks);
+      if (problems.length) return { problems };
+    }
     data = { ...data, stages: { ...data.stages } };
     const routes = Object.values(data.waves).flatMap(w => [...(w.routes ?? []), ...(w.extraRoutes ?? [])]);
     const changedWaves = new Set();

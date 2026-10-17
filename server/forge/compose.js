@@ -28,6 +28,12 @@ import { deepFreeze } from '../data.js';
 const FORGE_CLASS = Object.freeze({ content: 0, cosmetic: 1, ui: 2, trusted: 3 });
 
 /**
+ * 能表达成「引擎格式整条记录」的表（与 shared/plugins/recordsSchema.js 的 forge:1 分支枚举**逐字一致**）。
+ * 表外的（`variants` 是**轴定义**不是记录表；`dsl` 是规格）不在这里发 —— 发了只会得到 PLUGIN_RECORD_TYPE。
+ */
+const FORGE_RECORD_TABLES = Object.freeze(['chess','enemies','waves','stages','modes','items','bands','garrisons','effects','choices','tokens','bonds']);
+
+/**
  * Forge 的内容表是 `{ "<id>": record }` 映射；0.3.0 要求 `{ records: 1, entries: [...] }`。
  * 这一步把前者翻成后者 —— **补上各表的 id 字段**（`RECORD_MAPS` 的第二个元素），值取自映射的键。
  *
@@ -43,6 +49,7 @@ export function buildContent(pack) {
   const tables = Array.isArray(pack.manifest.content) ? pack.manifest.content : [];
   for (const table of tables) {
     if (!WORKSHOP_CONTENT_FILES.includes(table)) continue;
+    if (!FORGE_RECORD_TABLES.includes(table)) { skipped.push(`${table}.json: 不是记录表（轴/规格），不按记录发送`); continue; }
     const rel = `${table}.json`;
     const abs = path.join(pack.dir, rel);
     let doc;
@@ -123,7 +130,9 @@ export function readForgePack(dir, { id = path.basename(dir) } = {}) {
 /** 把一个已读出的包合成成 0.3.0 的 `Plugin` 记录。 */
 export function packToPlugin(pack, { where = `workshop/${pack.id}/` } = {}) {
   const m = pack.manifest;
-  const tables = (Array.isArray(m.content) ? m.content : []).filter((f) => WORKSHOP_CONTENT_FILES.includes(f));
+  // parts.data.files 必须与**实际发出去的 documents** 逐项一致：列了却没发，contentSet 会读到 undefined 并抛
+  // （实测 PLUGIN_CONTENT_FORMAT: Cannot read properties of undefined (reading 'patch')）。
+  const tables = (Array.isArray(m.content) ? m.content : []).filter((f) => WORKSHOP_CONTENT_FILES.includes(f) && FORGE_RECORD_TABLES.includes(f));
   const payloads = serverPayloads(m);
   const hasUi = !!(m.client && (m.client.panels || m.client.screens || m.client.styles));
   const hasAssets = !!(m.assets || m.art || m.skins || m.voices);

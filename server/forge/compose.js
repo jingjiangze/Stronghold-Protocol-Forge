@@ -135,7 +135,10 @@ export function packToPlugin(pack, { where = `workshop/${pack.id}/` } = {}) {
   const tables = (Array.isArray(m.content) ? m.content : []).filter((f) => WORKSHOP_CONTENT_FILES.includes(f) && FORGE_RECORD_TABLES.includes(f));
   const payloads = serverPayloads(m);
   const hasUi = !!(m.client && (m.client.panels || m.client.screens || m.client.styles));
-  const hasAssets = !!(m.assets || m.art || m.skins || m.voices);
+  // ⚠ 空数组/空对象是 truthy：Forge 的归一化会给很多包填 `skins: []`，直接用 `||` 会把**没有素材**的包
+  // 误判成 cosmetic（实测 18 个包被误分类）。所以逐项判「非空」。
+  const nonEmpty = (v) => (Array.isArray(v) ? v.length > 0 : (v && typeof v === 'object' ? Object.keys(v).length > 0 : !!v));
+  const hasAssets = nonEmpty(m.assets) || nonEmpty(m.art) || nonEmpty(m.skins) || nonEmpty(m.voices);
 
   let klass = 'content';
   if (payloads.length) klass = 'trusted';

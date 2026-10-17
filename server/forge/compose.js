@@ -21,9 +21,51 @@ import path from 'node:path';
 import { normalizePackManifest, PACK_FIELDS, WORKSHOP_CONTENT_FILES } from '../../shared/forge/workshop.js';
 import { sha256Hex, modManifestDigest } from '../../shared/forge/modIdentity.js';
 import { listPackFiles } from './packFiles.js';
+import { RECORD_MAPS } from '../../shared/plugins/dataUtils.js';
+import { deepFreeze } from '../data.js';
 
 /** 0.3.0 里 `class` 的闭集（shared/plugins/manifest.js CLASSES）；这里只用到这四个。 */
 const FORGE_CLASS = Object.freeze({ content: 0, cosmetic: 1, ui: 2, trusted: 3 });
+
+/**
+ * Forge 的内容表是 `{ "<id>": record }` 映射；0.3.0 要求 `{ records: 1, entries: [...] }`。
+ * 这一步把前者翻成后者 —— **补上各表的 id 字段**（`RECORD_MAPS` 的第二个元素），值取自映射的键。
+ *
+ * 只做形状转换，不做语义判断：记录本身写得对不对由 0.3.0 的 `expandRecords` / `validateData` 判
+ * （它们会给出带 `PLUGIN_*` 码的问题，比我们自己另写一份校验更可信）。
+ *
+ * @returns {{ documents: Record<string, any>, files: Record<string,string>, hash: string, skipped: string[] }}
+ */
+export function buildContent(pack) {
+  const documents = {};
+  const files = {};
+  const skipped = [];
+  const tables = Array.isArray(pack.manifest.content) ? pack.manifest.content : [];
+  for (const table of tables) {
+    if (!WORKSHOP_CONTENT_FILES.includes(table)) continue;
+    const rel = `${table}.json`;
+    const abs = path.join(pack.dir, rel);
+    let doc;
+    try {
+      const bytes = fs.readFileSync(abs);
+      files[rel] = sha256Hex(bytes);
+      doc = JSON.parse(bytes.toString('utf8'));
+    } catch (e) {
+      skipped.push(`${rel}: ${e && e.message ? e.message : e}`);
+      continue;
+    }
+    if (!doc || typeof doc !== 'object' || Array.isArray(doc)) { skipped.push(`${rel}: 不是 { id: record } 映射`); continue; }
+    const idField = RECORD_MAPS[table] ? RECORD_MAPS[table][1] : 'id';
+    const entries = [];
+    for (const [key, rec] of Object.entries(doc)) {
+      if (!rec || typeof rec !== 'object' || Array.isArray(rec)) { skipped.push(`${rel}.${key}: 不是记录对象`); continue; }
+      // 表键就是 id（Forge 侧的 ID_FIELD_BY_FILE 也钉着这一点）；缺字段时补上，已有则尊重记录自己写的值
+      entries.push(rec[idField] === undefined ? { ...rec, [idField]: key } : rec);
+    }
+    documents[rel] = { records: 1, entries };
+  }
+  return { documents, files, hash: sha256Hex(Buffer.from(JSON.stringify(files))), skipped };
+}
 
 /** 这个包声明了哪些**服务端代码**载荷（决定是否落到 `trusted` 档）。 */
 export function serverPayloads(manifest) {
@@ -108,6 +150,8 @@ export function packToPlugin(pack, { where = `workshop/${pack.id}/` } = {}) {
     name: m.name || pack.id,
     version: m.version || '0.0.0',
     class: klass,
+    // 0.3.0 的 contentSet 只收 scope 含 room 的插件（服务端对局内容）；工坊包天然是房间级内容
+    scope: ['room'],
     // 0.3.0 的字段名与我们不同但语义相同的那些，逐条映射；没有对应物的（variants/behaviour）留在 `forge` 里，
     // 让阶段 3 的运行时按 Forge 语义处理 —— **不假装成插件的能力**。
     permissions,
@@ -130,6 +174,12 @@ export function packToPlugin(pack, { where = `workshop/${pack.id}/` } = {}) {
     },
   };
 
+  // 内容快照：0.3.0 的 contentSet 从 plugin.content.documents[rel] 读，形状必须是 records:1/entries
+  const built = buildContent(pack);
+  const content = built.skipped.length && !Object.keys(built.documents).length
+    ? null
+    : deepFreeze({ documents: built.documents, files: built.files, hash: built.hash });
+
   return {
     id: pack.id,
     type: 'forge-pack',
@@ -141,6 +191,8 @@ export function packToPlugin(pack, { where = `workshop/${pack.id}/` } = {}) {
     // `supported` 在 0.3.0 里表示"语言包视图也算它"；工坊包不是语言包，恒 false，避免污染 `/packs/index.json`
     supported: false,
     manifest: manifest2,
+    ...(content ? { content } : {}),
+    ...(built.skipped.length ? { contentSkipped: built.skipped } : {}),
     files: pack.files.map((f) => ({ path: f.path, sha256: f.hash, bytes: f.bytes })),
     bytes: pack.files.reduce((n, f) => n + (f.bytes || 0), 0),
     count: pack.files.length,

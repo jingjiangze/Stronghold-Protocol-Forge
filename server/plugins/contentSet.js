@@ -55,7 +55,10 @@ function writesAllowed(before, after, plugin, owners) {
         && !own(plugin.manifest.requires, owners.get(`${file}.${key}`))) problems.push(problem('PLUGIN_DEPENDENCY', `${file}.${key}`, 'requires must declare the plugin whose record is changed'));
     }
     for (const key of Object.keys(next[file] ?? {})) if (!own(map, key)) {
-      if (!prefixes[file] || !recordId(key, id, prefixes[file])) problems.push(problem('PLUGIN_RECORD_ID', `${file}.${key}`, 'new record is outside this plugin namespace'));
+      // Forge 工坊包的记录 id 由**作者**命名（`chess_ws_demo_a`），不像插件那样必须带 pluginId 前缀 ⇒ 只对它豁免
+      // 这一道前缀闸。「不许悄悄覆盖已有记录」那条仍然守着：records.js 的 forgeRecord 要求包里 overrides 点名。
+      const authored = plugin.source === 'workshop';
+      if (!authored && (!prefixes[file] || !recordId(key, id, prefixes[file]))) problems.push(problem('PLUGIN_RECORD_ID', `${file}.${key}`, 'new record is outside this plugin namespace'));
       else owners.set(`${file}.${key}`, id);
     }
   }

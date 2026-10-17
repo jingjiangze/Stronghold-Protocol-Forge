@@ -19,6 +19,16 @@ export const RECORD_SCHEMA = {
         talentMods: MODS_SCHEMA, talents: { type: 'array', items: obj }, trait: obj, art: { type: 'object', required: ['ref'], properties: { ref: str }, additionalProperties: false },
         nationId: { anyOf: [str, { type: 'null' }] }, powers: ids, dmgType: str, attackKind: str, projectile: str, canHitFly: { type: 'boolean' }, targetPriority: str,
       } },
+    // Forge 工坊包的**整条引擎格式记录**（forge:1）。与上面那条紧凑补丁**不是**同一个模型：
+    // 上面只能改已有记录或按 builder 造干员，这一支才表达得了引擎格式的完整记录。
+    // 写入口只新建；要覆盖已有 id 必须由该包在 overrides 里点名（records.js 的 forgeRecord 执行）。
+    { type: 'object', required: ['file', 'id', 'forge', 'record'], additionalProperties: false, properties: {
+      file: { enum: ['chess', 'enemies', 'waves', 'stages', 'modes', 'items', 'bands', 'garrisons', 'effects', 'choices', 'tokens', 'units', 'bosses', 'factions', 'bonds'] },
+      id: { ...str, maxLength: 64, pattern: '^[A-Za-z0-9_.:-]+$' },
+      forge: { const: 1 },
+      record: { type: 'object' },
+      replace: { type: 'boolean' },
+    } },
     { type: 'object', required: ['file', 'id'], additionalProperties: false, properties: {
       file: { enum: ['enemies', 'waves', 'stages', 'modes', 'items', 'bands', 'garrisons', 'effects', 'choices', 'tokens'] },
       id: { ...str, maxLength: 64, pattern: '^[A-Za-z0-9_-]+$' }, base: str, set: obj, value: obj, special: str,

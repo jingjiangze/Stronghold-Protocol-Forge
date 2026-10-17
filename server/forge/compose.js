@@ -60,7 +60,10 @@ export function buildContent(pack) {
     for (const [key, rec] of Object.entries(doc)) {
       if (!rec || typeof rec !== 'object' || Array.isArray(rec)) { skipped.push(`${rel}.${key}: 不是记录对象`); continue; }
       // 表键就是 id（Forge 侧的 ID_FIELD_BY_FILE 也钉着这一点）；缺字段时补上，已有则尊重记录自己写的值
-      entries.push(rec[idField] === undefined ? { ...rec, [idField]: key } : rec);
+      // 0.3.0 的 schema 用 forge:1 这一支接引擎格式整条记录（见 shared/plugins/recordsSchema.js）；
+      // replace 只有在包显式 overrides 了这个 id 时才置 true —— 否则 forgeRecord 会拒绝覆盖已有记录。
+      const replace = Object.prototype.hasOwnProperty.call(pack.manifest.overrides || {}, key);
+      entries.push({ file: table, id: key, forge: 1, record: rec[idField] === undefined ? { ...rec, [idField]: key } : rec, ...(replace ? { replace: true } : {}) });
     }
     documents[rel] = { records: 1, entries };
   }

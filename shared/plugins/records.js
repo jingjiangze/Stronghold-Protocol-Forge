@@ -131,8 +131,32 @@ function operator(data, r, pluginId, validateDsl) {
   }
 }
 
+/**
+ * **Forge 工坊包**的整条引擎格式记录（`forge: 1`）。
+ *
+ * 为什么需要这一支：0.3.0 的插件记录是**紧凑的声明式补丁**（`{file,id,base/set/value}`，`base` 只是一个已有记录的
+ * id 字符串），它表达不了 Forge 包里那种「完整的引擎格式记录」（`chessId/baseId/rarity/profession/backup/…`）。
+ * 两者不是字段名不同，是不同的数据模型 —— 实测 `PLUGIN_RECORD_TYPE: object required`。
+ *
+ * 三条硬规则（与 Forge 侧同一个口径）：
+ *   * **只能新建**：撞上已存在的 id ⇒ 必须在该包的 `overrides` 里点名，否则拒绝（`PLUGIN_RECORD_EXISTS`）；
+ *   * **不发明命名空间**：Forge 记录的 id 是作者自己起的（`chess_ws_demo_a`），不像插件那样必须带 pluginId 前缀，
+ *     所以这里不做前缀校验 —— 但 `overrides` 那条闸仍然守着"不许悄悄覆盖官方记录"；
+ *   * **深拷贝写入**：内容集是不可变的，包的对象不能被外面改到。
+ */
+function forgeRecord(data, r) {
+  const map = data[r.file];
+  if (!object(map)) fail('PLUGIN_RECORD_TYPE', r.id, `unknown table ${r.file}`);
+  if (!object(r.record)) fail('PLUGIN_RECORD_TYPE', r.id, 'forge record must be an object');
+  if (own(map, r.id) && r.replace !== true) {
+    fail('PLUGIN_RECORD_EXISTS', r.id, 'this id already exists — the pack must declare it in overrides to replace it');
+  }
+  map[r.id] = clone(r.record);
+}
+
 /** General records: { file, id, base?, set? | value? }; modes inherit an official base. */
 function record(data, r, pluginId) {
+  if (r.forge === 1) { forgeRecord(data, r); return; }
   if (r.file === 'choices') {
     const cards = data.choices?.cards?.[r.kind];
     const source = cards?.find(c => c.effectId === r.base);

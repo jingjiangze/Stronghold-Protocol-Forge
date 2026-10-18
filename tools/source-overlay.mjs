@@ -160,7 +160,9 @@ async function assertOutside(directory, forbidden = []) {
     const root = path.resolve(found.stdout.trim());
     if (absolute === root || inside(root, absolute)) throw new Error('Cache/output resolves inside Git worktree: ' + root);
   }
-  await fs.mkdir(absolute, { recursive: true });
+  // Create only the parent. Creating the target here makes compose misread its own reserved
+  // output directory as a pre-existing user directory and abort before writing anything.
+  await fs.mkdir(path.dirname(absolute), { recursive: true });
 }
 
 async function prepareSnapshot(home, label, repository, ref, commit) {

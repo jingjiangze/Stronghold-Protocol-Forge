@@ -10,15 +10,27 @@
       "sourcePaths": [],
       "integrationPoints": [
         "server/match/match/combat.js",
-        "server/match/match/settle.js",
+        "server/sim/Battle.js",
+        "server/sim/content/items/battle.js",
+        "server/sim/content/bands/battle.js",
+        "server/sim/content/bonds/addon/battle.js",
+        "server/sim/content/kits/ops/chess_char_2_12-gravel.js",
+        "server/sim/content/kits/ops/chess_char_3_04-swire2.js",
+        "server/sim/content/kits/ops/chess_char_5_05-ulpia.js",
         "server/match/Match.js",
         "shared/protocol.js"
       ],
       "activationStatus": "adapter-required",
-      "rationale": "当前固定来源快照中，combat.js 负责保留真实战斗结果来源（synthetic 结果不能冒充救援捐助者），settle.js 承载结算/结果视图；它们仍是共享 Match 方法模块，因此只按原始 Git blob 保存到 reference 区，不假称为独立可执行模块。需由 Forge adapter 将救援规则抽到独立功能层。",
+      "rationale": "复活语义并非一个独立文件：items/battle.js 定义 reviveNow/死亡与立即免费再部署优先级，bands/battle.js 处理埃芒加德复活，bonds/addon/battle.js 处理不屈，Swire2/乌尔比安等干员模块又包含专属费用/落点规则；Battle.js 是底层死亡/部署时序，combat.js 还确保 synthetic 结果不能冒充真实救援资格。以上都是混合多种游戏行为的共享文件，所以目前只原样写入 references，不冒充独立功能模块。需从这些钩子提取窄接口的 Forge revive/rescue adapter，并把资格、优先级、费用、SP、部署事件和落点回归后，才能启用。",
       "referencePaths": [
         "server/match/match/combat.js",
-        "server/match/match/settle.js"
+        "server/sim/Battle.js",
+        "server/sim/content/items/battle.js",
+        "server/sim/content/bands/battle.js",
+        "server/sim/content/bonds/addon/battle.js",
+        "server/sim/content/kits/ops/chess_char_2_12-gravel.js",
+        "server/sim/content/kits/ops/chess_char_3_04-swire2.js",
+        "server/sim/content/kits/ops/chess_char_5_05-ulpia.js"
       ]
     },
     {

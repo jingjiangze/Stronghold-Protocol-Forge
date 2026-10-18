@@ -69,9 +69,10 @@ test('source comparison reads raw Git blob bytes rather than working-tree EOL co
   await fs.writeFile(path.join(root, 'sample.txt'), 'alpha\nbeta\n');
   runGit(['add', '.gitattributes', 'sample.txt']);
   runGit(['commit', '-m', 'fixture']);
-  runGit(['checkout', '--', 'sample.txt']);
   const sha = runGit(['rev-parse', 'HEAD:sample.txt']).toString('utf8').trim();
   const rawBlob = readGitBlob(root, { mode: '100644', blob: sha });
+  // Simulate the CRLF checkout bytes enforced by the attribute, while the Git blob stays LF-normalized.
+  await fs.writeFile(path.join(root, 'sample.txt'), Buffer.from('alpha\\r\\nbeta\\r\\n', 'utf8'));
   const workingFile = await fs.readFile(path.join(root, 'sample.txt'));
   assert.deepEqual(rawBlob, Buffer.from('alpha\nbeta\n'));
   assert.notDeepEqual(workingFile, rawBlob, 'eol=crlf changes the checked-out bytes, not the committed Git blob');

@@ -782,7 +782,7 @@ export class Lobby {
     // 魔塔 mode module (server/mota/): a rule-set variant of a co-op room ('xie' = 协同共竞). Accepted only when this
     // installation actually ships mode_<variant>_<difficulty>; anything else is dropped rather than refused, so an
     // older client cannot fail room creation by sending an unknown field.
-    const modes = (() => { const d = this.getData(); return d && d.modes && typeof d.modes === 'object' ? d.modes : {}; })();
+    const modes = (() => { const d = this.getData(); const m = (d && d.config && d.config.modes) || (d && d.modes); return m && typeof m === 'object' ? m : {}; })();
     room.variant = mode === 'coop' && typeof variant === 'string' && /^[A-Za-z0-9_.:-]{1,64}$/.test(variant)
       && Object.hasOwn(modes, modeIdFor(mode, difficulty, variant)) ? variant : null;
     room.content = this.vanilla;
@@ -910,7 +910,7 @@ export class Lobby {
       // 魔塔 mode module: keep the variant only while this difficulty ships mode_<variant>_<difficulty>
       if (room.variant) {
         const d = this.getData();
-        const modes = d && d.modes && typeof d.modes === 'object' ? d.modes : {};
+        const modes = (d && d.config && d.config.modes) || (d && d.modes) || {};
         if (!Object.hasOwn(modes, modeIdFor(room.mode, difficulty, room.variant))) room.variant = null;
       }
       if (room.content?.modeId) { const rest = { ...room.content }; delete rest.modeId; room.content = Object.freeze(rest); }

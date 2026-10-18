@@ -32,7 +32,7 @@
 | 改引擎、加一格开关 | [docs/MOD-SURFACE.md](docs/MOD-SURFACE.md) · [docs/SYNC-POINTS.md](docs/SYNC-POINTS.md) |
 | 开服、打包、发版 | [docs/DEPLOY.md](docs/DEPLOY.md) · [docs/WINDOWS.md](docs/WINDOWS.md) |
 | 挂载我的服务器差异 | [docs/SOURCE-DELTA-LAYER.md](docs/SOURCE-DELTA-LAYER.md) —— 上游做本体，管理器维护差异和冲突决策 |
-| 用管理器运行我的完整服务器源码 | [docs/SOURCE-RUNTIME-MOUNT.md](docs/SOURCE-RUNTIME-MOUNT.md) —— 不拆成玩法插件，不改两个源仓库 |
+| 看独立玩法隔离和剩余冲突取舍 | [docs/audit/2026-10-18-feature-isolation-and-conflicts.md](docs/audit/2026-10-18-feature-isolation-and-conflicts.md) —— 玩法独立包、公共挂载点、上游与自有方案优缺点 |
 | 查全部文档 | [docs/README.md](docs/README.md) —— `docs/` 的全量索引 |
 
 ## 目录

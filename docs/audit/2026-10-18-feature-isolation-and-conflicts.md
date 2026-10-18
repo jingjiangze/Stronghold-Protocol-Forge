@@ -14,10 +14,11 @@
 - AI 代算触及 `server/match/match/prep.js`、`server/match/match/rehearsal.js`，并依赖房主变化、超时接管和前端消息。
 - 来源 `server/match/match/combat.js` 明确保留“synthetic 结果不能冒充救援捐助者”的资格判断；救援/复活的结算与结果视图又和公共 `settle.js` 交叉，不能把来源版整个文件替换上游版就称为独立挂载。
 
-因此执行两层隔离：
+因此执行三类隔离：
 
-1. **玩法源码层**：将来源 Git blob 原样保存到组合树的 `.forge-source-features/<feature-id>/<profile>/<original-path>`。不修改来源仓库，不改写被保存的源码字节，也不把同路径文件整份覆盖进上游主树。
-2. **适配挂载点层**：把状态机、生命周期、协议、UI/Worker 的公共入口单独记录。当前 manifest 将四个功能标记为 `adapter-required`；管理器尚未证明适配器已经接通，所以即使没有路径级冲突，`READY` 仍然必须是 false。
+1. **独立模块层**：将可独立归属的来源 Git blob 原样保存到 `.forge-source-features/<feature-id>/<profile>/<original-path>`。不修改来源仓库，不改写 blob 字节，也不把同路径文件整份覆盖进上游主树。
+2. **共享路径参考层**：把依然承载两边逻辑的完整来源文件原样保存到 `.forge-source-references/<feature-id>/<profile>/<original-path>`。这些文件只是提取适配器时对照的参考，不会被当作独立可执行模块。
+3. **适配挂载点层**：把状态机、生命周期、协议、UI/Worker 的公共入口单独记录。当前 manifest 将四个功能标记为 `adapter-required`；管理器尚未证明适配器已经接通，所以即使没有路径级冲突，`READY` 仍然必须是 false。
 
 这是一种“独立源码 + 管理器适配器”的边界，不是把代码放进隔离目录就假装它已运行。AI 浏览器 Worker 的客户端实际路径仍要在下一轮完整树审计中核对；当前已确认并纳入清单的是服务端 `prep.js` 和 `rehearsal.js`。
 

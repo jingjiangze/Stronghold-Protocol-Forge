@@ -12,7 +12,7 @@
 - 联防二段接力触及 `server/match/unite.js`、`server/match/match/unitePhase.js` 及 `server/match/match/settle.js`。
 - 冻结触及 `server/match/match/frozen.js`，并需要大厅生命周期接线。
 - AI 代算触及 `server/match/match/prep.js`、`server/match/match/rehearsal.js`，并依赖房主变化、超时接管和前端消息。
-- 来源 `server/match/match/combat.js` 明确保留“synthetic 结果不能冒充救援捐助者”的资格判断；救援/复活的结算与结果视图又和公共 `settle.js` 交叉，不能把来源版整个文件替换上游版就称为独立挂载。
+- 来源 `server/match/match/combat.js` 明确要求 synthetic 结果不能冒充真实救援资格；具体复活不是单一独立模块，而是散布在 `server/sim/content/items/battle.js`（`reviveNow`、死亡/立即免费再部署顺序）、`bands/battle.js`（埃芒加德）、`bonds/addon/battle.js`（不屈）及 Swire2、乌尔比安等干员模块，底层时序在 `server/sim/Battle.js`。这些大文件还承载其他装备/干员机制，不能整份作为复活插件覆盖上游。当前都只放进 reference 区，需再把复活规则提取为窄接口的独立管理器模块。
 
 因此执行三类隔离：
 
@@ -26,7 +26,7 @@
 
 | 功能包 | 当前隔离的来源文件 | 管理器需挂载的公共接口 | 当前结论 |
 |---|---|---|---|
-| 救援/复活 | `server/match/match/combat.js`、`server/match/match/settle.js` | 结算状态机、Match 状态/结果视图；必要时协议消息 | 源文件原样隔离；需单独适配，不能覆盖上游完整结算文件 |
+| 救援/复活 | 目前没有可独立加载的来源模块 | 只读参考：`combat.js`、底层 `Battle.js`、items/bands/bonds registries 和 Gravel/Swire2/Ulpianus kits | 实现横跨共享模块；需要从死亡/立即免费再部署钩子抽出窄接口，不可将任一混合文件整体作为玩法模块 |
 | 联防二段接力 | `server/match/unite.js`、`server/match/match/unitePhase.js`、共享的 `settle.js` | 联防阶段推进、跨轮次结果/奖励归因、客户端联防结果协议 | 玩法独立；公共结算和协议仍是挂载点 |
 | 全员离线冻结对局 | agent 层的 `server/lobby.js`、`server/match/match/frozen.js` | 房间成员生命周期、Match 计时器冻结/恢复、重连和房主/房间终止流程 | 功能独立；不能用 agent 版大厅整文件覆盖上游大厅 |
 | 房主浏览器 AI 代算 | `.forge-source-features/`：`public/js/battle/rehearsal.js`、`public/js/battle/rehearsalWorker.js`、`server/match/match/rehearsal.js`、`server/sim/rehearsal.js` | `.forge-source-references/`：`public/js/main.js`、`server/match/Match.js`、`server/match/match/prep.js`、`server/lobby.js`、`server/index.js`；并需校验 `shared/protocol.js` | 客户端与服务端模块已纳入隔离清单；与目标上游新插件/Match 接口的适配、主机切换及超时回退回归仍 PENDING |

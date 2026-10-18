@@ -12,7 +12,7 @@
 - 联防二段接力触及 `server/match/unite.js`、`server/match/match/unitePhase.js` 及 `server/match/match/settle.js`。
 - 冻结触及 `server/match/match/frozen.js`，并需要大厅生命周期接线。
 - AI 代算触及 `server/match/match/prep.js`、`server/match/match/rehearsal.js`，并依赖房主变化、超时接管和前端消息。
-- 救援/复活的结算接线当前与公共结算文件交叉，不能把来源版整个 `settle.js` 替换上游版就称为独立挂载。
+- 来源 `server/match/match/combat.js` 明确保留“synthetic 结果不能冒充救援捐助者”的资格判断；救援/复活的结算与结果视图又和公共 `settle.js` 交叉，不能把来源版整个文件替换上游版就称为独立挂载。
 
 因此执行两层隔离：
 
@@ -25,7 +25,7 @@
 
 | 功能包 | 当前隔离的来源文件 | 管理器需挂载的公共接口 | 当前结论 |
 |---|---|---|---|
-| 救援/复活 | `stronghold-server:server/match/match/settle.js` | 结算状态机、Match 状态/结果视图；必要时协议消息 | 源文件原样隔离；需单独适配，不能覆盖上游完整结算文件 |
+| 救援/复活 | `server/match/match/combat.js`、`server/match/match/settle.js` | 结算状态机、Match 状态/结果视图；必要时协议消息 | 源文件原样隔离；需单独适配，不能覆盖上游完整结算文件 |
 | 联防二段接力 | `server/match/unite.js`、`server/match/match/unitePhase.js`、共享的 `settle.js` | 联防阶段推进、跨轮次结果/奖励归因、客户端联防结果协议 | 玩法独立；公共结算和协议仍是挂载点 |
 | 全员离线冻结对局 | agent 层的 `server/lobby.js`、`server/match/match/frozen.js` | 房间成员生命周期、Match 计时器冻结/恢复、重连和房主/房间终止流程 | 功能独立；不能用 agent 版大厅整文件覆盖上游大厅 |
 | 房主浏览器 AI 代算 | agent 层的 `server/match/match/prep.js`、`server/match/match/rehearsal.js` | 准备阶段调度、当前房主、Worker 请求/响应、超时/掉线接管、服务端回退 | 服务端功能片段已隔离；前端 Worker 和协议的完整路径清点仍 PENDING |

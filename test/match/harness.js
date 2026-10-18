@@ -61,6 +61,10 @@ export function makeMatch(o = {}) {
   }
   h.m = new Match({
     roomCode: 'TEST', mode, difficulty, seats, spectators: o.spectators, seed: o.seed ?? 1, matchNo: o.matchNo, data: o.data ?? DATA, log,
+    // a mode module room (server/mota/): mode_xie_<difficulty>; omitted ⇒ modeIdFor(mode, difficulty)
+    ...(o.modeId !== undefined ? { modeId: o.modeId } : {}),
+    // trusted match modules (entry.match): [{ id, activate }]; omitted ⇒ a vanilla match
+    ...(o.matchPlugins ? { matchPlugins: o.matchPlugins } : {}),
     send: (id, msg) => {
       for (const fn of h.onSend) fn(id, msg);
       if (msg.t === 'b.snap' || msg.t === 'b.ev') { h.frames++; if (!captureFrames) return true; }

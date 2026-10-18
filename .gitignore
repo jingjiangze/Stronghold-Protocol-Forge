@@ -44,6 +44,8 @@ plugins/*
 !plugins/README.md
 !plugins/AGENTS.md
 !plugins/_template/
+# the 协同共竞 content plugin ships with this fork (its rules are the content, not engine code)
+!plugins/mota-coop/
 
 # --- tests & logs ----------------------------------------------------------------------------------
 test/e2e/out/

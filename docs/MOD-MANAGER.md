@@ -72,3 +72,17 @@ Forge 包的导入是"尽力而为"的（上游策略）：它能导的写进插
   符号链接失败就递归复制（校验视图是只读的，等价）。这是 3 行改动，位于 `server/plugins/forgeImport.js`
   `openValidationView` 的 `take()`。
 - `kits/`（技能脚本）需要 `acorn` 才能解析；未安装 `node_modules` 时这一项会出现在"没有导入的玩法"里。
+
+## 8. 握手平台（P2P 邀请链接）
+
+`server/platform.js`：配了 `SP_PLATFORM_HOSTNODE`（p2p 模式）或 `SP_PLATFORM_UPSTREAM`（direct 模式）时，每个非
+solo 房间会向平台登记一次，拿到 `joinUrl` 写进 `room.state.inviteUrl`；客户端优先用它，缺省回落本地 `?room=` 链接。
+
+- 平台**只回一个 302**，不中继游戏流量；登记失败只损失远端链接。
+- 失败退避 15s / 30s / 1min / 2min 重试；平台房间 6h 过期，本实现在 5h 主动刷新。
+- 诊断：`GET /api/platform`（`enabled/mode/createToken/rooms/lastOkAt/lastError`，不含玩家数据）；`GET /mod/status.json` 的
+  `platform` 字段同一份，`/mod` 页面直接显示。
+- **创建令牌（可选）**：平台设 `O2P_CREATE_TOKEN` 后，建房/关房需要 `Authorization: Bearer <token>`（也接受
+  `x-o2p-token`）；本端用 `SP_PLATFORM_TOKEN` 发送。读取与 `/go/<id>` 永远不要令牌——玩家的浏览器要能直接打开邀请链接。
+  两边都不设 = 维持原来的开放行为。
+- 关掉：不设环境变量，或 `SP_PLATFORM_URL=off`。

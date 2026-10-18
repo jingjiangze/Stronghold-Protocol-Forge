@@ -52,7 +52,9 @@ import { createMatchHosts } from './match/host/index.js';
 import { createTrustedRuntime } from './plugins/trustedRuntime.js';
 import { trustedHostAllowed } from './plugins/trusted.js';
 import { createStudio } from './studio/index.js';
+import { preloadMatchModules } from './plugins/matchPlugins.js';
 import { createMods } from './mods/index.js';
+import { createPlatformLink, platformConfigFromEnv, PLATFORM_DISABLED } from './platform.js';
 import { MIME, COMPRESSIBLE, acceptsGzip, pickEncoding, parseRange } from './http/files.js';
 import { BUILD_INPUTS, computeBuildTag, buildTag, resetBuildTag } from './http/buildTag.js';
 import { createRequestHandler } from './http/routes.js';
@@ -112,6 +114,16 @@ export async function startServer(opts = {}) {
   const scriptMode = process.env.SP_PLUGIN_SCRIPTS;
   const packs = createPluginRegistry({ publicDir, dataDir, packsDir, pluginsDir }, { log, scriptHost:host, scriptMode });
   packs.refresh(true);
+  // trusted match modules (entry.match): imported once here, activated by each match of a room that selected the
+  // plugin. A rescan reloads the ones whose lock changed; a plugin without the owner's pin never gets a module.
+  const matchPluginMap = new Map();
+  const syncMatchPlugins = async () => {
+    await preloadMatchModules(packs, { log });
+    matchPluginMap.clear();
+    for (const p of packs.plugins('trusted')) if (p.match && p.match.activate) matchPluginMap.set(p.id, { id: p.id, activate: p.match.activate });
+  };
+  await syncMatchPlugins();
+  packs.onScan(() => { void syncMatchPlugins(); });
   // the content hashes of the art (built in the background once listening) and the manifests served with them
   const indexOptions = assetIndexOptionsFrom(opts, publicDir);
   const assetIndex = indexOptions ? createAssetIndex({ publicDir, log, ...indexOptions }) : null;
@@ -128,11 +140,24 @@ export async function startServer(opts = {}) {
   const transport = String(process.env.SP_MATCH_HOST || '').trim().toLowerCase() === 'worker' ? 'worker' : 'process';
   const hosts = createMatchHosts({ contents, log, options: { transport, maxWorkers: Math.max(1, policy.get().maxSets), ...(opts.matchHost || {}) } });
   const { registry, lobby, network } = createSessionStack(opts, { data, log, content, plugins: roomSets, hosts });
+  // the trusted match modules a room may start with (entry.match), keyed by plugin id; a vanilla room has none
+  lobby.matchPlugins = matchPluginMap;
+  // the openp2p handshake platform (server/platform.js): off unless SP_PLATFORM_* is configured. It answers exactly one
+  // 302 and never carries gameplay, so an unreachable platform can only cost a room its remote invite link.
+  const platformConfig = platformConfigFromEnv(process.env);
+  const platform = platformConfig ? createPlatformLink(platformConfig, { log }) : null;
+  if (platform) {
+    lobby.platform = platform;
+    log.info(`[platform] ${platform.mode} invite links via ${platform.base}${platform.upstream ? ` (fallback ${platform.upstream})` : ''}`);
+  }
+  const serveStatic = createStaticHandler({ publicDir, dataDir, sharedDir, simDir, packsDir, pluginsDir, packs, content, log, assetIndex, views, visual, contents });
+  // the plugin studio (DESIGN §32.9): its page and API for this machine and the local network; it watches plugins/ only
+  // once it is used (hot reload), and rooms whose host is the author or alone follow a plugin's changes by themselves
   const studio = opts.studio === false ? null : createStudio({ publicDir, pluginsDir, dataDir, registry: packs, lobby, sessions: registry, log, fetch: opts.fetch });
   // the mod manager (server/mods/): the /mod page and the drop-in inbox. Imports go through the plugin system's own
   // forgeImport / installPluginBytes — one loading chain, no second one. Off with opts.mods === false or SP_MODS=off.
   const mods = opts.mods === false || String(process.env.SP_MODS || '').toLowerCase() === 'off' ? null : createMods({
-    root: ROOT, pluginsDir, dataDir, registry: packs, log, fetch: opts.fetch,
+    root: ROOT, pluginsDir, dataDir, registry: packs, log, fetch: opts.fetch, platform,
     vanilla: (() => { try { return packs.vanillaAssets?.() || null; } catch { return null; } })(),
   });
   const trustedRuntime = await createTrustedRuntime({registry:packs,log});
@@ -143,7 +168,7 @@ export async function startServer(opts = {}) {
   buildTag();
 
   const traffic = createTrafficCounter();
-  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health }, log, trustProxy: network.opts.trustProxy, studio, mods, trustedRuntime }));
+  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health }, log, trustProxy: network.opts.trustProxy, studio, mods, trustedRuntime, platformStatus: () => (platform ? platform.status() : PLATFORM_DISABLED) }));
   server.on('clientError', answerClientError);
   const wss = attachWebSocket(server, { network, log, traffic });
 
@@ -223,7 +248,7 @@ export async function startServer(opts = {}) {
     return closing;
   }
 
-  return { port: actualPort, host: boundHost, url, server, wss, lobby, network, registry, packs, content, visual, contents, hosts, traffic, assetIndex, views, studio, mods, close };
+  return { port: actualPort, host: boundHost, url, server, wss, lobby, network, registry, packs, content, visual, contents, hosts, traffic, assetIndex, views, studio, mods, platform, close };
 }
 
 // `node server/index.js` / npm start: listen, print the banner, stop on SIGINT / SIGTERM (http/boot.js).

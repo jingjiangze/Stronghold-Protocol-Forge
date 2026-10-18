@@ -150,6 +150,16 @@ const SKINS_MAX = 64;
 /** One skin of an operator: the pictures and models the operator's own record has, under its key, and its name. */
 const SKIN_RECORD = { fields: { name: 'text', group: 'text', avatar: 'image', avatarE2: 'image', portrait: 'image',
   portraitE2: 'image', illust: 'image', spine: { fields: { front: 'spine', back: 'spine' } } } };
+/**
+ * One entry of the flat `skins` table: the operator it belongs to, its display fields and its model. This is the shape a
+ * content pack ships (the 魔塔 package's `assets.json` `skins`: 271 entries keyed by skin id), so an existing catalogue
+ * needs no regrouping per operator. `charId` names the operator the entry decorates.
+ */
+const SKIN_ENTRY = { fields: {
+  charId: 'text', name: 'text', brand: 'text', series: 'text', officialId: 'text', wikiIndex: 'text', charName: 'text',
+  desc: 'text', illustration: 'image', avatar: 'image', portrait: 'image',
+  spine: { fields: { front: 'spine', back: 'spine' } },
+} };
 const SFX_UNIT = { fields: { attack: 'audio', hit: 'audio', skill: 'audio', die: 'audio', born: 'audio',
   skills: { each: 'audio', key: INDEX }, attacks: { each: 'audio', key: INDEX }, hits: { each: 'audio', key: INDEX } } };
 
@@ -158,6 +168,8 @@ export const ASSET_CONTAINERS = Object.freeze(/** @type {AssetContainer[]} */ ([
   { path: ['chars'], record: { fields: { avatar: 'image', avatarE2: 'image', portrait: 'image', portraitE2: 'image', illust: 'image',
       spine: { fields: { front: 'spine', back: 'spine' } }, skins: { each: SKIN_RECORD, key: SKIN_KEY, max: SKINS_MAX, keyName: 'key (letters, digits, _ @ # + . -, at most 64 characters)', keyProblem: true } } } },
   { path: ['enemies'], record: { fields: { icon: 'image', spine: 'spine' } } },
+  // the flat skin catalogue (skin id → operator + display fields + model): a pack's own `assets.json` skins table
+  { path: ['skins'], record: { fields: SKIN_ENTRY.fields, key: SKIN_KEY } },
   { path: ['tokens'], record: { fields: { avatar: 'image', spine: 'spine' } } },
   ...['bonds', 'items', 'bands', 'skills', 'modules', 'ui'].map((k) => ({ path: [k], record: 'image' })),
   ...['icon', 'large', 'battlecard', 'sub'].map((k) => ({ path: ['prof', k], record: 'image' })),

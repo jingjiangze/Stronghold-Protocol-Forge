@@ -1,0 +1,37 @@
+{
+  "lock": 1,
+  "id": "mota-coop",
+  "version": "1.0.0",
+  "generator": "tools/plugin.mjs pack",
+  "files": {
+    "constants.js": {
+      "sha256": "68715bf4106e8f5044b77f9e6544d38c99429ebe77e46413c45f9d9e2741ead9",
+      "bytes": 791
+    },
+    "econBot.js": {
+      "sha256": "550c72b391f29ef48496194a2b5219f9572f5622cc8c8fdc04561e0b6e4b1108",
+      "bytes": 2774
+    },
+    "economy.js": {
+      "sha256": "2b952de72a636aadf4ff192b3c2a7f5137ae446b6160e0a4de8c15c3ba972836",
+      "bytes": 57319
+    },
+    "match.js": {
+      "sha256": "66c0e92245402118291ed4fb67d9711e5ad0277decb54f4751133c89cb353f6b",
+      "bytes": 5244
+    },
+    "plugin.json": {
+      "sha256": "d9e3a4b79f0bc2071d6c14c99ca5c9c8674df562598f8fa5d91a779be390cf18",
+      "bytes": 427
+    },
+    "revival.js": {
+      "sha256": "14278b712227b559b8978331934664ab1c56bc4d624e67b5287fb68e4a6f4594",
+      "bytes": 12149
+    },
+    "rules.js": {
+      "sha256": "595e100d8d2c596af952e971d288ed0003a7ac031d90111e9e87ccd38d464b0b",
+      "bytes": 6475
+    }
+  },
+  "spine": {}
+}

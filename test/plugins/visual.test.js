@@ -70,6 +70,27 @@ describe('reading an overlay', () => {
     assert.deepEqual(r.models, [['spine/front/t.skel', 'spine/front/t.atlas', 'spine/front/t.png']]);
   });
 
+  test('a flat skins catalogue (skin id → its operator) is a container of its own', () => {
+    // the shape a content pack ships in data/assets.json: 271 entries keyed by skin id, not grouped per operator
+    const r = read({
+      skins: {
+        char_102_texas_wild: {
+          charId: 'char_102_texas', name: '野地秘行', brand: '生命之地', series: '生命之地', officialId: 'x', wikiIndex: '3',
+          charName: '德克萨斯', desc: '野地里的她', illustration: 'art/a.png',
+          spine: { front: { skel: 'spine/front/t.skel', anims: 'auto' } },
+        },
+      },
+    });
+    assert.deepEqual([r.problems, r.warnings], [[], []]);
+    const at = r.ops.map((o) => o.at.join('.'));
+    assert.ok(at.includes('skins.char_102_texas_wild.charId'), at.join('\n'));
+    assert.ok(at.includes('skins.char_102_texas_wild.name'), at.join('\n'));
+    assert.ok(at.includes('skins.char_102_texas_wild.brand'), 'the display fields are kept, not dropped', at.join('\n'));
+    assert.ok(at.includes('skins.char_102_texas_wild.spine.front'), at.join('\n'));
+    assert.deepEqual(r.ops.find((o) => o.at.join('.') === 'skins.char_102_texas_wild.spine.front').spine.skel, 'spine/front/t.skel');
+    assert.deepEqual(r.files, ['art/a.png', 'spine/front/t.skel', 'spine/front/t.atlas', 'spine/front/t.png']);
+  });
+
   test('references: a whole record (replaced as a whole, other keys change fields of it) or one field — of the same container', () => {
     const r = read({ chars: {
       char_102_texas: { ref: 'char_112_siege', avatar: 'art/a.png' },
@@ -217,7 +238,7 @@ describe('reading an overlay', () => {
   });
 
   test('the containers: every one is a path of data/assets.json\'s schema; keys are plain and never Object.prototype\'s', () => {
-    assert.deepEqual(ASSET_CONTAINERS.map((c) => c.path.join('.')), ['chars', 'enemies', 'tokens', 'bonds', 'items', 'bands', 'skills', 'modules', 'ui',
+    assert.deepEqual(ASSET_CONTAINERS.map((c) => c.path.join('.')), ['chars', 'enemies', 'skins', 'tokens', 'bonds', 'items', 'bands', 'skills', 'modules', 'ui',
       'prof.icon', 'prof.large', 'prof.battlecard', 'prof.sub', 'audio.bgm', 'audio.bossBgm', 'audio.voice', 'audio.voiceJp', 'audio.voiceEn', 'audio.voiceKr', 'audio.voiceNative', 'audio.sfx.ui', 'audio.sfx.battle', 'audio.sfx.units']);
     for (const k of ['char_102_texas', 'hudPanel/icon_hp', 'sol-x', 'emoticon/basic/pic_happy_battle']) assert.ok(isAssetKey(k), k);
     for (const k of ['', '__proto__', 'constructor', 'a b', '/x', 'x'.repeat(129)]) assert.ok(!isAssetKey(k), k);

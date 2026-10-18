@@ -24,6 +24,16 @@
         "$ref": "#/$defs/enemyRecord"
       }
     },
+    "skins": {
+      "description": "The flat skin catalogue a content pack ships (skin id → its operator, display fields and model).",
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/skinKey"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/skinEntry"
+      }
+    },
     "tokens": {
       "description": "Summons by tokenId.",
       "type": "object",
@@ -503,7 +513,6 @@
         ]
       }
     },
-
     "leafRef": {
       "type": "object",
       "description": "That field of another entry of the installation's manifest: { \"ref\": \"char_112_siege\" } (no other key).",
@@ -823,6 +832,66 @@
         }
       },
       "additionalProperties": false
+    },
+    "skinEntry": {
+      "description": "One entry of the flat skin catalogue: the operator it decorates, its display fields and its model.",
+      "type": "object",
+      "properties": {
+        "charId": {
+          "$ref": "#/$defs/assetKey",
+          "description": "The operator this skin belongs to."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "brand": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "series": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "officialId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "wikiIndex": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "charName": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "desc": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "illustration": {
+          "$ref": "#/$defs/image"
+        },
+        "avatar": {
+          "$ref": "#/$defs/image"
+        },
+        "portrait": {
+          "$ref": "#/$defs/image"
+        },
+        "spine": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "front": {
+              "$ref": "#/$defs/spine"
+            },
+            "back": {
+              "$ref": "#/$defs/spine"
+            }
+          }
+        }
+      }
     }
   }
 }

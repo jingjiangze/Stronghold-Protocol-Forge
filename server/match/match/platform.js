@@ -11,7 +11,8 @@ import { FLOW_TICKER_PRIORITY, OK, fail } from './common.js';
 import { msg } from '../../../shared/i18n.js';
 import { ruleOption } from '../../../shared/plugins/rules.js';
 
-const GAME_TYPES = new Set(Object.keys(C2S).filter((t) => Object.hasOwn(C2S, t) && (t.startsWith('g.') || t.startsWith('b.'))));
+// the match accepts the game intents, the battle reports and a trusted match plugin's own messages (p.msg)
+const GAME_TYPES = new Set(Object.keys(C2S).filter((t) => Object.hasOwn(C2S, t) && (t.startsWith('g.') || t.startsWith('b.') || t.startsWith('p.'))));
 
 export class MatchPlatform {
   start() {
@@ -181,6 +182,8 @@ export class MatchPlatform {
     if (!ps || ps.isBot || ps.left || this.disposed) return;
     this.guard(() => {
       ps.left = true;
+      // trusted match plugins: this seat left
+      this.pluginOnLeave(playerId);
       this.cancelSetupVote();
       ps.connected = false;
       ps.autoplay = false;
@@ -231,6 +234,8 @@ export class MatchPlatform {
     }
     ps.lp = 0;
     ps.eliminate(passedRound);
+    // a departure is an elimination too (settle's path calls this hook; this one is the same event)
+    this.pluginOnEliminated(ps);
     this.offersChanged();
     this.tickerText(msg('{name}博士中途退出了模拟', { name: ps.name }), FLOW_TICKER_PRIORITY);
     if (this.bossWaves && (phase === PHASE.ROUND_START || phase === PHASE.SP_DRAFT || phase === PHASE.PREP)) {

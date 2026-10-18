@@ -64,6 +64,8 @@ export class PlayerViews {
     const bossMate = typeof this.m.bossMateView === 'function' ? this.m.bossMateView(this) : null;
     return {
       t: 'm.private',
+      // trusted match plugins (entry.match): this seat's own keys. Absent when the room has none.
+      ...(this.m.pluginPrivateView?.(this) || {}),
       playerId: this.playerId,
       seat: this.seat,
       alive: this.alive,

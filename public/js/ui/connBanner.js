@@ -10,22 +10,20 @@ import { net, CLIENT_ERR_TEXT } from '../net.js';
 import { useStore, shallowEqual } from '../store.js';
 import { useDocClass } from './device.js';
 import { t } from '../../../shared/i18n.js';
+import { P2P_BADGE_AFTER, bannerText, bannerVisible } from './connLogic.js';
 
-/** Whether the banner shows for this connection state (mirrors the early returns below). */
-export function bannerVisible(conn, entered, restoring, buildStale = false) {
-  if (!entered || !conn) return false;
-  if (conn.status === 'online') return !!restoring || !!buildStale;
-  if (!conn.everOnline && (conn.status === 'connecting' || conn.status === 'handshaking' || conn.status === 'idle')) return false;
-  return true;
-}
+// kept exported from here for the existing callers and tests; the rules themselves live in connLogic.js
+export { bannerVisible };
 
 export function ConnectionBanner() {
   const conn = useStore((s) => s.connection, shallowEqual);
   const entered = useStore((s) => s.session.entered);
   const restoring = useStore((s) => s.ui.restoring);
   const buildStale = useStore((s) => !!s.ui.buildStale);
+  // a page opened through the handshake platform (server/platform.js): a dropped tunnel is not a dropped server
+  const p2p = useStore((s) => s.ui.p2p === true);
   useTicker(conn.status === 'reconnecting' ? 500 : 0);
-  useDocClass('sp-conn', bannerVisible(conn, entered, restoring, buildStale));
+  useDocClass('sp-conn', bannerVisible(conn, entered, restoring, buildStale, p2p));
   if (!entered) return null;
   if (conn.status === 'online' && !restoring && !buildStale) return null;
   if (conn.status === 'online' && restoring) {
@@ -41,17 +39,18 @@ export function ConnectionBanner() {
     </div>`;
   }
   if (!conn.everOnline && (conn.status === 'connecting' || conn.status === 'handshaking' || conn.status === 'idle')) return null;
+  // p2p: the first attempts are a small badge (the tunnel usually recovers), and it never says the server dropped
+  if (p2p && conn.status === 'reconnecting' && (Number(conn.attempt) || 0) < P2P_BADGE_AFTER) {
+    return html`<div class="conn-badge" role="status"><${Icon} name="wifiOff" /><span>${bannerText(conn, { p2p })}</span></div>`;
+  }
   const secs = conn.retryAt ? Math.max(0, Math.ceil((conn.retryAt - Date.now()) / 1000)) : 0;
   const replaced = conn.status === 'closed' && conn.lastError?.code === 'REPLACED';
   const rejected = conn.status === 'connected' && !!conn.lastError; // hello refused (version, server full…)
   const versionMismatch = rejected && conn.lastError.text === CLIENT_ERR_TEXT.VERSION;
   // Short transitional states (a rename re-sends hello on the live socket) only show if they linger.
   const transient = conn.status === 'connecting' || conn.status === 'handshaking' || (conn.status === 'connected' && !rejected);
-  const text = conn.status === 'reconnecting'
-    ? t('与服务器的连接已中断，正在重连')
-    : replaced ? t('该身份已在其他页面登录')
-      : conn.status === 'closed' ? t('连接已关闭')
-        : rejected ? t(conn.lastError.text) : t('正在连接服务器');
+  // the wording rules live in connLogic.js: a p2p page says "正在连接房主…" / "房主可能已离线，正在重试"
+  const text = bannerText(conn, { p2p, replaced, rejected: rejected ? conn.lastError.text : null });
   const action = conn.status === 'reconnecting' ? { label: t('立即重连'), run: () => net.retryNow() }
     : conn.status === 'closed' ? { label: replaced ? t('在此页面继续') : t('重新连接'), run: () => net.connect() }
       : versionMismatch ? { label: t('刷新页面'), run: () => location.reload() }

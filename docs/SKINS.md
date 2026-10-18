@@ -12,12 +12,21 @@ each player switches on for themself.
 
 ## The data: one overlay, no catalogue file
 
+Two shapes reach the same composition. An operator's own record nests its skins (`chars[<charId>].skins[<skinKey>]`),
+and a content pack may instead ship a **flat catalogue** (`skins[<skinId>]`), the shape the 魔塔 package's
+`assets.json` has: each entry names its operator in `charId` and carries the display fields (`name`, `brand`, `series`,
+`officialId`, `wikiIndex`, `charName`, `desc`, `illustration`) beside its pictures and models. A 271-entry catalogue
+therefore needs no regrouping per operator.
+
 ```
 plugins/<id>/plugin.json
   └── assets (or a .json file):  chars[<charId>].illust ……     the operator's own 立绘 (one picture)
                                  chars[<charId>].skins[<skinKey>] = { name, group, avatar, avatarE2,
                                                                       portrait, portraitE2, illust,
                                                                       spine: { front, back? } }
+                                 skins[<skinId>] = { charId, name, brand, series, officialId, wikiIndex,
+                                                     charName, desc, illustration, avatar, portrait,
+                                                     spine: { front, back? } }   ← 扁平目录
         │
         ├── the server checks the overlay (shared/plugins/visual.js, docs/PLUGINS.md §9) and serves it as a document:
         │   /vs/<vs16>/overlay.json — composed on the INSTALLATION's manifest, never on a copy of it

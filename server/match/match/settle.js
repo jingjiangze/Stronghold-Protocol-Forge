@@ -80,7 +80,14 @@ export class MatchSettle {
     this.watchers.clear();
     this.markPublic();
     onSettle(this); // one emote per alive AI per round (enabled by default; SP_BOT_EMOTES=0 silences it)
-    this.setDeadline(DELAYS.SETTLE / 1000, () => this.afterSettle(), { silent: this.soloUntimed });
+    // a trusted match plugin may hold the settle phase open (a rescue window); every other room keeps the delay
+    const hold = this.pluginSettleHoldMs();
+    if (hold > 0) {
+      this.tickerText(msg('救援窗口：{n} 秒内可以救回队友', { n: Math.round(hold / 1000) }), FLOW_TICKER_PRIORITY);
+      this.setDeadline(hold / 1000, () => { this.pluginPhaseExpired('settle'); this.afterSettle(); }, { silent: this.soloUntimed });
+    } else {
+      this.setDeadline(DELAYS.SETTLE / 1000, () => this.afterSettle(), { silent: this.soloUntimed });
+    }
   }
 
   /**
@@ -114,8 +121,11 @@ export class MatchSettle {
   eliminateBroken() {
     for (const ps of this.alivePlayers()) {
       if (ps.lp <= 0) {
+        // a trusted match plugin may hold this player at 0 LP instead of eliminating them (a rescue window)
+        if (this.pluginDefersElimination(ps)) continue;
         ps.lp = 0;
         ps.eliminate(this.round);
+        this.pluginOnEliminated(ps);
         this.toast(ps, 'error', '你的目标生命值耗尽，已被淘汰');
         this.tickerText(msg('{name}博士的目标生命值已耗尽', { name: ps.name }), FLOW_TICKER_PRIORITY);
       }
@@ -123,6 +133,8 @@ export class MatchSettle {
   }
 
   afterSettle() {
+    // a held settle window cut short by another path (a leave, the match ending) still finalizes here
+    this.pluginPhaseExpired('settle');
     if (!this.alivePlayers().length) { this.finish({ victory: false, reason: 'eliminated' }); return; }
     resetRoundCounters(this); // AI bot merge-counter resets each round (server/match/botEmotes.js)
     this.startRound(this.round + 1);

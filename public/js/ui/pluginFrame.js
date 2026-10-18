@@ -20,6 +20,7 @@
 // others with tabs in the slot. Nothing here calls net.send. A match intent is rejected locally.
 
 import { store } from '../store.js';
+import { net } from '../net.js';
 import { battleRunner } from '../battle/runner.js';
 import { catalog, loadCatalog, installedCount, pluginName } from '../content.js';
 import { toast } from './toasts.js';
@@ -31,6 +32,8 @@ import {
   createRateLimiter, createSlotTable, frameLoadDecision, framePageUrl, hostLimit, hostNet, hostRejected, hostResult,
   hostState, hostWelcome, isIntentType, namespacedStorageKey, netSlot, subsetRoom, validatePluginMessage,
 } from '../../../shared/plugins/ui.js';
+import { UI_SLOT_ALIASES } from '../../../shared/plugins/manifest.js';
+import { planMount } from './framePlan.js';
 
 const SLOT_MS = Math.round(1000 / UI_LIMITS.battleHz);
 const STATE_MS = 250;
@@ -51,6 +54,7 @@ const api = {
   blocked: () => [...blocked],
   rejected,
   last: null,
+  // the mounted frames: one key per plugin, or `<pluginId>#<hostKey>` for each instance of a repeatable slot
   frames: () => [...frames.keys()],
   debugBattle(events) {
     const msg = battlePayload({ fieldId: 'debug', gt: 0, events, snap: null });
@@ -60,7 +64,11 @@ const api = {
 };
 
 /**
- * @typedef {{ id: string, iframe: HTMLIFrameElement, declared: string[], entry: any, ready: boolean,
+ * One mounted document. A plugin has one of these per host element: a repeatable slot (`screen.game.shopCard`) renders
+ * a host in every shop card and each card gets its own frame, so `id` is the frame's key (the plugin id, or
+ * `<pluginId>#<hostKey>` for an instance) while `pluginId` is always the plugin it belongs to.
+ * @typedef {{ id: string, pluginId: string, hostKey: string | null, host: Element | null,
+ *   iframe: HTMLIFrameElement, declared: string[], entry: any, ready: boolean,
  *   preview?: any, entries: Record<string, string>, limitAt: number, loads: number, closed: boolean,
  *   netAt?: number | null, netText?: string }} FrameRec
  */
@@ -104,25 +112,33 @@ function post(rec, msg) {
   } catch { /* the frame is gone */ }
 }
 
-/** @param {string} id */
+/** Every frame of one plugin (a repeatable slot has one per host). @param {string} pluginId */
+function framesOf(pluginId) {
+  const out = [];
+  for (const rec of frames.values()) if (rec.pluginId === pluginId) out.push(rec);
+  return out;
+}
+
+/** Remove one frame. The plugin's slot is released only when its last frame goes. @param {string} id */
 function destroy(id) {
   const rec = frames.get(id);
   if (!rec) return;
   rec.closed = true;
   rec.ready = false;
   frames.delete(id);
-  for (const [slot, held] of chosenSlot) if (held === id) chosenSlot.delete(slot);
-  slots.release(id);
   limiter.reset(id);
   noticeLimiter.reset(id);
   rec.iframe.remove();
+  if (framesOf(rec.pluginId).length) return;
+  for (const [slot, held] of chosenSlot) if (held === rec.pluginId) chosenSlot.delete(slot);
+  slots.release(rec.pluginId);
 }
 
-/** A frame left its entry document: destroy it and keep the plugin off for the rest of this page. @param {string} id */
-function stopForLeaving(id) {
-  if (!frames.has(id)) return;
-  blocked.add(id);
-  destroy(id);
+/** A frame left its entry document: destroy every frame of the plugin and keep it off for the rest of this page. */
+function stopForLeaving(pluginId) {
+  if (!framesOf(pluginId).length) return;
+  blocked.add(pluginId);
+  for (const rec of framesOf(pluginId)) destroy(rec.id);
   try { toast(t('界面插件离开了自己的页面，本页已停用它（刷新后恢复）'), 'warn'); } catch { /* the toast host may be absent */ }
 }
 
@@ -143,8 +159,9 @@ function rescue(node) {
   const frame = el.classList && el.classList.contains('ui-slot__frame') ? el : (el.querySelector ? el.querySelector('.ui-slot__frame') : null);
   if (!frame || frame.isConnected) return false;
   // only a live frame is re-parked: a destroyed one (no record any more) stays removed instead of coming back as an
-  // orphan that reloads the plugin's page
-  const rec = frames.get(/** @type {HTMLElement} */ (frame).dataset.plugin || '');
+  // orphan that reloads the plugin's page. `data-rec` is the frame's own key (an instance of a repeatable slot has one).
+  const el2 = /** @type {HTMLElement} */ (frame);
+  const rec = frames.get(el2.dataset.rec || '') || frames.get(el2.dataset.plugin || '') || framesOf(el2.dataset.plugin || '')[0];
   if (!rec || rec.iframe !== frame || rec.closed) return false;
   moveFrame(rec, parkEl());
   return true;
@@ -166,22 +183,46 @@ function moveFrame(rec, home) {
 
 /** @param {FrameRec} rec */
 function place(rec) {
-  const slot = slots.slotOf(rec.id);
-  const el = slot ? document.querySelector(`[data-ui-slot="${slot}"]`) : null;
+  const slot = slots.slotOf(rec.pluginId);
+  const el = rec.host || (slot ? hostOf(slot, rec.hostKey) : null);
   const home = rec.preview?.host || el || parkEl();
   if (rec.iframe.parentElement !== home) moveFrame(rec, home);
 }
 
+/**
+ * The element a slot mounts into: its own `[data-ui-slot="<slot>"]`, else the element of the name it aliases
+ * (UI_SLOT_ALIASES: the content's `screen.game.hud` is the same place as the older `hud.right`). An instance of a
+ * repeatable slot names its host's key, so each card gets its own frame.
+ * @param {string | null | undefined} slot @param {string | null} [hostKey]
+ * @returns {Element | null}
+ */
+function hostOf(slot, hostKey = null) {
+  if (!slot) return null;
+  if (hostKey) {
+    const at = document.querySelector(`[data-ui-slot="${slot}"][data-ui-host-key="${hostKey}"]`);
+    if (at) return at;
+  }
+  const own = document.querySelector(`[data-ui-slot="${slot}"]`);
+  if (own) return own;
+  const alias = UI_SLOT_ALIASES[slot];
+  return alias ? document.querySelector(`[data-ui-slot="${alias}"]`) : null;
+}
+
+/** Every host element of a slot, in document order (a repeatable slot renders one per item). */
+function hostsOf(slot) {
+  return [...document.querySelectorAll(`[data-ui-slot="${slot}"]`)];
+}
+
 function byPluginName(a, b) {
-  const an = pluginName(a.entry) || a.id;
-  const bn = pluginName(b.entry) || b.id;
-  return an.localeCompare(bn) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const an = pluginName(a.entry) || a.pluginId;
+  const bn = pluginName(b.entry) || b.pluginId;
+  return an.localeCompare(bn) || (a.pluginId < b.pluginId ? -1 : a.pluginId > b.pluginId ? 1 : 0);
 }
 
 /** The first declared slot that currently has an element. */
 function preferredSlot(rec) {
   const allowed = rec.declared.filter((s) => UI_SLOTS.includes(s));
-  return allowed.find((s) => document.querySelector(`[data-ui-slot="${s}"]`)) || null;
+  return allowed.find((s) => hostOf(s)) || null;
 }
 
 /**
@@ -195,32 +236,45 @@ function assignSlots() {
     if (rec.preview || rec.closed) continue;
     const slot = preferredSlot(rec);
     if (!slot) continue;
-    if (!groups.has(slot)) groups.set(slot, []);
-    groups.get(slot).push(rec);
+    if (!groups.has(slot)) groups.set(slot, new Map());
+    // one entry per plugin: a repeatable slot has one frame per host
+    if (!groups.get(slot).has(rec.pluginId)) groups.get(slot).set(rec.pluginId, rec);
   }
-  for (const [slot, list] of groups) {
-    list.sort(byPluginName);
+  for (const [slot, byId] of groups) {
+    const list = [...byId.values()].sort(byPluginName);
     const want = chosenSlot.get(slot);
-    const pick = (want && list.find((r) => r.id === want)) || list[0];
-    if (slots.holder(slot) !== pick.id) {
+    const pick = (want && list.find((r) => r.pluginId === want)) || list[0];
+    if (slots.isRepeatable(slot)) {
+      // shared: every plugin that prefers it holds it
+      for (const rec of list) if (slots.slotOf(rec.pluginId) !== slot) slots.request(rec.pluginId, slot, rec.declared);
+      continue;
+    }
+    if (slots.holder(slot) !== pick.pluginId) {
       const holder = slots.holder(slot);
       if (holder) slots.release(holder);
-      if (slots.slotOf(pick.id)) slots.release(pick.id);
-      slots.request(pick.id, slot, pick.declared);
+      if (slots.slotOf(pick.pluginId)) slots.release(pick.pluginId);
+      slots.request(pick.pluginId, slot, pick.declared);
     }
-    for (const rec of list) if (rec.id !== pick.id && slots.slotOf(rec.id) === slot) slots.release(rec.id);
+    for (const rec of list) if (rec.pluginId !== pick.pluginId && slots.slotOf(rec.pluginId) === slot) slots.release(rec.pluginId);
   }
 }
 
 /** Tabs for a slot that more than one switched-on plugin prefers. One is visible; the rest are listed here. */
 function renderSlotTabs() {
   for (const slot of UI_SLOTS) {
-    const el = document.querySelector(`[data-ui-slot="${slot}"]`);
+    // an aliased name has no element of its own: the target's pass renders the tabs, so no double set
+    if (UI_SLOT_ALIASES[slot]) continue;
+    // a repeatable slot has one frame per host and every plugin may hold it: there is nothing to switch between
+    if (slots.isRepeatable(slot)) continue;
+    const el = hostOf(slot);
     if (!el) continue;
+    const seen = new Set();
     const list = [];
     for (const rec of frames.values()) {
-      if (rec.preview || rec.closed) continue;
-      if (preferredSlot(rec) === slot) list.push(rec);
+      if (rec.preview || rec.closed || seen.has(rec.pluginId)) continue;
+      if (preferredSlot(rec) !== slot) continue;
+      seen.add(rec.pluginId);
+      list.push(rec);
     }
     list.sort(byPluginName);
     const old = el.querySelector(':scope > .ui-slot__tabs');
@@ -235,12 +289,12 @@ function renderSlotTabs() {
       b.type = 'button';
       b.className = 'ui-slot__tab';
       b.setAttribute('role', 'tab');
-      const label = pluginName(rec.entry) || rec.id;
+      const label = pluginName(rec.entry) || rec.pluginId;
       b.textContent = label;
       b.title = label;
-      b.setAttribute('aria-selected', holder === rec.id ? 'true' : 'false');
+      b.setAttribute('aria-selected', holder === rec.pluginId ? 'true' : 'false');
       b.addEventListener('click', () => {
-        chosenSlot.set(slot, rec.id);
+        chosenSlot.set(slot, rec.pluginId);
         assignSlots();
         for (const frame of frames.values()) place(frame);
         renderSlotTabs();
@@ -257,53 +311,78 @@ function placeAll() {
   renderSlotTabs();
 }
 
-/**
- * [ASSUMED] grant the first declared slot that currently has an element and is free, else the first free one.
- * @param {string} id @param {string[]} declared
- */
-function autoGrant(id, declared) {
-  const allowed = declared.filter((s) => UI_SLOTS.includes(s));
-  const withEl = allowed.find((s) => document.querySelector(`[data-ui-slot="${s}"]`) && !slots.holder(s));
-  const pick = withEl || allowed.find((s) => !slots.holder(s));
-  if (!pick) return;
-  slots.request(id, pick, allowed);
+/** How many plugins are mounted (instances of one plugin count once). */
+function pluginCount() {
+  const ids = new Set();
+  for (const rec of frames.values()) ids.add(rec.pluginId);
+  return ids.size;
 }
 
-/** @param {any} entry */
-function mount(entry, preview = null) {
-  const id = entry.id;
-  if (frames.has(id) || frames.size >= UI_LIMITS.maxPlugins) return;
-  const rel = typeof entry.entry === 'string' ? entry.entry : null;
-  const sha = rel && entry.frameFiles && typeof entry.frameFiles[rel] === 'string' ? entry.frameFiles[rel] : null;
-  const src = rel && sha ? framePageUrl(id, rel, sha) : null;
-  if (!src) return;
-  const declared = Array.isArray(entry.slots) ? entry.slots.filter((s) => typeof s === 'string') : [];
+/**
+ * Create one frame. `place` moves it into its host. A repeatable slot calls this once per host element, each instance
+ * with its own key (`<pluginId>#<hostKey>`) and host, so every card gets the panel.
+ * @param {any} entry @param {any} preview
+ * @param {{ recId: string, hostKey: string | null, host: Element | null, declared: string[],
+ *   src: string, entries: Record<string, string> }} plan
+ */
+function createFrame(entry, preview, plan) {
+  const id = plan.recId;
   const iframe = document.createElement('iframe');
   iframe.className = 'ui-slot__frame';
   iframe.setAttribute('sandbox', 'allow-scripts');
   iframe.referrerPolicy = 'no-referrer';
   iframe.setAttribute('credentialless', '');
   iframe.setAttribute('allow', '');
-  iframe.title = pluginName(entry) || id;
-  iframe.dataset.plugin = id;
+  iframe.title = pluginName(entry) || entry.id;
+  iframe.dataset.plugin = entry.id;
+  iframe.dataset.rec = id;
   /** @type {FrameRec} */
-  const rec = { id, iframe, declared, entry, ready: false, preview, entries: preview ? Object.create(null) : loadEntries(id), limitAt: 0, loads: 0, closed: false };
+  const rec = { id, pluginId: entry.id, hostKey: plan.hostKey, host: plan.host, iframe, declared: plan.declared, entry,
+    ready: false, preview, entries: plan.entries, limitAt: 0, loads: 0, closed: false };
   frames.set(id, rec);
-  autoGrant(id, declared);
   iframe.addEventListener('load', () => {
     if (frames.get(id) !== rec || rec.closed) return;
     rec.loads += 1;
     const decision = frameLoadDecision(rec.loads);
-    if (decision === 'destroy') { stopForLeaving(id); return; }
+    if (decision === 'destroy') { stopForLeaving(entry.id); return; }
     // The entry document. welcome does not include the private view; ready (accepted only at this count) does.
     // `net` is not the private view: the panel reads it during mount, before ready.
     if (decision === 'entry') {
       if (!rec.preview) postNetNow(rec);
-      post(rec, hostWelcome(id, declared, rec.preview ? undefined : welcomeInfo(rec)));
+      post(rec, hostWelcome(entry.id, plan.declared, rec.preview ? undefined : welcomeInfo(rec), plan.hostKey));
     }
   });
-  iframe.src = src;
+  iframe.src = plan.src;
   place(rec);
+}
+
+/** @param {any} entry */
+function mount(entry, preview = null) {
+  const id = entry.id;
+  if (framesOf(id).length || pluginCount() >= UI_LIMITS.maxPlugins) return;
+  const rel = typeof entry.entry === 'string' ? entry.entry : null;
+  const sha = rel && entry.frameFiles && typeof entry.frameFiles[rel] === 'string' ? entry.frameFiles[rel] : null;
+  const src = rel && sha ? framePageUrl(id, rel, sha) : null;
+  if (!src) return;
+  const declared = Array.isArray(entry.slots) ? entry.slots.filter((s) => typeof s === 'string') : [];
+  // the hosts this page renders for the declared slots: a repeatable slot names one key per host (its own card)
+  const hosts = {};
+  for (const s of declared) {
+    if (!UI_SLOTS.includes(s)) continue;
+    hosts[s] = slots.isRepeatable(s) ? hostsOf(s).map((h) => (h.dataset && h.dataset.uiHostKey) || '').filter(Boolean) : [];
+  }
+  const plan = planMount({ declared, hosts, isRepeatable: slots.isRepeatable, holder: slots.holder });
+  if (plan && !slots.request(id, plan.slot, declared).ok) return;
+  const entries = preview ? Object.create(null) : loadEntries(id);
+  // a preview mounts into the host it was given, never once per card
+  if (plan && plan.repeatable && !preview && plan.keys.length) {
+    for (const key of plan.keys) {
+      const host = hostOf(plan.slot, key);
+      createFrame(entry, preview, { recId: `${id}#${key}`, hostKey: key, host, declared, src, entries });
+    }
+    return;
+  }
+  createFrame(entry, preview, { recId: id, hostKey: null, host: null, declared, src, entries });
 }
 
 /** @param {string} id @returns {Record<string, string>} */
@@ -438,7 +517,7 @@ function onStorage(rec, msg) {
     post(rec, { v: 1, t: 'storage', op: 'keys', keys: Object.keys(rec.entries), ok: true });
     return;
   }
-  const full = namespacedStorageKey(rec.id, key);
+  const full = namespacedStorageKey(rec.pluginId, key);
   if (!full) {
     post(rec, { v: 1, t: 'storage', op, key, ok: false, error: UI_ERRORS.PLUGIN_STORAGE });
     return;
@@ -495,7 +574,7 @@ function handle(rec, msg) {
     return;
   }
   if (msg.t === 'slot') {
-    const r = slots.request(rec.id, /** @type {string} */ (msg.slot), rec.declared);
+    const r = slots.request(rec.pluginId, /** @type {string} */ (msg.slot), rec.declared);
     post(rec, { v: 1, t: 'slot', slot: msg.slot, ok: r.ok === true, ...(r.ok ? {} : { error: r.error }) });
     if (r.ok) place(rec);
     return;
@@ -525,7 +604,20 @@ function handle(rec, msg) {
     post(rec, { v: 1, t: 'stats', unitId, fieldId, stats: stats && typeof stats === 'object' ? stats : null });
     return;
   }
-  if (msg.t === 'storage') onStorage(rec, msg);
+  if (msg.t === 'storage') { onStorage(rec, msg); return; }
+  if (msg.t === 'intent') {
+    // A content panel asks for one gameplay action (g.*) or for its own match plugin (p.msg). `plugin` is always the
+    // frame's own id — a panel cannot speak for another plugin — and the socket validates the message again
+    // (shared/protocol.js validateC2S), so a panel can only do what this player could click.
+    const inner = msg.msg && typeof msg.msg === 'object' ? msg.msg : null;
+    if (!inner || typeof inner.t !== 'string') { post(rec, hostRejected('shape')); return; }
+    const fields = { ...inner };
+    const type = fields.t;
+    delete fields.t;
+    if (type === 'p.msg') fields.plugin = rec.pluginId;
+    try { net.send(type, fields); } catch { /* offline: the panel learns it from the net frames */ }
+    return;
+  }
 }
 
 function onWindowMessage(ev) {
@@ -553,7 +645,7 @@ function onWindowMessage(ev) {
   // (DESIGN §32.8 [ASSUMED]).
   setTimeout(() => {
     if (frames.get(rec.id) !== rec || rec.closed) return;
-    if (frameLoadDecision(rec.loads) === 'destroy') { stopForLeaving(rec.id); return; }
+    if (frameLoadDecision(rec.loads) === 'destroy') { stopForLeaving(rec.pluginId); return; }
     handle(rec, msg);
   }, 0);
 }
@@ -575,9 +667,9 @@ function sync() {
     if (entries.some((p) => p.id === id)) want.push(id);
   }
   const keep = new Set(want);
-  for (const id of [...frames.keys()]) if (!keep.has(id)) destroy(id);
+  for (const rec of [...frames.values()]) if (!keep.has(rec.pluginId)) destroy(rec.id);
   for (const id of want) {
-    if (!frames.has(id)) mount(entries.find((p) => p.id === id));
+    if (!framesOf(id).length) mount(entries.find((p) => p.id === id));
   }
   placeAll();
 }

@@ -181,6 +181,9 @@ export class MatchViews {
         ...(e.detail ? { detail: e.detail } : {}),
       }));
     }
+    // trusted match plugins (entry.match): the keys they add. null with none, so a vanilla m.public is unchanged.
+    const pluginView = this.pluginPublicView();
+    if (pluginView) Object.assign(v, pluginView);
     return v;
   }
 

@@ -53,6 +53,9 @@ export class MatchIntents {
       case 'g.unitStats': return this.unitStats(ps, msg.seq ?? null);
       case 'g.leave': this.onLeave(ps.playerId); return OK;
       case 'g.test': return this.applyTestCommand(ps, msg);
+      // a trusted match plugin's own intent (server/match/plugins.js). With no plugin the answer is BAD_MSG, as before.
+      case 'p.msg':
+        return this.pluginIntent(ps, msg);
       case 'b.progress': return this._onProgress(ps, msg);
       case 'b.result': return this._onResult(ps, msg);
       // the host's answer to a delegated bot layout rehearsal (DESIGN §14): a report, never an error — an unknown,

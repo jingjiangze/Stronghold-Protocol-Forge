@@ -41,7 +41,8 @@
 //                inside the folder (isPackPath) and .json, the files an inline `assets` names are art, models, audio
 //                or fonts
 //   entry        { sim, meta } (script, .js) · { client } (ui: .html, required; trusted: .js) · { server } (trusted, .js)
-//   slots        ui only: hud.right, result.tab, stats.tab, room.panel (UI_SLOT_IDS). Absent or []: a warning, the
+//                · { match } (trusted, .js: the in-process match module, server/match/plugins.js)
+//   slots        ui only: any UI_SLOT_IDS. Absent or []: a warning, the
 //                plugin still loads but the host grants no slot. A bad list, or slots on another class: a problem.
 //   lang class   the language fields of manifest 1 (lang, base, fallback, complete, machineTranslated, numberUnits —
 //                shared/i18nPacks.js) and files { ui (required), data }, both .json
@@ -149,6 +150,9 @@ export const PERMISSIONS = Object.freeze({
   'ui.frame': ['ui'],
   'trusted.page': ['trusted'],
   'trusted.server': ['trusted'],
+  // A match module: in-process match code (server/match/plugins.js). Trusted only, and like every trusted entry it
+  // runs only when the owner pinned this plugin's lock — the class gate and the pin are the whole security model.
+  'match.code': ['trusted'],
 });
 
 /**
@@ -177,6 +181,9 @@ const ENTRIES = Object.freeze({
   meta: { classes: ['script', 'trusted'], ext: '.js', needs: { script: 'meta.code', trusted: 'meta.code' } },
   client: { classes: ['ui', 'trusted'], ext: '.html', needs: { ui: 'ui.frame', trusted: 'trusted.page' } },
   server: { classes: ['trusted'], ext: '.js', needs: { trusted: 'trusted.server' } },
+  // The match module (PLUGIN API v2, docs/PLUGINS.md §13): activate(match) → the match's hooks. Loaded in the process
+  // that runs the match (server/match/host/entry.js for a content set, the lobby's process for a vanilla one).
+  match: { classes: ['trusted'], ext: '.js', needs: { trusted: 'match.code' } },
 });
 
 const SETTING_TYPES = ['boolean', 'integer', 'number', 'enum'];
@@ -210,7 +217,30 @@ export const isPluginId = (v) => typeof v === 'string' && /^[a-z0-9][a-z0-9-]{1,
  * The slots a ui plugin may ask the host for (DESIGN §32.8). [ASSUMED] these four. The protocol table grants one
  * plugin per slot at a time; the match shows tabs when several ask for the same one (public/js/ui/pluginFrame.js).
  */
-export const UI_SLOT_IDS = Object.freeze(['hud.right', 'result.tab', 'stats.tab', 'room.panel']);
+export const UI_SLOT_IDS = Object.freeze([
+  // the first four, still accepted unchanged (stable since 0.3.0)
+  'hud.right', 'result.tab', 'stats.tab', 'room.panel',
+  // the content's nine (`MOD_PANEL_SLOTS` in the 魔塔 workshop client): the screen-scoped hosts a pack panel declares
+  'root.overlays', 'root.guide', 'screen.game.aside', 'screen.result.footer',
+  'screen.game.shopCard', 'screen.game.bondStrip', 'screen.game.hud', 'screen.game.overlay',
+  'screen.loadout.detail',
+]);
+
+/**
+ * Two of the content's names are the same place under an older name: the host element keeps the original
+ * `data-ui-slot`, and a panel that declares the new name mounts there (public/js/ui/pluginFrame.js `hostOf`).
+ */
+export const UI_SLOT_ALIASES = Object.freeze({
+  'screen.game.hud': 'hud.right',
+  'screen.result.footer': 'result.tab',
+});
+
+/**
+ * Slots whose host is rendered more than once (the shop bar renders one per card). Any number of plugins may hold such
+ * a slot at the same time; public/js/ui/pluginFrame.js mounts each holder into its own host element and passes the
+ * host's `data-ui-host-key` in `welcome` so the panel knows which card it is.
+ */
+export const UI_SLOT_REPEATABLE = Object.freeze(['screen.game.shopCard']);
 
 /**
  * A path inside a pack or plugin folder ('ui.json', 'img/a.png'): relative, '/'-separated, no '.' / '..' / hidden /

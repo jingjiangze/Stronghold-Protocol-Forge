@@ -168,6 +168,8 @@ export class MatchPrep {
     this._cancelRehearsal();
     this.setDeadline(0);
     const alive = this.alivePlayers();
+    // trusted match plugins: their prep-end step (before PlayerState.endPrep clears the funds)
+    this.pluginPrepEnd(alive);
     for (const ps of alive) this.dispatch(ps, 'onPrepEnd', { round: this.round });
     for (const ps of alive) ps.endPrep();
     const r = this.round;

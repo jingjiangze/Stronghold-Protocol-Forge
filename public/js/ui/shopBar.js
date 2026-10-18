@@ -313,6 +313,9 @@ export function ShopBar({ priv, editable, collapsed, refreshBusy = false, onColl
   const frzReason = editable ? null : shopBlockReason('freeze', { priv, editable });
   const free = Number(shop.freeRefreshes) || 0;
   const showReward = !!(reward && Array.isArray(reward.slots) && reward.slots.length);
+  // One host per card (UI_SLOT_REPEATABLE): a panel declaring screen.game.shopCard mounts into each card and learns
+  // which one it is from data-ui-host-key. The wrapper is display: contents, so the card stays a direct flex child.
+  const cardSlot = (key) => html`<div class="ui-slot" data-ui-slot="screen.game.shopCard" data-ui-host-key=${key} aria-label=${t('界面插件')} dangerouslySetInnerHTML=${{ __html: '' }}></div>`;
 
   // A completed upgrade changes the level, so its confirmation cannot carry into the next upgrade.
   const levelKey = `lv:${shop.level ?? 1}`;
@@ -378,8 +381,11 @@ export function ShopBar({ priv, editable, collapsed, refreshBusy = false, onColl
           if (!s) return html`<${EmptyCard} key=${`e${i}`} />`;
           if (s.sold) return html`<${SoldCard} key=${`s${i}`} />`;
           const reason = shopBlockReason('buy', { priv, editable, slot: s, ...LOOKUPS });
-          return html`<${ChessCard} key=${`c${i}:${s.id}`} slot=${s} idx=${i} priv=${priv} frozen=${slotFrozen(s, frozen)} onBuy=${onBuy} onDetail=${onDetail} offBonds=${offBonds}
-              reason=${reason} armed=${armed === armKey('c', i, s)} onTap=${editable ? (idx) => tapCard('c', idx, s, 'chess', reason, onBuy) : null} />`;
+          return html`<div class="slotw" key=${`c${i}:${s.id}`}>
+            <${ChessCard} slot=${s} idx=${i} priv=${priv} frozen=${slotFrozen(s, frozen)} onBuy=${onBuy} onDetail=${onDetail} offBonds=${offBonds}
+              reason=${reason} armed=${armed === armKey('c', i, s)} onTap=${editable ? (idx) => tapCard('c', idx, s, 'chess', reason, onBuy) : null} />
+            ${cardSlot(`c${i}`)}
+          </div>`;
         })}
       </div>`}
       ${showReward ? null : html`<div class="shopbar__item">
@@ -387,8 +393,11 @@ export function ShopBar({ priv, editable, collapsed, refreshBusy = false, onColl
           ? itemSlots.map(({ s, i }) => {
             if (s.sold) return html`<${SoldCard} key=${`is${i}`} item=${true} />`;
             const reason = shopBlockReason('buy', { priv, editable, slot: s, ...LOOKUPS });
-            return html`<${ItemCard} key=${`i${i}:${s.id}`} slot=${s} idx=${i} frozen=${slotFrozen(s, frozen)} onBuy=${onBuy} onDetail=${onDetail} reason=${reason}
-              armed=${armed === armKey('i', i, s)} onTap=${editable ? (idx) => tapCard('i', idx, s, 'item', reason, onBuy) : null} />`;
+            return html`<div class="slotw" key=${`i${i}:${s.id}`}>
+              <${ItemCard} slot=${s} idx=${i} frozen=${slotFrozen(s, frozen)} onBuy=${onBuy} onDetail=${onDetail} reason=${reason}
+                armed=${armed === armKey('i', i, s)} onTap=${editable ? (idx) => tapCard('i', idx, s, 'item', reason, onBuy) : null} />
+              ${cardSlot(`i${i}`)}
+            </div>`;
           })
           : html`<${SoldCard} item=${true} />`}
       </div>`}

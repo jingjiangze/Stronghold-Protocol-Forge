@@ -91,7 +91,14 @@ export const initialState = Object.freeze({
   ticker: [],
   emotes: [],
   clock: { offset: 0, rtt: null, synced: false },
-  ui: { pendingJoin: null, restoring: false, buildStale: false },
+  ui: {
+    pendingJoin: null, restoring: false, buildStale: false,
+    // the handshake platform's form (server/platform.js, read from the URL at boot): a p2p page speaks to a tunnel on
+    // this machine, so a dropped link reads as "the host may be offline" and never blocks the board
+    p2p: false, relayFallback: false, relayRetry: false,
+    // the room chat's last 40 lines for the room in `code` (public/js/ui/chatModel.js); empty across rooms
+    chat: { code: null, lines: [] },
+  },
 });
 
 /** The app-wide store singleton. */

@@ -25,6 +25,7 @@
 import { createStore, loadPref, savePref } from '../store.js';
 import { data } from '../data.js';
 import { SKIN_LIMITS } from '../../../shared/protocol.js';
+import { skinHasModel, skinRows } from './skinRows.js';
 
 /** The localStorage preference (`sp.pref.<key>`) of this browser's skin choices: `{ [charId]: skinId }`. */
 export const SKINS_PREF = 'skins';
@@ -44,7 +45,7 @@ const str = (v) => (typeof v === 'string' && v ? v : null);
  * difference can only be a skin whose model is written but does not resolve — the picker would offer it once and the
  * renderer would draw the operator's own body, which is the same fallback a plugin-withdrawn model gets.
  */
-export const skinHasModel = (skin) => !!skin && isObj(skin.spine) && isObj(skin.spine.front) && typeof skin.spine.front.skel === 'string';
+export { skinHasModel };
 
 /**
  * A stored selection as the store holds it: `{ [charId]: skinId }`, both non-empty strings, at most
@@ -129,51 +130,9 @@ export function availableSkins(charId) {
   const id = str(charId);
   if (!id) return [];
   const m = data.get('assets');
-  const rec = m && isObj(m.chars) ? m.chars[id] : null;
-  // a record without `skins` still has its own appearance (the 默认 row below), because the picker's global display rule
-  // shows the section for an operator the plugins wrote no skin for (hasAnySkinChoices, docs/SKINS.md)
-  if (!rec) return [];
-  const ownIllust = str(rec.illust);
-  const ownPortrait = str(rec.portrait);
-  const ownAvatar = str(rec.avatar);
-  const rows = [];
-  for (const [skinId, skin] of Object.entries(isObj(rec.skins) ? rec.skins : {})) {
-    if (!str(skinId) || !isObj(skin)) continue;
-    const playable = skinHasModel(skin);
-    // the tile art: the fixed-size portrait family first (a 1:2 box the grid lines up on), then the illustration, then
-    // the avatar; the operator's own portrait when the skin ships none (`fallbackArt`, which the picker draws a little
-    // differently so a plugin that replaced only the model is legible)
-    const ownArt = str(skin.portrait) || str(skin.illust);
-    const portrait = ownArt || ownPortrait;
-    const avatar = str(skin.avatar) || str(skin.illust) || ownAvatar;
-    const illust = str(skin.illust) || portrait;
-    rows.push({
-      id: skinId,
-      name: str(skin.name) || skinId,
-      group: str(skin.group) || '',
-      playable,
-      portrait,
-      avatar,
-      illust,
-      fallbackArt: !ownArt && !str(skin.avatar),
-      own: false,
-    });
-  }
-  // The operator's OWN appearance, always the first row — even for a record the plugins wrote no `skins` under, because
-  // the picker shows the section for every operator as soon as one of them has a skin (hasAnySkinChoices).
-  //
-  // The art is what a plugin wrote for the operator: its 立绘 `chars[<charId>].illust` when there is one — the picture a
-  // plugin replaces for the operator itself (docs/PLUGINS.md §9), which the 默认 tile is the only place to see — else its
-  // portrait, else its avatar. Preferring the 立绘 is deliberate: a plugin may give an operator a picture and no skin at
-  // all, and that picture must be visible rather than staying in the manifest unread. The tile box is 1:2 and crops to
-  // the top, exactly as it already does for a skin that ships only an illust. Never null while the record has any of
-  // the three: an empty art box is the one thing this row must not draw.
-  rows.unshift({
-    id: '', name: '', group: '', playable: true,
-    portrait: ownIllust || ownPortrait, avatar: ownAvatar,
-    illust: ownIllust || ownPortrait, fallbackArt: false, own: true,
-  });
-  return rows;
+  if (!isObj(m)) return [];
+  // the operator's own record (chars[<charId>].skins) plus a content pack's flat catalogue (skins[<skinId>].charId)
+  return skinRows(isObj(m.chars) ? m.chars[id] : null, m.skins, id);
 }
 
 /**

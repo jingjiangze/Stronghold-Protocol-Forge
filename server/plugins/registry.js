@@ -589,6 +589,8 @@ export function readPluginFolder(dir, { app = APP_VERSION, api = PLUGIN_API, whe
     list.take({ problems: [], warnings: stageIssues.map(i => i.text), issues: stageIssues });
     if (isScriptClass(manifest.class)) {
       plugin.script = readScripts(dir,manifest,files);
+      // where the entries live: the match/trusted loaders import `entry.match` from here (server/plugins/matchPlugins.js)
+      plugin.script.dir = dir;
       for (const p of plugin.script.problems) list.problem(p.code,p.message,{where:p.path,detail:p.message});
       if (problems.length) return out(null);
       const gameplayFiles = { ...(c.content.gameplayFiles || c.content.files), ...plugin.script.files };

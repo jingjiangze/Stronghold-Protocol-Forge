@@ -1,0 +1,14 @@
+{
+  "manifest": 2,
+  "id": "mota-coop",
+  "name": "协同共竞",
+  "englishName": "Mota Co-op",
+  "description": "团队经济与救援：结余转化、借钱与欠账、后勤项目、救济、救援窗口。只在带 mota 块的模式里生效。",
+  "version": "1.0.0",
+  "app": ">=0.3.1 <0.4.0",
+  "class": "trusted",
+  "scope": ["room"],
+  "api": 1,
+  "permissions": ["match.code"],
+  "entry": { "match": "match.js" }
+}

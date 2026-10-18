@@ -200,14 +200,18 @@ describe('the wire: welcome, room.state, the match, /healthz, /cs/, BattleSpec, 
     constructor(o) { super(o); RecordingStub.last = o; }
   }
   let srv;
+  let pluginsDir;
   const clients = [];
   before(async () => {
     const { startServer } = await import('../../server/index.js');
-    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true, MatchClass: RecordingStub });
+    // an empty plugins folder: this test is about the vanilla content, not about what this repository ships in plugins/
+    pluginsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sp-wire-plugins-'));
+    srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true, MatchClass: RecordingStub, pluginsDir, mods: false });
   });
   after(async () => {
     await Promise.all(clients.map((c) => c.terminate().catch(() => {})));
     await srv.close();
+    try { fs.rmSync(pluginsDir, { recursive: true, force: true }); } catch { /* temp */ }
   });
 
   test('welcome.content, room.state.content (always the vanilla set) and the match\'s opts.cs', async () => {

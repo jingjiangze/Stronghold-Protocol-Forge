@@ -83,7 +83,7 @@ const wantsTraffic = (query) => /(?:^|&)traffic(?:=(?:1|true|yes))?(?:&|$)/i.tes
  *   plugin studio (server/studio/index.js), or none
  * @returns {(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => void}
  */
-export function createRequestHandler({ serveStatic, health, log, trustProxy = 'auto', studio = null, mods = null, csp = null, trustedRuntime = null }) {
+export function createRequestHandler({ serveStatic, health, log, trustProxy = 'auto', studio = null, mods = null, csp = null, trustedRuntime = null, platformStatus = null }) {
   async function handleRequest(req, res) {
     const url = req.url || '/';
     if (url.length > MAX_URL_LENGTH) { sendError(req, res, 414, '请求地址过长 · URI too long'); return; }
@@ -93,6 +93,11 @@ export function createRequestHandler({ serveStatic, health, log, trustProxy = 'a
     if (studio && studio.handles(parts.rawPath)) { await studio.handle(req, res, parts.rawPath, parts.query); return; }
     // the mod manager (server/mods/): /mod, /mod/status.json and its two writes — before the GET-only rule below
     if (mods && mods.handles(parts.rawPath)) { await mods.handle(req, res, parts.rawPath, parts.query); return; }
+    // the handshake platform's diagnostics (server/platform.js): counts only, never player data
+    if (parts.rawPath === '/api/platform' && (req.method === 'GET' || req.method === 'HEAD')) {
+      sendJson(req, res, 200, platformStatus ? platformStatus() : { enabled: false });
+      return;
+    }
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.setHeader('Allow', 'GET, HEAD');
       sendError(req, res, 405, '不支持的请求方法 · Method not allowed');

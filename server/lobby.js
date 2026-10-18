@@ -270,6 +270,12 @@ export class Room {
     this.mode = mode;
     this.difficulty = difficulty;
     /**
+     * 魔塔 mode module (server/mota/): a rule-set variant of a co-op room, e.g. 'xie' = 协同共竞 → mode_xie_<difficulty>.
+     * null for every official room, so its modeId and room.state stay exactly as before.
+     * @type {string | null}
+     */
+    this.variant = null;
+    /**
      * 「AI 队友最后选择」 (room.setAiPicksLast, GitHub #338; co-op only, off by default): the match's strategy and 机变 drafts
      * put every human seat before every AI seat (Match opts.aiPicksLast). Kept across the room's matches.
      */
@@ -312,6 +318,15 @@ export class Room {
     this.content = null;
     /** Test room (DESIGN §34.8). Set only at create, and only when the process switch is on. Never flipped later. */
     this.test = false;
+    /**
+     * The handshake platform's invite link for this room (server/platform.js), or null when the install has no
+     * platform configured or the registration has not landed yet. Purely presentational: joining still goes through
+     * room.join with this room's own code.
+     * @type {string | null}
+     */
+    this.inviteUrl = null;
+    /** Pending platform timer (retry after a failure / refresh before the platform TTL), cleared with the room. */
+    this.platformTimer = null;
     /** the room's queue (header "Gameplay plugins": Lobby.serial): what is still waiting or running, and its tail */
     this.queue = { pending: 0, tail: Promise.resolve() };
   }
@@ -339,9 +354,14 @@ export class Room {
     return {
       t: 'room.state',
       code: this.code,
+      // the handshake platform's join link (server/platform.js); omitted when there is none, so a room.state without
+      // a platform stays byte-identical
+      ...(this.inviteUrl ? { inviteUrl: this.inviteUrl } : {}),
       hostId: this.hostId,
       mode: this.mode,
       difficulty: this.difficulty,
+      // 魔塔 mode module (server/mota/): omitted for an official room, so a vanilla room.state stays identical
+      ...(this.variant ? { variant: this.variant } : {}),
       aiPicksLast: this.aiPicksLast,
       inMatch: !!this.match,
       seats: this.seats.map((s) => (s
@@ -356,6 +376,14 @@ export class Room {
     };
   }
 }
+
+/** How many times a failed platform registration is retried, and when the link is refreshed (before its 6 h TTL). */
+const PLATFORM_RETRIES = 4;
+const PLATFORM_REFRESH_MS = 5 * 3600 * 1000;
+
+/** Room chat: 80 characters a line, one line a second per session, control characters stripped. */
+const CHAT_MAX_CHARS = 80;
+const CHAT_INTERVAL_MS = 1000;
 
 /** Room registry + lobby message handlers. Pass an instance as the `handler` of net.js Network. */
 export class Lobby {
@@ -390,6 +418,11 @@ export class Lobby {
     /** the match hosts (header "Gameplay plugins"), or null */
     this.hosts = hosts;
     this.log = log;
+    /**
+     * The handshake platform link registry (server/platform.js), attached by server/index.js after construction so
+     * this class needs no knowledge of the environment. null = the feature is off.
+     */
+    this.platform = null;
     this.MatchClass = MatchClass;
     this.getData = getData;
     this.now = now;
@@ -639,6 +672,7 @@ export class Lobby {
       case 'room.join': return this.join(session, msg);
       case 'room.leave': return this.leave(session);
       case 'room.ready': return this.ready(session, msg);
+      case 'room.chat': return this.sayInRoom(session, msg);
       case 'room.setDifficulty': return this.setDifficulty(session, msg);
       case 'room.setAiPicksLast': return this.setAiPicksLast(session, msg);
       case 'room.addBot': return this.addBot(session);
@@ -725,7 +759,7 @@ export class Lobby {
   // room.* handlers
   // ---------------------------------------------------------------------------------------------------
 
-  create(session, { mode, difficulty, test } = {}) {
+  create(session, { mode, difficulty, test, variant } = {}) {
     // A test room exists only when the process switch allowed it. The check runs before the room is built.
     if (test === true && this.testEnabled !== true) return fail(ERR.TEST_DISABLED);
     const cur = this.roomOf(session);
@@ -745,6 +779,12 @@ export class Lobby {
     if (cur) this.removeMember(cur, session.playerId);
     const room = new Room(code, mode, difficulty, this.now());
     room.test = test === true;
+    // 魔塔 mode module (server/mota/): a rule-set variant of a co-op room ('xie' = 协同共竞). Accepted only when this
+    // installation actually ships mode_<variant>_<difficulty>; anything else is dropped rather than refused, so an
+    // older client cannot fail room creation by sending an unknown field.
+    const modes = (() => { const d = this.getData(); return d && d.modes && typeof d.modes === 'object' ? d.modes : {}; })();
+    room.variant = mode === 'coop' && typeof variant === 'string' && /^[A-Za-z0-9_.:-]{1,64}$/.test(variant)
+      && Object.hasOwn(modes, modeIdFor(mode, difficulty, variant)) ? variant : null;
     room.content = this.vanilla;
     // the server owner's default plugins (plugins/config.json `default`; header "Gameplay plugins"): none — the original game
     const defaults = this.plugins?.defaults?.() || [];
@@ -762,6 +802,7 @@ export class Lobby {
     session.pendingResult = null;
     this.log.info(`[lobby] ${code} created (${mode}/${difficulty}${room.test ? ', test' : ''}) by ${session.name}`);
     this.broadcastState(room);
+    this.announcePlatformRoom(room);
     return OK;
   }
 
@@ -866,6 +907,12 @@ export class Lobby {
     // a plugin mode chosen (header "Gameplay plugins") carries its own difficulty: picking one leaves it
     if (room.difficulty !== difficulty || room.content?.modeId) {
       room.difficulty = difficulty;
+      // 魔塔 mode module: keep the variant only while this difficulty ships mode_<variant>_<difficulty>
+      if (room.variant) {
+        const d = this.getData();
+        const modes = d && d.modes && typeof d.modes === 'object' ? d.modes : {};
+        if (!Object.hasOwn(modes, modeIdFor(room.mode, difficulty, room.variant))) room.variant = null;
+      }
       if (room.content?.modeId) { const rest = { ...room.content }; delete rest.modeId; room.content = Object.freeze(rest); }
       for (const s of room.seats) if (s && !s.isBot && s.playerId !== room.hostId) s.ready = false;
       this.broadcastState(room);
@@ -1378,13 +1425,15 @@ export class Lobby {
     let seed = 0;
     try { seed = this.seedFn() >>> 0; } catch { seed = randomInt(2 ** 32); }
     const modded = room.modded;
+    // the trusted match modules this room's plugins bring (server/plugins/matchPlugins.js); [] for a vanilla room
+    const matchPlugins = (room.content?.plugins || []).map((p) => this.matchPlugins?.get?.(p.id)).filter(Boolean);
     try {
       const opts = {
         roomCode: room.code,
         mode: room.mode,
         difficulty: room.difficulty,
         // a plugin mode the host chose (header "Gameplay plugins"), else the official mode of the difficulty
-        modeId: room.content?.modeId || modeIdFor(room.mode, room.difficulty),
+        modeId: room.content?.modeId || modeIdFor(room.mode, room.difficulty, room.variant || null),
         // 「AI 队友最后选择」 (GitHub #338): fixed for the match
         aiPicksLast: room.mode !== 'solo' && room.aiPicksLast === true,
         seats,
@@ -1407,6 +1456,8 @@ export class Lobby {
         // KITTED_CHARS, and the worker payload / test journal of a normal match do not grow a key.
         ...(modded ? { kitted: this.kittedFor(room) } : {}),
         ...(room.content?.rules ? { rules: room.content.rules } : {}),
+        // trusted match modules of the plugins this room selected (entry.match); omitted for a vanilla room
+        ...(matchPlugins.length ? { matchPlugins } : {}),
         data,
         log: this.log,
         now: this.now,
@@ -1782,12 +1833,43 @@ export class Lobby {
   }
 
   /**
+   * Publish this room on the handshake platform and rebroadcast once the link exists (server/platform.js). Fire and
+   * forget by design: a failed registration leaves inviteUrl null and the room keeps the client's own link.
+   * Two timers keep it honest — a backoff retry after a failure (15 s / 30 s / 1 min / 2 min) and a refresh before the
+   * platform's room TTL (the link registry caches one for 5 h).
+   */
+  announcePlatformRoom(room, attempt = 0) {
+    const platform = this.platform;
+    if (!platform || room.mode === 'solo' || room.disposed) return;
+    if (room.platformTimer) { clearTimeout(room.platformTimer); room.platformTimer = null; }
+    Promise.resolve()
+      .then(() => platform.register(room.code))
+      .then((res) => {
+        if (room.disposed) return;
+        if (!res || !res.joinUrl) {
+          if (attempt < PLATFORM_RETRIES) {
+            room.platformTimer = setTimeout(() => this.announcePlatformRoom(room, attempt + 1), 15000 * 2 ** Math.min(attempt, 3));
+            room.platformTimer.unref?.();
+          }
+          return;
+        }
+        if (room.inviteUrl !== res.joinUrl) { room.inviteUrl = res.joinUrl; this.broadcastState(room); }
+        room.platformTimer = setTimeout(() => this.announcePlatformRoom(room, 0), PLATFORM_REFRESH_MS);
+        room.platformTimer.unref?.();
+      })
+      .catch((e) => this.log.warn?.(`[platform] ${room.code} registration failed: ${e?.message || e}`));
+  }
+
+  /**
    * Delete a room, detach its members (room.closed unless the room simply emptied) and dispose its match.
    * @param {Room} room @param {string} reason
    */
   disposeRoom(room, reason) {
     if (room.disposed) return;
     room.disposed = true;
+    // the platform would expire the entry on its own (6 h), but a closed room should not keep handing out a link
+    if (room.platformTimer) { clearTimeout(room.platformTimer); room.platformTimer = null; }
+    this.platform?.release?.(room.code);
     if (this.rooms.get(room.code) === room) { this.trustedRuntime?.event('roomClosed',{room:room.toState()}); this.rooms.delete(room.code); }
     const ctx = room.matchCtx;
     room.match = null;
@@ -1860,6 +1942,30 @@ export class Lobby {
 
   sendState(room, session) {
     sendSession(session, room.toState());
+  }
+
+  /**
+   * room.chat: one line to the whole room — players and spectators, the sender included. The server is the authority:
+   * control characters are stripped, the text is trimmed and cut to 80 characters, an empty line is refused, and one
+   * session may send one line a second. Nothing is stored: the room is the only channel, there is no history and no
+   * private message, so a later joiner sees only what is said after it arrived.
+   * @param {any} session @param {{ text?: unknown }} msg
+   */
+  sayInRoom(session, msg) {
+    const room = this.roomOf(session);
+    if (!room) return fail(ERR.NOT_IN_ROOM);
+    const now = this.now();
+    if (now - (session.chatAt || 0) < CHAT_INTERVAL_MS) return fail(ERR.RATE);
+    const text = String(msg && typeof msg.text === 'string' ? msg.text : '')
+      .replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, CHAT_MAX_CHARS);
+    if (!text) return fail(ERR.BAD_MSG, 'empty');
+    session.chatAt = now;
+    const seat = room.seatOf(session.playerId);
+    this.broadcastRoom(room, {
+      t: 'room.chat', playerId: session.playerId, name: (seat && seat.name) || session.name || '',
+      text, spectator: !seat, seat: seat ? seat.seat : null, at: now,
+    });
+    return OK;
   }
 
   /** Match broadcast: encode once, send to every connected member. @returns {string | null} the encoded frame */

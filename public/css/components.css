@@ -998,6 +998,30 @@
 .sp-in-match .toast-host { top: calc(1.34rem + var(--sa-t, 0px)); }
 .sp-in-match .conn-banner { top: calc(1.34rem + var(--sa-t, 0px)); bottom: auto; }
 .sp-in-match.sp-conn .toast-host { top: calc(2.0rem + var(--sa-t, 0px)); }
+
+/* A page opened through the handshake platform (server/platform.js): the first reconnect attempts show this compact
+   badge instead of the full banner, so a tunnel blip never covers the board. It never counts as `sp-conn` (toasts stay
+   where they are) and it never takes a click — the player does not need to act on it. */
+.conn-badge {
+  position: fixed;
+  top: .18rem;
+  right: .18rem;
+  z-index: var(--z-conn);
+  display: inline-flex;
+  align-items: center;
+  gap: .08rem;
+  padding: .06rem .14rem;
+  border-radius: .2rem;
+  background: rgba(24, 12, 8, .88);
+  border: 1px solid rgba(232, 90, 26, .45);
+  color: var(--text-lo);
+  font-size: calc(.14 * var(--t));
+  pointer-events: none;
+  animation: conn-in-badge var(--t-med) var(--ease-out);
+}
+@keyframes conn-in-badge { from { opacity: 0; } }
+.conn-badge .icon { width: .18rem; height: .18rem; color: var(--orange-hi); }
+.sp-in-match .conn-badge { top: calc(1.34rem + var(--sa-t, 0px)); }
 .conn-banner .icon { width: .22rem; height: .22rem; color: var(--orange-hi); }
 .conn-banner__sub { color: var(--text-lo); font-family: var(--font-num); font-size: calc(.15 * var(--t)); }
 
@@ -1119,6 +1143,19 @@
 .plugpanel__reapply { display: flex; flex-wrap: wrap; align-items: center; gap: .08rem .12rem; }
 .ui-slot { display: flex; flex-direction: column; gap: .04rem; min-width: 0; }
 .ui-slot:empty { display: none; }
+
+/* Room chat (room.chat, public/js/ui/chat.js): a compact channel under the seats — no history, no private message. */
+.room-chat { margin: .1rem auto 0; width: min(44rem, 100%); padding: .1rem .12rem; border: 1px solid var(--line-2); border-radius: .1rem; background: rgba(0, 0, 0, .22); }
+.room-chat__log { display: flex; flex-direction: column; gap: .04rem; max-height: 7rem; overflow-y: auto; }
+.room-chat__line { font-size: calc(.15 * var(--t)); line-height: 1.35; word-break: break-word; }
+.room-chat__who { color: var(--mint-400); margin-right: .08rem; }
+.room-chat__who.is-spec { color: var(--text-lo); }
+.room-chat__empty { margin: 0; font-size: calc(.14 * var(--t)); }
+.room-chat__form { display: flex; gap: .08rem; margin-top: .08rem; }
+.room-chat__input { flex: 1 1 auto; min-width: 0; padding: .06rem .1rem; border-radius: .06rem; border: 1px solid var(--line-2); background: rgba(0, 0, 0, .35); color: var(--text-hi); font-size: calc(.15 * var(--t)); }
+/* A repeatable slot's per-item wrapper (the shop cards): the wrapper adds no box, so the card and its slot stay the
+   flex children they were before the slot existed. */
+.slotw { display: contents; }
 /* [ASSUMED] color-scheme: dark clears the iframe's opaque white canvas. A background the plugin paints still shows. */
 .ui-slot__frame { width: 100%; border: 0; background: transparent; color-scheme: dark; }
 .ui-slot__tabs { display: flex; flex-wrap: wrap; gap: .02rem; }

@@ -69,6 +69,8 @@ function schemaMatches(schema, value, root) {
     if (typeof value !== 'string') return false;
     if (schema.minLength != null && value.length < schema.minLength) return false;
     if (schema.maxLength != null && value.length > schema.maxLength) return false;
+    // the intent message names its type with a pattern (g.* / p.msg); a contract the helper cannot check is not a contract
+    if (schema.pattern != null && !new RegExp(schema.pattern).test(value)) return false;
     return true;
   }
   if (schema.type === 'integer') return Number.isInteger(value);
@@ -98,8 +100,14 @@ describe('the postMessage contract', () => {
       { v: 1, t: 'storage', op: 'get', key: 'total' },
       { v: 1, t: 'storage', op: 'set', key: 'total', value: 4 },
       { v: 1, t: 'storage', op: 'delete', key: 'total' },
+      // a content panel's gameplay intent (g.* / its own p.msg): the only intents a panel may send
+      { v: 1, t: 'intent', msg: { t: 'g.econ.request', body: { to: 'p_1', amount: 1 } } },
+      { v: 1, t: 'intent', msg: { t: 'p.msg', type: 'g.econ.relief' } },
     ];
     const no = [
+      { v: 1, t: 'intent', msg: { t: 'room.setPlugins' } },
+      { v: 1, t: 'intent', msg: { t: 'b.result' } },
+      { v: 1, t: 'intent', msg: { t: 'hello' } },
       { v: 1, t: 'ready', extra: true },
       { v: 1, t: 'slot', slot: 'nope' },
       { v: 1, t: 'resize', height: '72' },

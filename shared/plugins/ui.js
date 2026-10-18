@@ -33,7 +33,7 @@
 //
 // Error codes (PLUGIN_*) stay in this file. Claude merges them into shared/plugins/errors.js (C6) at integration.
 
-import { UI_SLOT_IDS, isPackPath, isPluginId } from './manifest.js';
+import { UI_SLOT_IDS, UI_SLOT_REPEATABLE, isPackPath, isPluginId } from './manifest.js';
 import { utf8 } from '../sha256.js';
 
 export { UI_SLOT_IDS as UI_SLOTS };
@@ -83,18 +83,27 @@ export const UI_ERRORS = Object.freeze({
 });
 
 /** Plugin → host, postMessage API v1. Anything else is refused. `stats` is a read of the battle on screen, never `g.unitStats`. */
-export const UI_PLUGIN_MESSAGES = Object.freeze(['ready', 'slot', 'resize', 'storage', 'notice', 'stats']);
+export const UI_PLUGIN_MESSAGES = Object.freeze(['ready', 'slot', 'resize', 'storage', 'notice', 'stats', 'intent']);
 /** Host → plugin, postMessage API v1. */
 export const UI_HOST_MESSAGES = Object.freeze(['welcome', 'state', 'battle', 'stats', 'storage', 'limit', 'slot', 'rejected', 'result', 'net']);
 const PLUGIN_TYPES = new Set(UI_PLUGIN_MESSAGES);
 const HOST_TYPES = new Set(UI_HOST_MESSAGES);
 
 /**
- * A client→server type (shared/protocol.js C2S): hello, ping, room.*, g.*, b.*.
+ * The client→server intents a content panel may ask for: the gameplay intents (`g.*`) and a trusted match plugin's own
+ * message (`p.msg`, bound to the panel's own plugin by the host). Everything else a socket may send stays out:
+ * `room.*` (room lifecycle, plugin selection) and `b.*` (a battle report is the page's own authority, never a panel's),
+ * and so do `hello`/`ping`.
+ * @param {unknown} t
+ */
+export const isPanelIntentType = (t) => typeof t === 'string' && (t.startsWith('g.') || t === 'p.msg');
+
+/**
+ * A client→server type (shared/protocol.js C2S): hello, ping, room.*, g.*, b.*, p.*.
  * The unit test asserts every current C2S key matches.
  * @param {unknown} s
  */
-export const isIntentType = (s) => typeof s === 'string' && /^(?:hello|ping|room\.[A-Za-z][A-Za-z0-9]*|g\.[A-Za-z][A-Za-z0-9]*|b\.[A-Za-z][A-Za-z0-9]*)$/.test(s);
+export const isIntentType = (s) => typeof s === 'string' && /^(?:hello|ping|room\.[A-Za-z][A-Za-z0-9]*|g\.[A-Za-z][A-Za-z0-9]*|b\.[A-Za-z][A-Za-z0-9]*|p\.[A-Za-z][A-Za-z0-9]*)$/.test(s);
 
 /**
  * Whether `value` is, or carries, a match intent. A plugin must not send one (no auto-play, no cheat).
@@ -123,6 +132,28 @@ const finite = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 const text = (v, max) => (typeof v === 'string' ? v.slice(0, max) : null);
 
 /**
+ * A content panel's gameplay intent: `{ v: 1, t: 'intent', msg: { t: 'g.…', … } }` or a `p.msg` for the panel's own
+ * plugin. The panel never names its own plugin id for `p.msg` — the host overwrites `plugin` with the frame's id, so one
+ * panel cannot speak for another. The message is validated again by shared/protocol.js validateC2S when it is sent.
+ * @param {Record<string, any>} raw
+ * @returns {{ ok: true, msg: Record<string, unknown> } | { ok: false, reason: 'intent' | 'shape' }}
+ */
+export function validatePanelIntent(raw) {
+  if (!isObj(raw) || !isObj(raw.msg)) return { ok: false, reason: 'shape' };
+  if (!Object.keys(raw).every((k) => k === 'v' || k === 't' || k === 'msg')) return { ok: false, reason: 'shape' };
+  const inner = raw.msg;
+  if (!isPanelIntentType(inner.t)) return { ok: false, reason: 'intent' };
+  // only the message's own `t` may name an intent; no other intent-typed key may ride along
+  for (const k of Object.keys(inner)) {
+    if (k === 't') continue;
+    if (isIntentType(k)) return { ok: false, reason: 'intent' };
+  }
+  // a p.msg body is the plugin's own data; it may not smuggle a second intent inside
+  if (inner.t === 'p.msg' && isMatchIntent(inner.body)) return { ok: false, reason: 'intent' };
+  return { ok: true, msg: { v: 1, t: 'intent', msg: { ...inner } } };
+}
+
+/**
  * @param {unknown} raw
  * @returns {{ ok: true, msg: Record<string, unknown> } | { ok: false, reason: 'intent' | 'shape' | 'version' | 'size' }}
  */
@@ -131,8 +162,10 @@ export function validatePluginMessage(raw) {
   let size = 0;
   try { size = JSON.stringify(raw).length; } catch { return { ok: false, reason: 'shape' }; }
   if (size > UI_LIMITS.messageBytes) return { ok: false, reason: 'size' };
-  if (isMatchIntent(raw)) return { ok: false, reason: 'intent' };
   if (raw.v !== UI_API) return { ok: false, reason: 'version' };
+  // a panel's gameplay intent (g.* / its own p.msg): checked here, then again by the socket's validateC2S
+  if (raw.t === 'intent') return validatePanelIntent(raw);
+  if (isMatchIntent(raw)) return { ok: false, reason: 'intent' };
   const t = raw.t;
   if (typeof t !== 'string' || !PLUGIN_TYPES.has(t)) return { ok: false, reason: 'shape' };
   const keys = Object.keys(raw);
@@ -262,34 +295,53 @@ export function checkStorageWrite(entries, key, value) {
 }
 
 /**
- * One slot per plugin, and one holder per slot in this table. The match shows tabs when several plugins ask for one slot. `allowed` is the plugin's declared slots.
+ * One slot per plugin. Every slot takes one holder — the match shows tabs when several plugins ask for one slot — except
+ * the repeatable ones (`UI_SLOT_REPEATABLE`: a container is rendered once per shop card), which any number of plugins
+ * may hold at the same time, each mounting into its own host element. `allowed` is the plugin's declared slots.
+ * @param {{ repeatable?: readonly string[] }} [opts]
  * @returns {{ request: (pluginId: string, slot: string, allowed: string[]) => { ok: true, slot: string } | { ok: false, error: string },
- *   release: (pluginId: string) => void, slotOf: (pluginId: string) => string | null, holder: (slot: string) => string | null }}
+ *   release: (pluginId: string) => void, slotOf: (pluginId: string) => string | null, holder: (slot: string) => string | null,
+ *   holders: (slot: string) => string[], isRepeatable: (slot: string) => boolean }}
  */
-export function createSlotTable() {
+export function createSlotTable({ repeatable = UI_SLOT_REPEATABLE } = {}) {
   /** @type {Map<string, string>} */
   const byPlugin = new Map();
   /** @type {Map<string, string>} */
   const bySlot = new Map();
+  /** @type {Map<string, Set<string>>} */
+  const repeatHolders = new Map();
+  const isRepeatable = (slot) => Array.isArray(repeatable) && repeatable.includes(slot);
   return {
     request(pluginId, slot, allowed) {
       if (!UI_SLOT_IDS.includes(slot) || !Array.isArray(allowed) || !allowed.includes(slot)) return { ok: false, error: UI_ERRORS.PLUGIN_SLOT };
       const cur = byPlugin.get(pluginId);
       if (cur === slot) return { ok: true, slot };
-      const holder = bySlot.get(slot);
-      if (holder && holder !== pluginId) return { ok: false, error: UI_ERRORS.PLUGIN_SLOT };
-      if (cur) bySlot.delete(cur);
+      if (!isRepeatable(slot)) {
+        const holder = bySlot.get(slot);
+        if (holder && holder !== pluginId) return { ok: false, error: UI_ERRORS.PLUGIN_SLOT };
+      }
+      if (cur) {
+        if (isRepeatable(cur)) { const set = repeatHolders.get(cur); if (set) { set.delete(pluginId); if (!set.size) repeatHolders.delete(cur); } }
+        else if (bySlot.get(cur) === pluginId) bySlot.delete(cur);
+      }
       byPlugin.set(pluginId, slot);
-      bySlot.set(slot, pluginId);
+      if (isRepeatable(slot)) { const set = repeatHolders.get(slot) || new Set(); set.add(pluginId); repeatHolders.set(slot, set); }
+      else bySlot.set(slot, pluginId);
       return { ok: true, slot };
     },
     release(pluginId) {
       const cur = byPlugin.get(pluginId);
-      if (cur && bySlot.get(cur) === pluginId) bySlot.delete(cur);
+      if (cur) {
+        if (isRepeatable(cur)) { const set = repeatHolders.get(cur); if (set) { set.delete(pluginId); if (!set.size) repeatHolders.delete(cur); } }
+        else if (bySlot.get(cur) === pluginId) bySlot.delete(cur);
+      }
       byPlugin.delete(pluginId);
     },
     slotOf: (pluginId) => byPlugin.get(pluginId) || null,
-    holder: (slot) => bySlot.get(slot) || null,
+    // a repeatable slot has no single holder: the callers' "is it taken?" answer must be "no", or nobody could share it
+    holder: (slot) => (isRepeatable(slot) ? null : bySlot.get(slot) || null),
+    holders: (slot) => (isRepeatable(slot) ? [...(repeatHolders.get(slot) || [])] : (bySlot.get(slot) ? [bySlot.get(slot)] : [])),
+    isRepeatable,
   };
 }
 
@@ -660,9 +712,12 @@ const scalarPref = (v) => {
  * @param {string[]} slots
  * @param {{ version?: unknown, lang?: unknown, plugins?: unknown, prefs?: unknown, cs?: unknown }} [info]
  *   Omitted: the message stays `{ v, t, id, slots }`.
+ * @param {string | null} [hostKey] the host element's key when the slot is repeatable (one frame per shop card)
  */
-export function hostWelcome(id, slots, info) {
+export function hostWelcome(id, slots, info, hostKey = null) {
   const msg = { v: UI_API, t: 'welcome', id, slots: [...slots] };
+  // a repeatable slot mounts one frame per host: the panel learns which one it is (its own card) from this key
+  if (typeof hostKey === 'string' && /^[A-Za-z0-9_.#-]{1,32}$/.test(hostKey)) msg.hostKey = hostKey;
   if (!isObj(info)) return msg;
   if (typeof info.version === 'number' && Number.isFinite(info.version)) msg.version = info.version;
   if (typeof info.lang === 'string' && info.lang) msg.lang = info.lang.slice(0, 16);

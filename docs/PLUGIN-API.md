@@ -127,6 +127,7 @@ replacement. No route or frozen plugin grammar member is added; the stable surfa
 | `permission.ui.frame` | stable | 0.3.0 | `shared/plugins/manifest.js#PERMISSIONS` |
 | `permission.trusted.page` | experimental | 0.3.0 | `shared/plugins/manifest.js#PERMISSIONS` |
 | `permission.trusted.server` | experimental | 0.3.0 | `shared/plugins/manifest.js#PERMISSIONS` |
+| `permission.match.code` | experimental | 0.3.0 | `shared/plugins/manifest.js#PERMISSIONS` |
 | `class.lang` | stable | 0.3.0 | `shared/plugins/manifest.js#PLUGIN_CLASSES` |
 | `class.cosmetic` | stable | 0.3.0 | `shared/plugins/manifest.js#PLUGIN_CLASSES` |
 | `class.content` | stable | 0.3.0 | `shared/plugins/manifest.js#PLUGIN_CLASSES` |
@@ -182,6 +183,19 @@ replacement. No route or frozen plugin grammar member is added; the stable surfa
 | `overlay.chars.skins.*` | stable | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
 | `overlay.enemies.icon` | stable | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
 | `overlay.enemies.spine` | stable | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
+| `overlay.skins.charId` | experimental | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
+| `overlay.skins.name` | experimental | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
+| `overlay.skins.brand` | experimental | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
+| `overlay.skins.series` | experimental | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
+| `overlay.skins.officialId` | experimental | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
+| `overlay.skins.wikiIndex` | experimental | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
+| `overlay.skins.charName` | experimental | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
+| `overlay.skins.desc` | experimental | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
+| `overlay.skins.illustration` | experimental | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
+| `overlay.skins.avatar` | experimental | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
+| `overlay.skins.portrait` | experimental | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
+| `overlay.skins.spine.front` | experimental | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
+| `overlay.skins.spine.back` | experimental | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
 | `overlay.tokens.avatar` | stable | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
 | `overlay.tokens.spine` | stable | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
 | `overlay.bonds.*` | stable | 0.3.0 | `shared/plugins/visual.js#ASSET_CONTAINERS` |
@@ -292,6 +306,7 @@ replacement. No route or frozen plugin grammar member is added; the stable surfa
 | `ui.message.plugin.storage` | stable | 0.3.0 | `shared/plugins/ui.js#UI_PLUGIN_MESSAGES` |
 | `ui.message.plugin.notice` | stable | 0.3.0 | `shared/plugins/ui.js#UI_PLUGIN_MESSAGES` |
 | `ui.message.plugin.stats` | stable | 0.3.0 | `shared/plugins/ui.js#UI_PLUGIN_MESSAGES` |
+| `ui.message.plugin.intent` | experimental | 0.3.0 | `shared/plugins/ui.js#UI_PLUGIN_MESSAGES` |
 | `ui.message.host.welcome` | stable | 0.3.0 | `shared/plugins/ui.js#UI_HOST_MESSAGES` |
 | `ui.message.host.state` | stable | 0.3.0 | `shared/plugins/ui.js#UI_HOST_MESSAGES` |
 | `ui.message.host.battle` | stable | 0.3.0 | `shared/plugins/ui.js#UI_HOST_MESSAGES` |
@@ -306,6 +321,15 @@ replacement. No route or frozen plugin grammar member is added; the stable surfa
 | `ui.slot.result.tab` | stable | 0.3.0 | `shared/plugins/manifest.js#UI_SLOT_IDS` |
 | `ui.slot.stats.tab` | stable | 0.3.0 | `shared/plugins/manifest.js#UI_SLOT_IDS` |
 | `ui.slot.room.panel` | stable | 0.3.0 | `shared/plugins/manifest.js#UI_SLOT_IDS` |
+| `ui.slot.root.overlays` | experimental | 0.3.0 | `shared/plugins/manifest.js#UI_SLOT_IDS` |
+| `ui.slot.root.guide` | experimental | 0.3.0 | `shared/plugins/manifest.js#UI_SLOT_IDS` |
+| `ui.slot.screen.game.aside` | experimental | 0.3.0 | `shared/plugins/manifest.js#UI_SLOT_IDS` |
+| `ui.slot.screen.result.footer` | experimental | 0.3.0 | `shared/plugins/manifest.js#UI_SLOT_IDS` |
+| `ui.slot.screen.game.shopCard` | experimental | 0.3.0 | `shared/plugins/manifest.js#UI_SLOT_IDS` |
+| `ui.slot.screen.game.bondStrip` | experimental | 0.3.0 | `shared/plugins/manifest.js#UI_SLOT_IDS` |
+| `ui.slot.screen.game.hud` | experimental | 0.3.0 | `shared/plugins/manifest.js#UI_SLOT_IDS` |
+| `ui.slot.screen.game.overlay` | experimental | 0.3.0 | `shared/plugins/manifest.js#UI_SLOT_IDS` |
+| `ui.slot.screen.loadout.detail` | experimental | 0.3.0 | `shared/plugins/manifest.js#UI_SLOT_IDS` |
 | `studio.route.GET /studio/api/info` | stable | 0.3.0 | `server/studio/index.js#STUDIO_ROUTES` |
 | `studio.route.GET /studio/api/trial-options` | stable | 0.3.0 | `server/studio/index.js#STUDIO_ROUTES` |
 | `studio.route.POST /studio/api/trial` | stable | 0.3.0 | `server/studio/index.js#STUDIO_ROUTES` |

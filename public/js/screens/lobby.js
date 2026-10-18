@@ -162,6 +162,12 @@ export function parseRoomParam(search) {
   }
 }
 
+/**
+ * The handshake platform's form flags on the URL — defined in ui/connLogic.js (vendor-free, so it is testable) and
+ * re-exported here for the callers that already import the lobby's parsing helpers.
+ */
+export { parseRelayParam } from '../ui/connLogic.js';
+
 /** Recently joined/created co-op room codes (most recent first). */
 export function recentRooms() {
   const list = loadPref('recentRooms', []);
@@ -361,6 +367,11 @@ export function LobbyScreen() {
         </button>
       </div>
     </header>
+
+    ${/* the app-level mount points (the content's root.overlays / root.guide). The lobby and the match screen are
+         never mounted together, so each screen rendering them is enough for the panel to find one. */ ''}
+    <div class="ui-slot" data-ui-slot="root.overlays" aria-label=${t('界面插件')} dangerouslySetInnerHTML=${{ __html: '' }}></div>
+    <div class="ui-slot" data-ui-slot="root.guide" aria-label=${t('界面插件')} dangerouslySetInnerHTML=${{ __html: '' }}></div>
 
     <div class="lobby-body screen__scroll">
       <section class="lobby-left">

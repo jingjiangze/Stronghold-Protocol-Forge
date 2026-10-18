@@ -498,10 +498,19 @@ export const C2S = {
   ping: { c: (v) => typeof v === 'number' && Number.isFinite(v) },
   // test: only the literal true (DESIGN §34.8). Omit it for a normal room — `false` is a bad field, so a
   // string cannot sneak in as "not a test". The server still refuses it unless SP_TEST_MODE is on.
-  'room.create': { mode: (v) => v === 'solo' || v === 'coop', difficulty: (v) => DIFFICULTIES.includes(v), test: (v) => v === true, $optional: ['test'] },
+  // variant (魔塔 mode module, server/mota/): a rule-set variant of a co-op room — mode_<variant>_<difficulty>
+  // ('xie' = 协同共竞). Absent for every official mode, so a vanilla client's room.create is unchanged.
+  'room.create': { mode: (v) => v === 'solo' || v === 'coop', difficulty: (v) => DIFFICULTIES.includes(v), test: (v) => v === true,
+    variant: (v) => v == null || (typeof v === 'string' && v.length > 0 && v.length <= 64 && /^[A-Za-z0-9_.:-]+$/.test(v)),
+    $optional: ['test', 'variant'] },
   'room.join': { $optional: ['testAck'], testAck: (v) => v === true, code: (v) => isStr(v, ROOM_CODE_LEN + 2) && /^[A-Za-z0-9]+$/.test(v) },
   'room.leave': {},
   'room.ready': { ready: isBool },
+  // room chat (one line at a time): the server strips control characters, trims, cuts to 80 characters, refuses an
+  // empty line and allows one line a second per session, then broadcasts it to the whole room — players and
+  // spectators alike, including the sender (server/lobby.js sayInRoom). The text is cut before it is sent; a client
+  // that sends more is not refused, it is trimmed.
+  'room.chat': { text: (v) => isStr(v, 240) },
   'room.setDifficulty': { difficulty: (v) => DIFFICULTIES.includes(v) },
   // the co-op room option 「AI 队友最后选择」 (GitHub #338; host, before the match): the strategy and 机变 drafts order every
   // human seat before every AI seat (server/match/match/phases.js humansFirst); room.state.aiPicksLast
@@ -594,6 +603,11 @@ export const C2S = {
   // again by shared/testMode.js parseTestArgs (ids, bounds). Unknown keys inside args fail there, not here.
   'g.test': { cmd: isTestCommand, args: (v) => v === undefined || (isPlain(v) && Object.keys(v).length <= 8), $optional: ['args'] },
 
+  // A trusted match plugin's own message (PLUGIN API v2, docs/PLUGINS.md §13; server/match/plugins.js). `plugin` is a
+  // plugin id the room selected; `type` names one of that plugin's handlers; `body` is the plugin's own payload.
+  // The match answers BAD_MSG when no selected plugin has that type, so a vanilla match is unchanged.
+  'p.msg': { plugin: isPluginId, type: (v) => isStr(v, 48), body: (v) => v === undefined || isPlain(v), $optional: ['body'] },
+
   // client-side combat (DESIGN §14): the authoritative client of a field reports its battle; a 联防 field adds
   // `left` = { [leakerId]: its enemies still standing (unspawned, alive, or through again) } (server/sim/spec.js
   // uniteLeft; user playtest #6 item 7 — the leakers' live counter). `resolved` = the HUD capsule's numerator: the
@@ -631,6 +645,8 @@ export const C2S = {
 export const S2C = [
   'welcome', 'ok', 'error', 'pong',
   'room.state', 'room.closed',
+  // a room chat line (server/lobby.js sayInRoom): { playerId, name, text, spectator, seat, at } to every member
+  'room.chat',
   'm.public', 'm.private', 'm.field', 'm.toast', 'm.ticker', 'm.emote', 'm.result',
   // m.layer { playerId, bondId, add } — own live prep layer gain; ephemeral, never replayed on resync.
   'm.layer',
@@ -647,6 +663,9 @@ export const S2C = [
   'b.rehearsal', 'b.rehearsalCancel',
   // server-run combat streaming (legacy / SP_COMBAT=server only)
   'b.snap', 'b.ev',
+  // a trusted match plugin's message: p.msg { plugin, type, body, from? } — only the plugins the room selected send or
+  // receive it (server/match/plugins.js)
+  'p.msg',
 ];
 
 /**

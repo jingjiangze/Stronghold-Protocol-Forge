@@ -323,6 +323,8 @@ function composeContentSet({ registry, ids = [], checkDataOnly = false }) {
     return source ? [[p.id, { source, hash: nodeSha256(Buffer.from(source)) }]] : [];
   }));
   const scripts = plugins.filter(p => p.script).map(p => ({ id:p.id, version:p.manifest.version, class:p.class,
+    // where a match host imports `entry.match` from (server/plugins/matchPlugins.js); never leaves the server
+    entry:p.manifest.entry, dir:p.script.dir,
     // [ASSUMED] For every script, identify the checked gameplay snapshot rather than its raw lock
     // (the latter includes the notice bytes). Owner admission still checks the complete, original lock hash.
     execution:p.script.execution || 'trusted', hash: noticeFree.has(p.id)

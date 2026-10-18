@@ -1696,6 +1696,7 @@ function MatchScreen() {
           <${BondStrip} bonds=${stripBonds} layersDisabled=${layersDisabled} openId=${bondPop && bondPop.ownerId === strip.ownerId ? bondPop.bondId : null}
             owner=${strip.name} onOpen=${(id) => openBond(id, strip.ownerId, 'strip')} />
         </div>
+        <div class="ui-slot" data-ui-slot="screen.game.bondStrip" aria-label=${t('界面插件')} dangerouslySetInnerHTML=${{ __html: '' }}></div>
       </div>
 
       <${TeamPanel} pub=${pub} myId=${myId} watching=${watchingNow} bubbles=${bubbles} onWatch=${watchPlayer} cap=${gd.config?.lpCapPerRound ?? 10} uniteLocal=${uniteLocal}
@@ -1719,6 +1720,9 @@ function MatchScreen() {
         reward=${phase === PHASE.PREP && !rewardMin ? priv?.shop?.rewardOffer || null : null}
         onReward=${(i) => actions.reward(i)} onRewardLater=${() => setRewardMin(true)} onArm=${setArmedCard} />` : null}
 
+      ${/* the shop-card mount point (the content's screen.game.shopCard); one host here, not one per card */ ''}
+      ${showShop ? html`<div class="ui-slot" data-ui-slot="screen.game.shopCard" aria-label=${t('界面插件')} dangerouslySetInnerHTML=${{ __html: '' }}></div>` : null}
+
       ${phase === PHASE.PREP && priv?.shop?.rewardOffer ? html`<${RewardOverlay} priv=${priv} minimized=${rewardMin || barCollapsed}
         onMinimize=${(m) => { setRewardMin(m); if (!m) setCollapsed(false); }} />` : null}
 
@@ -1733,6 +1737,12 @@ function MatchScreen() {
       <${Ticker} />
 
       <div class="ui-slot gm__ui-slot" data-ui-slot="hud.right" aria-label=${t('界面插件')} dangerouslySetInnerHTML=${{ __html: '' }}></div>
+      ${/* the content's screen-scoped mount points (UI_SLOT_IDS); an empty .ui-slot takes no layout space
+           (.ui-slot:empty { display: none }) */ ''}
+      <div class="ui-slot gm__ui-slot" data-ui-slot="screen.game.aside" aria-label=${t('界面插件')} dangerouslySetInnerHTML=${{ __html: '' }}></div>
+      <div class="ui-slot gm__ui-slot" data-ui-slot="screen.game.overlay" aria-label=${t('界面插件')} dangerouslySetInnerHTML=${{ __html: '' }}></div>
+      <div class="ui-slot" data-ui-slot="root.overlays" aria-label=${t('界面插件')} dangerouslySetInnerHTML=${{ __html: '' }}></div>
+      <div class="ui-slot" data-ui-slot="root.guide" aria-label=${t('界面插件')} dangerouslySetInnerHTML=${{ __html: '' }}></div>
 
       <div class="gm__corner">
         ${showMetrics && metricsOpen ? html`<${CombatMetricsPanel} myId=${myId} onClose=${() => setMetricsOpen(false)} />` : null}

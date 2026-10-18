@@ -32,6 +32,7 @@
 import { parentPort, workerData } from 'node:worker_threads';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
+import path from 'node:path';
 import { getData, setData } from '../../data.js';
 import { installOfficialBounds } from '../../../shared/plugins/officialBounds.js';
 import { contentHashOf } from '../../../shared/plugins/identity.js';
@@ -49,6 +50,8 @@ let scripts = [];
 let sandbox = false;
 /** PLUGIN API v2: the content set's interaction windows (docs/PLUGINS.md §10b) — data, injected into every match. */
 let offers = [];
+/** Trusted match modules of this content set: [{ id, activate }] — loaded at boot, activated per match. */
+let matchFactories = [];
 let options = {};
 const adopt = (init) => { ({ cs, hashInput, files, bounds = null, scripts = [], sandbox = false, offers = [] } = init || {}); options = (init && init.options) || {}; };
 if (viaWorker) adopt(workerData);
@@ -166,6 +169,25 @@ async function boot() {
   }
   // After setData, before Match: Match reads opts.registry || getDefaultRegistry(), the same singleton.
   dslGrants = await installPrepDsl(data);
+  // Trusted match modules (entry.match): loaded here, in the process that runs the match, once per content set. The
+  // main process already applied the class gate and the owner pin (server/plugins/trusted.js); this loads what it shipped.
+  if (scripts.length) {
+    const seen = new Set();
+    for (const s of scripts) {
+      const rel = s && s.entry && s.entry.match;
+      if (!rel || !s.dir || seen.has(s.id)) continue;
+      seen.add(s.id);
+      try {
+        const url = `${pathToFileURL(path.join(s.dir, rel)).href}?lock=${encodeURIComponent(s.hash || '')}`;
+        const mod = await import(url);
+        const activate = mod.activate || mod.default;
+        if (typeof activate !== 'function') throw new Error('the match entry exports no activate(match)');
+        matchFactories.push({ id: s.id, activate });
+      } catch (e) {
+        log.warn(`[host] ${s.id}: match entry not loaded — ${e?.message || e}`);
+      }
+    }
+  }
   const mod = await import(typeof options.matchModule === 'string' && options.matchModule ? pathToFileURL(options.matchModule).href : '../Match.js');
   const Inner = mod.Match || mod.default;
   if (typeof Inner !== 'function') throw new Error('the match module exports no Match');
@@ -217,6 +239,8 @@ function create(matchId, opts) {
       ...opts,
       // the content set installed at boot (server/data.js getData)
       data: installed,
+      // trusted match modules of this content set (entry.match), activated by the Match constructor
+      ...(matchFactories.length ? { matchPlugins: matchFactories } : {}),
       // the match names itself in its lines ([match <code>] …), as in the server process (the host adds [cs:<8 hex>])
       log,
       now: Date.now,

@@ -1286,7 +1286,11 @@ to show it. It is unofficial. It is not a member of a room's `plugins[]` and a r
 (`PLUGIN_BLOCKED`). It adds nothing to `cs` and it does add its own `vs` (§6).
 
 **Manifest.** `class: "ui"`, `scope` including `personal` (that is the only scope this class has), permission
-`ui.frame`, `entry.client` an `.html` path, `slots` any of `hud.right`, `result.tab`, `stats.tab`, `room.panel`.
+`ui.frame`, `entry.client` an `.html` path, `slots` any of `UI_SLOT_IDS` (`shared/plugins/manifest.js`): the original
+`hud.right`, `result.tab`, `stats.tab`, `room.panel`, plus the content's nine — `root.overlays`, `root.guide`,
+`screen.game.aside`, `screen.result.footer`, `screen.game.shopCard`, `screen.game.bondStrip`, `screen.game.hud`,
+`screen.game.overlay`, `screen.loadout.detail`. `screen.game.hud` and `screen.result.footer` are the same place as
+`hud.right` / `result.tab` under the content's name (`UI_SLOT_ALIASES`), so either name mounts there.
 `description` is the 简介. The `.html`, `.js`, `.css` and `.png` files must sit in the directory of `entry.client`.
 Start from `plugins/_template/ui/` (a damage tally). A folder whose name starts with `_` is a template: the registry
 never loads it.
@@ -1316,7 +1320,15 @@ room's plugin ids, never the join code). `welcome` may add `version` (`PROTOCOL_
 scalar prefs already stored for that plugin. A plugin that only reads `t === 'welcome'` keeps working. The plugin may
 ask for a slot, a height, a short notice, and a few namespaced storage keys (`sp.plugin.<id>.`, proxied by the host
 page). It cannot send a match intent: a message whose type is `hello`, `ping`, `room.*`, `g.*` or `b.*`, or that
-carries one, is rejected. The host never turns a plugin message into a client→server message. Nothing in these feeds
+carries one, is rejected — **except** through the one explicit channel below.
+
+**The intent channel (experimental, `t: 'intent'`).** A content panel may ask for *one* gameplay action or for its own
+match plugin: `{ v: 1, t: 'intent', msg: { t: 'g.…', … } }` or `{ …, msg: { t: 'p.msg', type, body } }`. The host binds
+`plugin` to the frame's own plugin id, so a panel cannot speak for another plugin, and the socket validates the message
+again (`shared/protocol.js` `validateC2S`) — a panel can only do what this player could click. `room.*` (room lifecycle,
+plugin selection), `b.*` (a battle report is the page's own authority), `hello` and `ping` stay refused, a second
+intent-typed key is refused, and a `p.msg` body may not smuggle another intent. It counts against the same per-plugin
+rate limit as every other panel message. Nothing else in these feeds
 lets the frame reach the parent page.
 
 **Limits [ASSUMED]:** 20 messages a second per plugin, burst 40; battle pushes at 4 Hz, ≤ 40 events a batch; a

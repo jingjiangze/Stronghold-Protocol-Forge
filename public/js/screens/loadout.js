@@ -742,6 +742,8 @@ function LoadoutScreen({ st }) {
         <${Detail} m=${m} chess=${base} golden=${golden} entries=${st.entries} ops=${st.ops} onChange=${change} onOps=${setOpsOf} onReset=${resetOne} locked=${locked}
           level=${golden ? previewLevel : 'normal'} onLevel=${setPreviewLevel}
           notOwned=${!!base && (st.notOwned || []).includes(base.chessId)} />
+        ${/* the detail-column mount point (the content's screen.loadout.detail): a panel here follows the picked operator */ ''}
+        <div class="ui-slot" data-ui-slot="screen.loadout.detail" aria-label=${t('界面插件')} dangerouslySetInnerHTML=${{ __html: '' }}></div>
       </div>
     </main>`}
   </div>

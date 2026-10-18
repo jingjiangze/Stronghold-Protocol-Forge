@@ -6,7 +6,12 @@
   "$defs": {
     "slot": {
       "type": "string",
-      "enum": ["hud.right", "result.tab", "stats.tab", "room.panel"]
+      "enum": [
+        "hud.right", "result.tab", "stats.tab", "room.panel",
+        "root.overlays", "root.guide", "screen.game.aside", "screen.result.footer",
+        "screen.game.shopCard", "screen.game.bondStrip", "screen.game.hud", "screen.game.overlay",
+        "screen.loadout.detail"
+      ]
     },
     "ready": {
       "type": "object",
@@ -81,8 +86,24 @@
         { "$ref": "#/$defs/storageKeys" },
         { "$ref": "#/$defs/storageGet" },
         { "$ref": "#/$defs/storageSet" },
-        { "$ref": "#/$defs/storageDelete" }
+        { "$ref": "#/$defs/storageDelete" },
+        { "$ref": "#/$defs/panelIntent" }
       ]
+    },
+    "panelIntent": {
+      "description": "A content panel's gameplay intent: g.* or its own p.msg (the host binds `plugin`). room.* and b.* are refused, and so is any second intent key.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["v", "t", "msg"],
+      "properties": {
+        "v": { "const": 1 },
+        "t": { "const": "intent" },
+        "msg": {
+          "type": "object",
+          "required": ["t"],
+          "properties": { "t": { "type": "string", "pattern": "^(g\\.[A-Za-z][A-Za-z0-9.]*|p\\.msg)$" } }
+        }
+      }
     }
   },
   "oneOf": [{ "$ref": "#/$defs/pluginToHost" }]

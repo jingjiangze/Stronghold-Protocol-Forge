@@ -45,10 +45,15 @@ export const SURFACE_MARKERS = Object.freeze({
 });
 
 /** Permissions that only an unsupported class may hold. Experimental until that class is supported. */
-const EXPERIMENTAL_PERMISSIONS = new Set(['sim.code', 'meta.code', 'mode.code', 'trusted.page', 'trusted.server']);
+const EXPERIMENTAL_PERMISSIONS = new Set(['sim.code', 'meta.code', 'mode.code', 'trusted.page', 'trusted.server', 'match.code']);
 /** Code plugins (P3a trusted, P3b sandbox) are new in 0.3.0: their classes and their manifest field stay experimental. */
 const EXPERIMENTAL_CLASSES = new Set(['script', 'trusted']);
 const EXPERIMENTAL_FIELDS = new Set(['overrides']);
+/** The content panel's intent channel is new: its message name stays experimental until a release freezes it. */
+const EXPERIMENTAL_UI_MESSAGES = new Set(['intent']);
+/** The content's nine mount points are new in this line; the first four slots keep their stable rows. */
+const EXPERIMENTAL_SLOTS = new Set(['root.overlays', 'root.guide', 'screen.game.aside', 'screen.result.footer',
+  'screen.game.shopCard', 'screen.game.bondStrip', 'screen.game.hud', 'screen.game.overlay', 'screen.loadout.detail']);
 
 const DSL_GROUPS = Object.freeze([
   ['trigger', 'TRIGGERS'],
@@ -128,12 +133,12 @@ export function buildSurface(extra = {}) {
   const records = recordNames();
   for (const name of records.operator) add(`record.operator.${name}`, 'record', 'stable', 'shared/plugins/recordsSchema.js#RECORD_SCHEMA');
   for (const name of records.generic) add(`record.generic.${name}`, 'record', 'stable', 'shared/plugins/recordsSchema.js#RECORD_SCHEMA');
-  for (const name of overlayNames()) add(name, 'overlay', 'stable', 'shared/plugins/visual.js#ASSET_CONTAINERS');
+  for (const name of overlayNames()) add(name, 'overlay', String(name).startsWith('overlay.skins.') ? 'experimental' : 'stable', 'shared/plugins/visual.js#ASSET_CONTAINERS');
   const dsl = extra.dsl || {};
   for (const [group, key] of DSL_GROUPS) for (const name of dsl[key] || []) add(`dsl.${group}.${name}`, 'dsl', 'stable', `server/sim/content/dsl/vocab.js#${key}`);
-  for (const name of UI_PLUGIN_MESSAGES) add(`ui.message.plugin.${name}`, 'ui', 'stable', 'shared/plugins/ui.js#UI_PLUGIN_MESSAGES');
+  for (const name of UI_PLUGIN_MESSAGES) add(`ui.message.plugin.${name}`, 'ui', EXPERIMENTAL_UI_MESSAGES.has(name) ? 'experimental' : 'stable', 'shared/plugins/ui.js#UI_PLUGIN_MESSAGES');
   for (const name of UI_HOST_MESSAGES) add(`ui.message.host.${name}`, 'ui', 'stable', 'shared/plugins/ui.js#UI_HOST_MESSAGES');
-  for (const name of UI_SLOT_IDS) add(`ui.slot.${name}`, 'ui', 'stable', 'shared/plugins/manifest.js#UI_SLOT_IDS');
+  for (const name of UI_SLOT_IDS) add(`ui.slot.${name}`, 'ui', EXPERIMENTAL_SLOTS.has(name) ? 'experimental' : 'stable', 'shared/plugins/manifest.js#UI_SLOT_IDS');
   for (const route of extra.studioRoutes || []) add(`studio.route.${route}`, 'studio', 'stable', 'server/studio/index.js#STUDIO_ROUTES');
   for (const code of Object.keys(PLUGIN_ERRORS)) add(`error.${code}`, 'error', 'stable', 'shared/plugins/errors.js#PLUGIN_ERRORS');
   for (const name of CATALOG_FIELDS) add(`catalog.field.${name}`, 'catalog', 'stable', 'shared/plugins/catalog.js#CATALOG_FIELDS');

@@ -33,6 +33,19 @@ node tools/package-server.mjs --out D:\Stronghold-Server-Release
    默认端口为 3000；可以通过 `PORT` 和 `HOST` 配置。健康检查为 `GET /healthz`。
 4. 如果使用交互式启动器，并且暂时不希望运行素材 setup，可用 `node scripts/launch.mjs --no-setup --no-open`。不要直接运行 `node tools/setup.mjs` 或会自动执行 setup 的安装流程，除非确实希望把素材下载到这台服务器。
 
+## 用管理器托管完整服务器源码
+
+发行包同时提供独立的完整源码运行时管理器。它用于选择并托管用户自己的完整服务器仓库，不将其中玩法拆成 Forge 工坊包：
+
+```sh
+node tools/source-runtime.mjs list
+node tools/source-runtime.mjs install stronghold-server
+node tools/source-runtime.mjs verify stronghold-server
+node tools/source-runtime.mjs serve stronghold-server --port 3000 --host 127.0.0.1
+```
+
+第二个配置是 `stronghold-server-server-agent`。详细边界、固定版本、隔离缓存、反向代理与排障见 [SOURCE-RUNTIME-MOUNT.md](SOURCE-RUNTIME-MOUNT.md)。源仓库保持只读；要让 Forge 的包 ABI 直接在这些完整运行时中执行，仍需独立适配与契约验收，不将透明托管误称为已经完成的 Mod 注入。
+
 ## 资源与 Mod 边界
 
 - 发行包不包含 `public/assets/` 的游戏美术、`public/fonts/` 的字体、`packs/` 中的仓库预装内容包，也不包含 `docs/my-first-pack/` 和 `docs/examples/` 的样例包载荷。

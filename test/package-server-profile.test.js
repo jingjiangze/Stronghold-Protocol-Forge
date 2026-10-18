@@ -1,8 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { selectServerFiles, planServer } from '../tools/package-server.mjs';
+import { playerPackageJson } from '../tools/package.mjs';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -17,6 +19,9 @@ test('server file selection excludes game art payload, fonts, bundled packs and 
   assert.ok(files.includes('public/js/ui/extensions.js'));
   assert.ok(files.includes('public/js/ui/modComponents.js'));
   assert.ok(files.includes('docs/DEPLOY-SERVER.md'));
+  assert.ok(files.includes('config/source-runtime-profiles.json'));
+  assert.ok(files.includes('tools/source-runtime.mjs'));
+  assert.ok(files.includes('docs/SOURCE-RUNTIME-MOUNT.md'));
   assert.ok(files.includes('data/assets.json'));
   assert.ok(!files.some((f) => f.startsWith('public/assets/')));
   assert.ok(!files.some((f) => f.startsWith('public/fonts/')));
@@ -37,4 +42,6 @@ test('server profile validation reports a clean source selection in the tracked 
   const plan = planServer(ROOT, { allowDirty: true, scan: false });
   assert.deepEqual(plan.problems, []);
   assert.ok(plan.files.length > 300, 'runtime allowlist has more than a trivial subset');
+  const rootPackage = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  assert.equal(playerPackageJson(rootPackage, plan.files).scripts['source-runtime'], 'node tools/source-runtime.mjs');
 });

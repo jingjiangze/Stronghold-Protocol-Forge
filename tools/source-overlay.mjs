@@ -325,7 +325,7 @@ export async function threeWayMerge(home, relativePath, baseBytes, upstreamBytes
     await Promise.all([fs.writeFile(base, baseBytes), fs.writeFile(upstream, upstreamBytes), fs.writeFile(source, sourceBytes)]);
     const res = git(temp, ['merge-file', '-p', '-L', 'UPSTREAM', '-L', 'BASE', '-L', 'SOURCE', upstream, base, source], { allowFailure: true });
     if (res.status === 0) return { kind: 'clean', content: res.stdout, segments: [], blocks: [] };
-    if (res.status !== 1) throw new Error('git merge-file failed for ' + relativePath);
+    if (res.status !== 1) throw new Error('git merge-file failed for ' + relativePath + ' (status=' + res.status + ')' + (res.stderr ? ': ' + String(res.stderr).trim().slice(0, 1000) : '') + (res.stdout ? ' output=' + String(res.stdout).trim().slice(0, 300) : ''));
     const parsed = parseMergeConflicts(res.stdout);
     if (parsed.invalid || !parsed.blocks.length) return { kind: 'unparsed-conflict', segments: [], blocks: [] };
     return { kind: 'conflict', segments: parsed.segments, blocks: parsed.blocks };

@@ -83,3 +83,31 @@
 | 所有者裁决与最终游戏回归 | PENDING |
 
 BASELINE=确认输入；IMPLEMENTED=代码/文档已提交；PASS=实测通过；PENDING=等待实测或所有者裁决。
+
+## 8. 实际快照审计结果（GitHub Actions run 39112551942）
+
+状态：**PASS（审计任务成功执行）**；这不代表组合构建已 READY。报告 artifact 名称为 source-delta-audit，可从该次 Actions 运行页面获取。
+
+| 来源 | 差异路径数 | 默认组之外 | 已包含在目标上游 | 新增挂载 | 等待裁决 |
+|---|---:|---:|---:|---:|---:|
+| stronghold-server | 1395 | 737 | 652 | 0 | 6 |
+| server-agent | 150 | 66 | 0 | 23 | 61 |
+| 合计 | 1545 | 803 | 652 | 23 | 67 |
+
+本次默认只组合 runtime/build/operations/deployment。803 个路径属于 docs/tests/automation/metadata 等被排除的组，并没有写入生成运行树；它们仍保留在差异报告中。上游已包含的 652 个差异不再覆盖。23 个未被上游包含的新增文件已作为来源增量挂载。该快照下自动 clean merge 数为 0：这不是“零冲突”，而是现有差异要么已被上游吸收、是新文件、要么需要明确裁决。
+
+### 已发现的裁决类型
+
+- stronghold-server 的 6 项：data/config.json 的 Boss 血量/数值策略、server/index.js 启动/Worker/监控、server/lobby.js 匹配/实验房间、server/match/match/settle.js 复活结算、server/match/unite.js 联防接力、shared/protocol.js 自定义协议。全部保持 PENDING。
+- server-agent 的 61 项：上游 0.3.1 线已删除或重组了多个 v0.2.5 基线路径，而 agent 源码仍修改旧路径。报告代表路径包括 Dockerfile、package.json/package-lock.json、public/js/main.js、public/js/render/*、public/js/screens/*、server/http/*、server/match/Match.js、server/match/match/*、shared/constants.js、shared/protocol.js 和工具脚本；同时 server/index.js、server/lobby.js、server/match/match/prep.js 是预先登记的高风险路径。
+
+### 这 61 项不能按普通文本冲突处理
+
+目标上游删除/拆分了旧路径时，“选择 source”意味着将旧版本完整文件恢复到旧路径；它不等于把玩法安全移植到上游的新模块。对希望保留的功能，下一步应在管理器差异层里建立明确的新挂载点/适配映射并测试，而不是直接恢复所有旧文件。选择 upstream 则表示放弃这一来源路径的增量。当前工具保持它们 PENDING，并阻止 READY，避免悄悄生成不完整或重复执行的游戏代码。
+
+### 验证结果
+
+- source-overlay 单元测试：PASS（7 项）。
+- 固定 SHA 的两份来源克隆和上游快照审计：PASS（任务成功，报告已上传 artifact）。
+- 组合是否可直接运行：PENDING（67 项待裁决；尚未达到 READY）。
+- Forge 全量 CI：TypeScript 检查仍报出本次未修改的 shared/formProjection.js 和 shared/morph.js 类型错误；因此不能标记整体 CI PASS。

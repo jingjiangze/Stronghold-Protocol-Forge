@@ -4,6 +4,8 @@
 //   * a URL longer than 4096 characters → 414; one that does not parse → 400;
 //   * /studio and /studio/… → the plugin studio (server/studio/index.js: for this machine and the local network only — any
 //     other client gets the 404 page; its API also takes POST / PUT / DELETE), when the server has one;
+//   * /mod, /mod/… → the mod manager (server/mods/: the same local-only gate; GET the page and the status, POST an upload
+//     or an https fetch), when the server has one;
 //   * any method but GET / HEAD → 405 with `Allow: GET, HEAD`;
 //   * GET /healthz → JSON status (protocol `version`, release `app`, uptime, the served `build`, the vanilla content
 //     hash `content.vanilla`, the modded content sets in use `content.sets` and — only when there are some — how many
@@ -81,7 +83,7 @@ const wantsTraffic = (query) => /(?:^|&)traffic(?:=(?:1|true|yes))?(?:&|$)/i.tes
  *   plugin studio (server/studio/index.js), or none
  * @returns {(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => void}
  */
-export function createRequestHandler({ serveStatic, health, log, trustProxy = 'auto', studio = null, csp = null, trustedRuntime = null }) {
+export function createRequestHandler({ serveStatic, health, log, trustProxy = 'auto', studio = null, mods = null, csp = null, trustedRuntime = null }) {
   async function handleRequest(req, res) {
     const url = req.url || '/';
     if (url.length > MAX_URL_LENGTH) { sendError(req, res, 414, '请求地址过长 · URI too long'); return; }
@@ -89,6 +91,8 @@ export function createRequestHandler({ serveStatic, health, log, trustProxy = 'a
     if (!parts) { sendError(req, res, 400, '请求地址无效 · Bad request'); return; }
     if (trustedRuntime && parts.rawPath.startsWith('/x/') && await trustedRuntime.route(req,res,parts.rawPath)) return;
     if (studio && studio.handles(parts.rawPath)) { await studio.handle(req, res, parts.rawPath, parts.query); return; }
+    // the mod manager (server/mods/): /mod, /mod/status.json and its two writes — before the GET-only rule below
+    if (mods && mods.handles(parts.rawPath)) { await mods.handle(req, res, parts.rawPath, parts.query); return; }
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.setHeader('Allow', 'GET, HEAD');
       sendError(req, res, 405, '不支持的请求方法 · Method not allowed');

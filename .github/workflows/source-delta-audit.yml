@@ -6,9 +6,12 @@ on:
     paths:
       - 'config/source-delta-profiles.json'
       - 'config/source-delta-decisions.json'
+      - 'config/source-delta-features.json'
       - 'tools/source-overlay.mjs'
       - 'test/source-overlay.test.mjs'
       - 'docs/audit/2026-10-18-source-runtime-mount.md'
+      - 'docs/audit/2026-10-18-feature-isolation-and-conflicts.md'
+      - 'docs/SOURCE-DELTA-LAYER.md'
       - '.github/workflows/source-delta-audit.yml'
   workflow_dispatch:
 

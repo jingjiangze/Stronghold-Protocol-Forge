@@ -94,7 +94,7 @@ BASELINE=确认输入；IMPLEMENTED=代码/文档已提交；PASS=实测通过�
 本节覆盖上文第 3 节和第 5 节中将 `settle.js`、`unite.js`、agent `server/lobby.js`、agent `prep.js` 直接列为 source/upstream 高风险二选一的旧分类。它们是独立玩法或其接线，不再通过公共路径整文件覆盖进行取舍。
 
 - 独立玩法映射见 `config/source-delta-features.json`，细化权衡见 `docs/audit/2026-10-18-feature-isolation-and-conflicts.md`。
-- 来源玩法源码以原始 Git blob 放到 `.forge-source-features/`，公共主树仍保留目标上游同路径文件。
+- 可独立归属的来源模块以原始 Git blob 放到 `.forge-source-features/`；仍与上游公共状态机交织的来源文件以原始 blob 放到 `.forge-source-references/`，两者都不覆盖组合树中的上游公共路径。救援/复活尚未完成独立模块提取，见新审计文档。
 - 上述路径不再生成普通的 `owner-review-required` / hunk 冲突；它们转成 `integrationPending`，表示需要管理器适配器接通。
 - 这个更改没有宣称玩法已经启动。只要功能包仍是 `adapter-required`，`READY=false`。其余实际冲突仍按新的原始 blob audit 报告和所有者决定处理。
 

@@ -9,9 +9,9 @@
 
 但这不等于其当前实现已天然与上游无冲突。审阅固定源码发现，若干功能仍与公共状态机/入口写在相同文件里：
 
-- 联防二段接力触及 `server/match/unite.js`、`server/match/match/unitePhase.js` 及 `server/match/match/settle.js`。
-- 冻结触及 `server/match/match/frozen.js`，并需要大厅生命周期接线。
-- AI 代算触及 `server/match/match/prep.js`、`server/match/match/rehearsal.js`，并依赖房主变化、超时接管和前端消息。
+- 联防二段接力的规则/阶段模块是 `server/match/unite.js` 和 `server/match/match/unitePhase.js`；结果/奖励归因交织在共享的 `server/match/match/settle.js`，目前只作为 reference 保存。
+- 冻结模块是 `server/match/match/frozen.js`；agent 版本 `server/lobby.js` 仅作共享生命周期 reference。
+- AI 代算独立模块包括浏览器调度与 Worker、共享模拟评分、服务端 `MatchRehearsal`；`public/js/main.js`、`prep.js`、`lobby.js`、`Match.js`、`server/index.js` 仅作为当前挂载点 reference。
 - 来源 `server/match/match/combat.js` 明确要求 synthetic 结果不能冒充真实救援资格；具体复活不是单一独立模块，而是散布在 `server/sim/content/items/battle.js`（`reviveNow`、死亡/立即免费再部署顺序）、`bands/battle.js`（埃芒加德）、`bonds/addon/battle.js`（不屈）及 Swire2、乌尔比安等干员模块，底层时序在 `server/sim/Battle.js`。这些大文件还承载其他装备/干员机制，不能整份作为复活插件覆盖上游。当前都只放进 reference 区，需再把复活规则提取为窄接口的独立管理器模块。
 
 因此执行三类隔离：
@@ -27,8 +27,8 @@
 | 功能包 | 当前隔离的来源文件 | 管理器需挂载的公共接口 | 当前结论 |
 |---|---|---|---|
 | 救援/复活 | 目前没有可独立加载的来源模块 | 只读参考：`combat.js`、底层 `Battle.js`、items/bands/bonds registries 和 Gravel/Swire2/Ulpianus kits | 实现横跨共享模块；需要从死亡/立即免费再部署钩子抽出窄接口，不可将任一混合文件整体作为玩法模块 |
-| 联防二段接力 | `server/match/unite.js`、`server/match/match/unitePhase.js`、共享的 `settle.js` | 联防阶段推进、跨轮次结果/奖励归因、客户端联防结果协议 | 玩法独立；公共结算和协议仍是挂载点 |
-| 全员离线冻结对局 | agent 层的 `server/lobby.js`、`server/match/match/frozen.js` | 房间成员生命周期、Match 计时器冻结/恢复、重连和房主/房间终止流程 | 功能独立；不能用 agent 版大厅整文件覆盖上游大厅 |
+| 联防二段接力 | `.forge-source-features/`：`server/match/unite.js`、`server/match/match/unitePhase.js` | `.forge-source-references/`：共享的 `server/match/match/settle.js`；并需成对接协议字段/结果 view | 玩法规则/阶段模块独立；结算奖励、结果视图和客户端消息仍需适配 |
+| 全员离线冻结对局 | `.forge-source-features/`：`server/match/match/frozen.js` | `.forge-source-references/`：agent 层的 `server/lobby.js`；另需 `MatchPause`、重连窗口和终止流程兼容 | 冻结模块独立；大厅接线独立适配，不能用 agent 版大厅整文件覆盖上游 |
 | 房主浏览器 AI 代算 | `.forge-source-features/`：`public/js/battle/rehearsal.js`、`public/js/battle/rehearsalWorker.js`、`server/match/match/rehearsal.js`、`server/sim/rehearsal.js` | `.forge-source-references/`：`public/js/main.js`、`server/match/Match.js`、`server/match/match/prep.js`、`server/lobby.js`、`server/index.js`；并需校验 `shared/protocol.js` | 客户端与服务端模块已纳入隔离清单；与目标上游新插件/Match 接口的适配、主机切换及超时回退回归仍 PENDING |
 
 **优点：** 自定义玩法的源码和版本身份保留；上游对同一公共文件的修复不会直接被来源整文件覆盖；每个玩法可以独立启用/停用和回归。

@@ -95,8 +95,14 @@ export function validateFeatureManifest(doc) {
     }
     ids.add(bundle.id);
     if (typeof bundle.profile !== 'string' || typeof bundle.name !== 'string' || !bundle.name.trim()) throw new Error('Invalid feature bundle identity: ' + bundle.id);
-    if (!Array.isArray(bundle.sourcePaths) || !bundle.sourcePaths.length || bundle.sourcePaths.some((p) => !safePath(p) || safePath(p) !== p)) {
-      throw new Error('Invalid sourcePaths for feature bundle: ' + bundle.id);
+    const sourcePaths = Array.isArray(bundle.sourcePaths) ? bundle.sourcePaths : [];
+    const referencePaths = Array.isArray(bundle.referencePaths) ? bundle.referencePaths : [];
+    const invalidPaths = [...sourcePaths, ...referencePaths].some((p) => !safePath(p) || safePath(p) !== p);
+    if ((!sourcePaths.length && !referencePaths.length) || invalidPaths) {
+      throw new Error('Invalid sourcePaths/referencePaths for feature bundle: ' + bundle.id);
+    }
+    if (new Set(sourcePaths).size !== sourcePaths.length || new Set(referencePaths).size !== referencePaths.length) {
+      throw new Error('Duplicate source/reference path in feature bundle: ' + bundle.id);
     }
     if (!Array.isArray(bundle.integrationPoints) || bundle.integrationPoints.some((p) => !safePath(p) || safePath(p) !== p)) {
       throw new Error('Invalid integrationPoints for feature bundle: ' + bundle.id);
@@ -104,16 +110,29 @@ export function validateFeatureManifest(doc) {
     if (!['adapter-required', 'ready'].includes(bundle.activationStatus)) throw new Error('Invalid activationStatus for feature bundle: ' + bundle.id);
     return Object.freeze({
       ...bundle,
-      sourcePaths: [...new Set(bundle.sourcePaths)],
+      sourcePaths: [...new Set(sourcePaths)],
+      referencePaths: [...new Set(referencePaths)],
       integrationPoints: [...new Set(bundle.integrationPoints)],
     });
   });
   return Object.freeze({ schemaVersion: 1, policy: String(doc.policy || 'independent-feature-bundles'), bundles: Object.freeze(bundles) });
 }
 
-export function featureBundlesForPath(manifest, profileId, relativePath) {
+export function featureBundleEntriesForPath(manifest, profileId, relativePath) {
   if (!manifest || !Array.isArray(manifest.bundles)) return [];
-  return manifest.bundles.filter((bundle) => bundle.profile === profileId && bundle.sourcePaths.includes(relativePath));
+  return manifest.bundles.flatMap((bundle) => {
+    if (bundle.profile !== profileId) return [];
+    const out = [];
+    if (bundle.sourcePaths.includes(relativePath)) out.push({ bundle, kind: 'feature' });
+    if ((bundle.referencePaths || []).includes(relativePath)) out.push({ bundle, kind: 'reference' });
+    return out;
+  });
+}
+
+export function featureBundlesForPath(manifest, profileId, relativePath) {
+  const unique = new Map();
+  for (const entry of featureBundleEntriesForPath(manifest, profileId, relativePath)) unique.set(entry.bundle.id, entry.bundle);
+  return [...unique.values()];
 }
 
 export async function loadSourceDeltaConfig() {
@@ -318,7 +337,7 @@ async function applyProfile(o) {
   const baseIndex = indexTracked(o.baseRoot), sourceIndex = indexTracked(o.sourceRoot);
   const profileBundles = (o.featureManifest?.bundles || []).filter((bundle) => bundle.profile === o.profile.id);
   for (const bundle of profileBundles) {
-    for (const p of bundle.sourcePaths) {
+    for (const p of [...bundle.sourcePaths, ...(bundle.referencePaths || [])]) {
       const entry = sourceIndex.get(p);
       if (!entry || readGitBlob(o.sourceRoot, entry) === null) {
         pending(o.report, o.profile, p, 'feature-source-missing', null,
@@ -340,7 +359,9 @@ async function applyProfile(o) {
     const group = classifyPath(p), row = { profile:o.profile.id, path:p, group, features:tags(p) };
     const sameToBase = !!(be && se && hash(base) === hash(source));
     const changed = !sameToBase;
-    const featureBundles = featureBundlesForPath(o.featureManifest, o.profile.id, p);
+    const featureBundleEntries = featureBundleEntriesForPath(o.featureManifest, o.profile.id, p);
+    const featureBundleMap = new Map(featureBundleEntries.map((entry) => [entry.bundle.id, entry.bundle]));
+    const featureBundles = [...featureBundleMap.values()];
     if (changed) {
       o.summary.deltaFiles++;
       o.summary.byGroup[group] = (o.summary.byGroup[group] || 0) + 1;
@@ -354,8 +375,9 @@ async function applyProfile(o) {
     // This prevents a whole-file source/upstream choice from deciding independent mode behavior.
     if (featureBundles.length && se && source !== null) {
       const stagedPaths = [];
-      for (const bundle of featureBundles) {
-        const stagedPath = '.forge-source-features/' + bundle.id + '/' + o.profile.id + '/' + p;
+      for (const { bundle, kind } of featureBundleEntries) {
+        const namespace = kind === 'feature' ? '.forge-source-features' : '.forge-source-references';
+        const stagedPath = namespace + '/' + bundle.id + '/' + o.profile.id + '/' + p;
         await writeFile(o.outputRoot, stagedPath, source, se.mode);
         stagedPaths.push(stagedPath);
         let featureRecord = o.report.featureBundles.find((entry) => entry.id === bundle.id);
@@ -365,20 +387,23 @@ async function applyProfile(o) {
             activationStatus: bundle.activationStatus,
             rationale: bundle.rationale || '',
             sourcePaths: bundle.sourcePaths,
+            referencePaths: bundle.referencePaths || [],
             integrationPoints: bundle.integrationPoints,
             stagedFiles: [],
           };
           o.report.featureBundles.push(featureRecord);
         }
-        if (!featureRecord.stagedFiles.some((entry) => entry.sourcePath === p)) {
-          featureRecord.stagedFiles.push({ sourcePath: p, outputPath: stagedPath, gitBlob: se.blob });
-          o.summary.featureSourcesStaged++;
+        if (!featureRecord.stagedFiles.some((entry) => entry.sourcePath === p && entry.kind === kind)) {
+          featureRecord.stagedFiles.push({ kind, sourcePath: p, outputPath: stagedPath, gitBlob: se.blob });
+          if (kind === 'feature') o.summary.featureSourcesStaged++;
+          else o.summary.referenceSourcesStaged++;
         }
       }
-      row.status = changed ? 'independent-feature-source-staged' : 'independent-feature-source-preserved';
+      row.status = changed ? 'independent-bundle-source-staged' : 'independent-bundle-source-preserved';
       row.featureBundles = featureBundles.map((bundle) => bundle.id);
+      row.stagedKinds = [...new Set(featureBundleEntries.map((entry) => entry.kind))];
       row.stagedPaths = stagedPaths;
-      row.note = 'Exact source blob staged separately; upstream common-path implementation is not overwritten and runtime activation waits for an adapter.';
+      row.note = 'Exact source blob staged in the feature or reference namespace; upstream common-path implementation is not overwritten.';
       o.report.applied.push(row);
       continue;
     }
@@ -474,7 +499,7 @@ async function copyTarget(targetRoot, outRoot) {
 function profileSummary(profile) {
   return {id:profile.id,commit:profile.commit,sourceVersion:profile.sourceVersion,deltaFiles:0,excluded:0,
     additionsMounted:0,deletionsMounted:0,sourceChangesMounted:0,autoMerged:0,alreadyPresent:0,
-    sourceChoice:0,upstreamChoice:0,hunkChoicesApplied:0,featureSourcesStaged:0,pending:0,byGroup:{}};
+    sourceChoice:0,upstreamChoice:0,hunkChoicesApplied:0,featureSourcesStaged:0,referenceSourcesStaged:0,pending:0,byGroup:{}};
 }
 
 export async function buildSourceDeltaComposition(o) {
@@ -506,17 +531,27 @@ export async function buildSourceDeltaComposition(o) {
     profiles:report.profiles.length,deltaFiles:report.profiles.reduce((n,p)=>n+p.deltaFiles,0),
     cleanMerges:report.profiles.reduce((n,p)=>n+p.autoMerged,0),additionsMounted:report.profiles.reduce((n,p)=>n+p.additionsMounted,0),
     sourceChangesMounted:report.profiles.reduce((n,p)=>n+p.sourceChangesMounted,0),alreadyPresent:report.profiles.reduce((n,p)=>n+p.alreadyPresent,0),
-    featureSourcesStaged:report.profiles.reduce((n,p)=>n+p.featureSourcesStaged,0),independentBundles:report.featureBundles.length,
+    featureSourcesStaged:report.profiles.reduce((n,p)=>n+p.featureSourcesStaged,0),
+    referenceSourcesStaged:report.profiles.reduce((n,p)=>n+p.referenceSourcesStaged,0),independentBundles:report.featureBundles.length,
     excluded:report.profiles.reduce((n,p)=>n+p.excluded,0),pending:report.pending.length,integrationPending:report.integrationPending.length};
   report.ready=report.pending.length===0&&report.integrationPending.length===0;
   if (!o.auditOnly) {
-    if (report.featureBundles.length) {
+    if (report.featureBundles.some((bundle) => bundle.stagedFiles.some((entry) => entry.kind === 'feature'))) {
       const featureDir=path.join(root,'.forge-source-features');
       await fs.mkdir(featureDir,{recursive:true});
       await fs.writeFile(path.join(featureDir,'FEATURES.json'),JSON.stringify({
         schemaVersion:1,policy:'immutable-source-isolation',runtimeEnabled:false,
-        message:'Feature source is preserved byte-for-byte; this directory is not executed or imported automatically. Each bundle needs an explicit adapter before READY.',
-        bundles:report.featureBundles,
+        message:'Feature-owned module blobs are preserved byte-for-byte. They are not executed or imported automatically; explicit Forge adapters are required before READY.',
+        bundles:report.featureBundles.map((bundle) => ({...bundle,stagedFiles:bundle.stagedFiles.filter((entry) => entry.kind === 'feature')})).filter((bundle) => bundle.stagedFiles.length),
+      },null,2)+'\n');
+    }
+    if (report.featureBundles.some((bundle) => bundle.stagedFiles.some((entry) => entry.kind === 'reference'))) {
+      const referenceDir=path.join(root,'.forge-source-references');
+      await fs.mkdir(referenceDir,{recursive:true});
+      await fs.writeFile(path.join(referenceDir,'REFERENCES.json'),JSON.stringify({
+        schemaVersion:1,policy:'immutable-source-reference',referenceOnly:true,
+        message:'These are exact source blobs from shared integration points, kept for review and adapter extraction. They are not active runtime files and never replace upstream paths.',
+        bundles:report.featureBundles.map((bundle) => ({...bundle,stagedFiles:bundle.stagedFiles.filter((entry) => entry.kind === 'reference')})).filter((bundle) => bundle.stagedFiles.length),
       },null,2)+'\n');
     }
     await fs.writeFile(path.join(root,'SOURCE-DELTA-REPORT.json'),JSON.stringify(report,null,2)+'\n');

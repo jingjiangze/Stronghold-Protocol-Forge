@@ -1,0 +1,186 @@
+name: release-manager
+
+# 发布「纯 mod 管理器」构建物（换世系后 2026-10-19 重写的这一版）。
+#
+# 与旧世系那一版的区别，以及为什么必须重写：
+#   · 旧版走 `tools/package-server.mjs` 的 server profile —— 那是 **Forge 世系**的打字器，
+#     依赖 `.github/overlay.json`、`shared/constants.js` 的 `UPSTREAM_VERSION`（0.3.1 树里没有这个常量），
+#     还有 `test/package-server-profile.test.js`。整套都随 Forge 世系归档了，不能搬到这棵树上。
+#   · 这一版走**上游自己的** `tools/package.mjs --lite`：白名单（RUNTIME_DIRS = server/ shared/ data/ public/
+#     packs/ schemas/ + 玩家工具）就是上游的判据，`server/` 整目录进包，所以 `server/mods/`（管理器本体 4 个
+#     文件）自动带上 —— 一条链，没有第二套打包口径。
+#   · tag 只用 `APP_VERSION`（0.3.1 树没有 UPSTREAM_VERSION，旧版那个 `modmgr-v<app>-<game>` 会退化成
+#     `modmgr-v0.3.1-`）。
+#
+# 触发：`workflow_run` 接在 `mirror-upstream` **成功且发生在默认分支**之后（「每次上游同步成功后自动发」），
+#       外加人工 `workflow_dispatch`（可 dry-run 只构建不发）。
+# 幂等：同 tag 已存在就跳过，绝不覆盖、绝不重传资产。
+# 不信任打包器的返回码：`--lite` 的 zip 分支不校验产物，所以 `unzip -t` + 条目断言两关都过才发。
+
+on:
+  workflow_run:
+    workflows: [mirror-upstream]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只构建 + 校验产物，不发 Release（演练）'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-manager
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    name: 构建并（不重复地）发布
+    if: >
+      github.event_name == 'workflow_dispatch'
+      || (github.event.workflow_run.conclusion == 'success'
+          && github.event.workflow_run.head_branch == github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DRY: ${{ github.event.inputs.dry_run == 'true' }}
+    steps:
+      # workflow_run 的 checkout 默认就是默认分支的最新提交；dispatch 时是所点分支。
+      - uses: actions/checkout@v4
+
+      - name: 读版本并判重
+        id: v
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          APP=$(grep -oE "APP_VERSION = '[^']+'" shared/constants.js | head -1 | cut -d"'" -f2)
+          PKG=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")
+          TAG="modmgr-v${APP}"
+          echo "app=$APP" >> "$GITHUB_OUTPUT"; echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "package.json=$PKG · 发行标识 $TAG"
+          if [ "$PKG" != "$APP" ]; then
+            echo "::error::package.json ($PKG) 与 shared/constants.js APP_VERSION ($APP) 不一致 —— 别发，先查哪边漂移"
+            exit 1
+          fi
+          if [ "$DRY" = "true" ]; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"; echo "演练模式：不发 Release"; exit 0
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "$TAG 已经发过了 —— 跳过（不覆盖、不重传资产）"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 构建（上游 lite profile）
+        if: steps.v.outputs.exists != 'true'
+        env:
+          # 扫描器会拒绝产物里出现「本机账户名」；runner 的账户名是 `runner` —— 一个常见词，
+          # 上游 package.mjs 的注释就为这种情况留了这个开关。真实发布机不设这个。
+          SP_PACKAGE_SCAN_USER: '0'
+        run: |
+          set -euo pipefail
+          node --version
+          rm -rf "${RUNNER_TEMP}/rel"
+          node tools/package.mjs --lite --out "${RUNNER_TEMP}/rel" --force
+          ls -la "${RUNNER_TEMP}/rel"
+
+      - name: 校验产物（zip 完整性 + 条目清单，两关都过才发）
+        if: steps.v.outputs.exists != 'true'
+        run: |
+          set -euo pipefail
+          ZIP="${RUNNER_TEMP}/rel/Stronghold-Protocol-v${{ steps.v.outputs.app }}-lite.zip"
+          [ -f "$ZIP" ] || { echo "::error::找不到构建产物 $ZIP"; exit 2; }
+          # 第一关：整档 CRC 校验（zip 分支只返回 0 不代表档是完整的）
+          unzip -t "$ZIP" > "${RUNNER_TEMP}/ziptest.log" 2>&1 || { tail -20 "${RUNNER_TEMP}/ziptest.log"; exit 1; }
+          grep -c "OK$" "${RUNNER_TEMP}/ziptest.log" | sed 's/^/条目 CRC OK: /'
+          tail -3 "${RUNNER_TEMP}/ziptest.log"
+          # 第二关：条目清单判据。管理器本体必须在档里；游戏素材 / 开发面必须不在。
+          MODS=$(unzip -Z1 "$ZIP" | grep -c '^Stronghold-Protocol/server/mods/' || true)
+          if [ "${MODS:-0}" -lt 4 ]; then
+            echo "::error::产物里 mod 管理器本体不足 4 个文件（实际 ${MODS:-0}）—— 别发"; exit 1
+          fi
+          echo "管理器本体文件数：${MODS}"
+          for bad in 'Stronghold-Protocol/public/assets/' 'Stronghold-Protocol/test/' 'Stronghold-Protocol/.github/' 'Stronghold-Protocol/public/dev/'; do
+            N=$(unzip -Z1 "$ZIP" | grep -c "^$bad" || true)
+            if [ "${N:-0}" -ne 0 ]; then echo "::error::产物不该包含 $bad（${N} 条）"; exit 1; fi
+          done
+          # 改名成一眼认得出是这条线的产物
+          OUTDIR="${RUNNER_TEMP}/publish"
+          mkdir -p "$OUTDIR"
+          NAME="Stronghold-Protocol-Forge-modmgr-${{ steps.v.outputs.app }}-lite.zip"
+          cp "$ZIP" "$OUTDIR/$NAME"
+          ( cd "$OUTDIR" && sha256sum "$NAME" > "$NAME.sha256" && cat "$NAME.sha256" )
+          echo "zip=$OUTDIR/$NAME" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          ls -la "$OUTDIR"
+        id: out
+
+      - name: 发 Release
+        if: steps.v.outputs.exists != 'true' && env.DRY != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          NOTES="${RUNNER_TEMP}/notes.md"
+          ENTRIES="$(unzip -Z1 '${{ steps.out.outputs.zip }}' | grep -vc '/$' || true)"
+          {
+            echo "## 这是什么"
+            echo
+            echo "**纯 mod 管理器发行物** —— 卫戍协议 0.3.1（\`APP_VERSION ${{ steps.v.outputs.app }}\`）的"
+            echo "**服务端运行时 + 模组管理器**。走的是上游自己的 \`tools/package.mjs --lite\`："
+            echo "\`server/\`（含 \`server/mods/\` 管理器本体）、\`shared/\`、\`data/\`、\`public/\`、\`packs/\`、\`schemas/\`。"
+            echo "**不含**游戏素材（\`npm run setup\` 首启自取）、\`public/dev/\`、\`test/\`、\`.github/\`。"
+            echo
+            echo "| 项 | 值 |"
+            echo "|---|---|"
+            echo "| 构建自 | \`${{ github.ref_name }}\` @ \`${SHA}\` |"
+            echo "| 条目数 | ${ENTRIES} |"
+            echo "| 校验 | \`unzip -t\` 全档 CRC + 条目清单判据（管理器 ≥4、素材/开发面 =0，两者都在 CI 里跑过才发） |"
+            echo
+            echo "## 怎么装"
+            echo
+            echo '```sh'
+            echo 'unzip Stronghold-Protocol-Forge-modmgr-'"${{ steps.v.outputs.app }}"'-lite.zip'
+            echo 'cd Stronghold-Protocol          # 包内已带生产依赖（npm ci --omit=dev 已跑过）'
+            echo 'npm start                       # http://localhost:3000'
+            echo '```'
+            echo
+            echo "装好后打开 **http://localhost:3000/mod** 就是管理器页面（本机 / 局域网可见）。"
+            echo "写入需要业主钥匙 \`plugins/.studio-key\`；读列表不需要。素材另取：\`npm run setup\`。"
+            echo "需要 Node.js 22 或 24。"
+            echo
+            echo "## 这条线与上游的关系"
+            echo
+            echo "- 上游是 \`sganggs/Stronghold-Protocol\`（游戏本体）。这条线是它的直接后代："
+            echo "  在 0.3.2 之上只多出 10 个文件（管理器本体 4 个 + \`tools/mod.mjs\` + 文档 + 测试，"
+            echo "  以及对 \`server/index.js\` / \`server/http/routes.js\` / \`server/plugins/forgeImport.js\` 三个挂点）。"
+            echo "- 上游同步由 \`mirror-upstream.yml\` 自动做（merge，不 reset），四道门全过才推。"
+            echo "- Forge 0.18.8 那条旧世系已归档：tag \`archive/forge-0.18.8-lineage\` + bundle。"
+          } > "$NOTES"
+          gh release create "${{ steps.v.outputs.tag }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "${{ github.ref_name }}" \
+            --title "mod 管理器 v${{ steps.v.outputs.app }}（纯服务端发行，不含素材）" \
+            --notes-file "$NOTES" \
+            '${{ steps.out.outputs.zip }}' '${{ steps.out.outputs.zip }}.sha256'
+          echo "### 已发布 ${{ steps.v.outputs.tag }}" >> "$GITHUB_STEP_SUMMARY"
+          gh release view "${{ steps.v.outputs.tag }}" --repo "$GITHUB_REPOSITORY" \
+            --json tagName,assets --jq '"- tag `\(.tagName)`", (.assets[] | "  - \(.name)  \(.size) B  → \(.url)")' \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: 演练或跳过时把话说清楚
+        if: always()
+        run: |
+          set -uo pipefail
+          case "${{ steps.v.outputs.exists }}" in
+            true)  echo "本次没发：tag \`${{ steps.v.outputs.tag }}\` 已存在（幂等，不覆盖）" >> "$GITHUB_STEP_SUMMARY" ;;
+            '')    echo "本次没发：前面的步骤没出结论（看上面的日志）" >> "$GITHUB_STEP_SUMMARY" ;;
+            *)     if [ "$DRY" = "true" ]; then echo "演练（dry_run）：构建与校验都做了，**没有**发 Release" >> "$GITHUB_STEP_SUMMARY"; fi ;;
+          esac
+        env:
+          DRY: ${{ github.event.inputs.dry_run == 'true' }}

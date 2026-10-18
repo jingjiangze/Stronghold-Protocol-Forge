@@ -16,7 +16,8 @@ audit 只读比较；compose 在隔离目录生成组合树。存在未裁决冲
 - 来源新增且上游没有同名路径时原样挂载。
 - 同路径修改以三方合并为基础：非重叠改动自动组合；重叠 hunk 生成稳定 ID，必须明确选择来源或上游。
 - config/source-delta-decisions.json 只用于真正的公共挂载点/重叠 hunk；按 profile-id:relative/path 选择 source、upstream 或 merge，单段 hunk 选择 source/upstream。
-- config/source-delta-features.json 把救援/复活、联防二段接力、全员离线冻结、房主浏览器 AI 代算列为独立功能包。来源 Git blob 按原始字节保存到组合树的 .forge-source-features/<feature-id>/<profile>/<original-path>；相同路径的上游公共文件保持不变，不通过整文件 source/upstream 选择决定玩法归属。
+- config/source-delta-features.json 把救援/复活、联防二段接力、全员离线冻结、房主浏览器 AI 代算列为独立功能包。
+- 独立模块 Git blob 按原始字节保存到 .forge-source-features/<feature-id>/<profile>/<original-path>；仍与公共状态机交织的完整来源文件保存到 .forge-source-references/<feature-id>/<profile>/<original-path>，仅供适配器提取对照，绝不替换上游公共路径。救援/复活尚未抽成独立模块，必须保留 PENDING 标记。
 - 独立源码暂存不等于运行时激活。报告会单独列出 integrationPending；适配器未接通并通过回归前，READY 仍为 false。
 - 所有缓存与输出放在来源仓库、Forge 工作树之外；源仓库 commit 和文件不会被本工具改写。
 

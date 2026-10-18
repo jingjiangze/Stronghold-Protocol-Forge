@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "explanation": "No side is selected by default. pathDecisions uses profile-id:relative/path and accepts source/upstream/merge. hunkDecisions uses generated h_ IDs and accepts source/upstream. Required review paths block READY until the owner chooses.",
+  "pathDecisions": {},
+  "hunkDecisions": {},
+  "reviewRequired": {
+    "stronghold-server:data/config.json": "OWNER DECISION: Boss HP scaling differs. Source uses perPlayer=false, solo=0.25 and aliveScaling=true; upstream v0.2.5 uses a different per-player/coop model.",
+    "stronghold-server:server/lobby.js": "OWNER DECISION: public matchmaking, experimental room capacity and lobby lifecycle intersect upstream state/protocol changes.",
+    "stronghold-server:shared/protocol.js": "OWNER DECISION: custom message types must stay paired with client and server handlers.",
+    "stronghold-server:server/match/match/settle.js": "OWNER DECISION: rescue/revival settlement intersects the newer upstream settlement lifecycle.",
+    "stronghold-server:server/match/unite.js": "OWNER DECISION: the second cooperative-defense relay changes gameplay progression.",
+    "stronghold-server:server/index.js": "OWNER DECISION: worker pool, health/traffic instrumentation and startup/shutdown are central lifecycle hooks.",
+    "stronghold-server-server-agent:server/lobby.js": "OWNER DECISION: rehearsal/freeze hooks must be checked against the other feature layer and newer upstream lobby.",
+    "stronghold-server-server-agent:server/match/match/prep.js": "OWNER DECISION: host-browser AI rehearsal alters preparation-phase behavior and needs paired client/worker paths.",
+    "stronghold-server-server-agent:server/index.js": "OWNER DECISION: asset/traffic and Agent initialization touch server startup."
+  }
+}

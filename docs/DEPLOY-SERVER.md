@@ -33,18 +33,15 @@ node tools/package-server.mjs --out D:\Stronghold-Server-Release
    默认端口为 3000；可以通过 `PORT` 和 `HOST` 配置。健康检查为 `GET /healthz`。
 4. 如果使用交互式启动器，并且暂时不希望运行素材 setup，可用 `node scripts/launch.mjs --no-setup --no-open`。不要直接运行 `node tools/setup.mjs` 或会自动执行 setup 的安装流程，除非确实希望把素材下载到这台服务器。
 
-## 用管理器托管完整服务器源码
+## 把服务器差异交给管理器挂载
 
-发行包同时提供独立的完整源码运行时管理器。它用于选择并托管用户自己的完整服务器仓库，不将其中玩法拆成 Forge 工坊包：
+管理器使用 upstream v0.2.5 作为共同基线，在隔离目录把来源仓库的增量三方合并到较新上游；不把完整来源仓库作为运行时，也不修改来源仓库。
 
-```sh
-node tools/source-runtime.mjs list
-node tools/source-runtime.mjs install stronghold-server
-node tools/source-runtime.mjs verify stronghold-server
-node tools/source-runtime.mjs serve stronghold-server --port 3000 --host 127.0.0.1
-```
+    node tools/source-overlay.mjs list
+    node tools/source-overlay.mjs audit --report ./source-delta-report.json
+    node tools/source-overlay.mjs compose --out ../stronghold-composed
 
-第二个配置是 `stronghold-server-server-agent`。详细边界、固定版本、隔离缓存、反向代理与排障见 [SOURCE-RUNTIME-MOUNT.md](SOURCE-RUNTIME-MOUNT.md)。源仓库保持只读；要让 Forge 的包 ABI 直接在这些完整运行时中执行，仍需独立适配与契约验收，不将透明托管误称为已经完成的 Mod 注入。
+未完成冲突裁决时组合会标记 READY=false，不得部署。详情见 SOURCE-DELTA-LAYER.md。
 
 ## 资源与 Mod 边界
 

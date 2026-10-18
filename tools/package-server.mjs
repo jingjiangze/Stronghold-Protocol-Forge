@@ -17,10 +17,11 @@ import { manifestText } from './package-update.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SERVER_GUIDE = 'docs/DEPLOY-SERVER.md';
-const SOURCE_RUNTIME_FILES = [
-  'config/source-runtime-profiles.json',
-  'tools/source-runtime.mjs',
-  'docs/SOURCE-RUNTIME-MOUNT.md',
+const SOURCE_DELTA_FILES = [
+  'config/source-delta-profiles.json',
+  'config/source-delta-decisions.json',
+  'tools/source-overlay.mjs',
+  'docs/SOURCE-DELTA-LAYER.md',
 ];
 const SAMPLE_PREFIXES = ['packs/', 'docs/my-first-pack/', 'docs/examples/'];
 const isExcluded = (p) => SAMPLE_PREFIXES.some((prefix) => p.startsWith(prefix));
@@ -30,7 +31,7 @@ export function selectServerFiles(root, paths = trackedFiles(root)) {
   const selected = selectTracked(paths).keep.filter((p) => !isExcluded(p));
   // Server-specific instructions and the full-source runtime manager are manager control-plane files,
   // not game content; ship them explicitly rather than widening the general player-file allowlist.
-  for (const rel of [SERVER_GUIDE, ...SOURCE_RUNTIME_FILES]) {
+  for (const rel of [SERVER_GUIDE, ...SOURCE_DELTA_FILES]) {
     if (paths.includes(rel) && !selected.includes(rel)) selected.push(rel);
   }
   return [...new Set(selected)].sort();

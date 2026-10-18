@@ -31,11 +31,13 @@
     "docs/DEPLOY-SERVER.md",
     "docs/ENGINE-COMPAT-STARDUST-AUDIT.md",
     "docs/UPSTREAM-PR-LEDGER.md",
-    "config/source-runtime-profiles.json",
-    "tools/source-runtime.mjs",
-    "test/source-runtime.test.mjs",
-    "docs/SOURCE-RUNTIME-MOUNT.md",
-    "docs/audit/2026-10-18-source-runtime-mount.md"
+    "docs/audit/2026-10-18-source-runtime-mount.md",
+    "config/source-delta-profiles.json",
+    "config/source-delta-decisions.json",
+    "tools/source-overlay.mjs",
+    "test/source-overlay.test.mjs",
+    "docs/SOURCE-DELTA-LAYER.md",
+    ".github/workflows/source-delta-audit.yml"
   ],
   "patches": [
     {

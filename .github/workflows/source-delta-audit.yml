@@ -1,0 +1,36 @@
+name: Source delta compatibility audit
+
+on:
+  push:
+    branches: [chatgpt]
+    paths:
+      - 'config/source-delta-profiles.json'
+      - 'config/source-delta-decisions.json'
+      - 'tools/source-overlay.mjs'
+      - 'test/source-overlay.test.mjs'
+      - 'docs/audit/2026-10-18-source-runtime-mount.md'
+      - '.github/workflows/source-delta-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Run source delta unit tests
+        run: node --test test/source-overlay.test.mjs
+      - name: Audit pinned source layers against upstream
+        run: node tools/source-overlay.mjs audit --include-groups runtime,build,operations,deployment --report "$RUNNER_TEMP/source-delta-report.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-delta-audit
+          path: ${{ runner.temp }}/source-delta-report.json
+          if-no-files-found: error
+          retention-days: 14

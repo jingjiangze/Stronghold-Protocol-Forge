@@ -19,9 +19,10 @@ test('server file selection excludes game art payload, fonts, bundled packs and 
   assert.ok(files.includes('public/js/ui/extensions.js'));
   assert.ok(files.includes('public/js/ui/modComponents.js'));
   assert.ok(files.includes('docs/DEPLOY-SERVER.md'));
-  assert.ok(files.includes('config/source-runtime-profiles.json'));
-  assert.ok(files.includes('tools/source-runtime.mjs'));
-  assert.ok(files.includes('docs/SOURCE-RUNTIME-MOUNT.md'));
+  assert.ok(files.includes('config/source-delta-profiles.json'));
+  assert.ok(files.includes('config/source-delta-decisions.json'));
+  assert.ok(files.includes('tools/source-overlay.mjs'));
+  assert.ok(files.includes('docs/SOURCE-DELTA-LAYER.md'));
   assert.ok(files.includes('data/assets.json'));
   assert.ok(!files.some((f) => f.startsWith('public/assets/')));
   assert.ok(!files.some((f) => f.startsWith('public/fonts/')));
@@ -43,5 +44,5 @@ test('server profile validation reports a clean source selection in the tracked 
   assert.deepEqual(plan.problems, []);
   assert.ok(plan.files.length > 300, 'runtime allowlist has more than a trivial subset');
   const rootPackage = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
-  assert.equal(playerPackageJson(rootPackage, plan.files).scripts['source-runtime'], 'node tools/source-runtime.mjs');
+  assert.equal(playerPackageJson(rootPackage, plan.files).scripts['source-overlay'], 'node tools/source-overlay.mjs');
 });

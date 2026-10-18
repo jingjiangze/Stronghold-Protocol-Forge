@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "upstream": {
+    "repository": "https://github.com/sganggs/Stronghold-Protocol.git",
+    "baselineCommit": "cf7a9400270d5aa79b2e601e405dab782e25f120",
+    "baselineVersion": "0.2.5",
+    "targetRef": "master",
+    "auditedTargetCommit": "d905c1464f762a03d236c7ad6bc3ba31a74f4494"
+  },
+  "profiles": [
+    {
+      "id": "stronghold-server",
+      "name": "stronghold-server / Stardust feature delta",
+      "repository": "https://github.com/jingjiangze/stronghold-server.git",
+      "ref": "master",
+      "commit": "48f8cff8277060a4da489f4f19658fcd05ebd145",
+      "sourceVersion": "0.2.5",
+      "groups": [
+        "runtime",
+        "build",
+        "operations",
+        "deployment",
+        "docs",
+        "tests",
+        "automation",
+        "metadata"
+      ],
+      "description": "Custom gameplay, UI, server/runtime and Stardust deployment deltas against upstream v0.2.5."
+    },
+    {
+      "id": "stronghold-server-server-agent",
+      "name": "stronghold-server-server-agent / agent feature delta",
+      "repository": "https://github.com/jingjiangze/stronghold-server-server-agent.git",
+      "ref": "master",
+      "commit": "d16ce8bd158aee31b74ac34635a585a7bdb5fe05",
+      "sourceVersion": "0.2.6",
+      "groups": [
+        "runtime",
+        "build",
+        "operations",
+        "deployment",
+        "docs",
+        "tests",
+        "automation",
+        "metadata"
+      ],
+      "description": "Lineup learning/sync, host AI rehearsal, freeze-on-empty, asset-cache and telemetry deltas against upstream v0.2.5."
+    }
+  ]
+}

@@ -45,7 +45,7 @@
     "workshop:validate": "node tools/workshop-validate.mjs",
     "workshop:scaffold": "node tools/workshop-scaffold.mjs",
     "forms:names": "node tools/build-form-names.mjs",
-    "source-runtime": "node tools/source-runtime.mjs"
+    "source-overlay": "node tools/source-overlay.mjs"
   },
   "engines": {
     "node": ">=22"

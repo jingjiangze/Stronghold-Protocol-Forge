@@ -41,7 +41,7 @@ node tools/package-server.mjs --out D:\Stronghold-Server-Release
     node tools/source-overlay.mjs audit --report ./source-delta-report.json
     node tools/source-overlay.mjs compose --out ../stronghold-composed
 
-未完成冲突裁决时组合会标记 READY=false，不得部署。详情见 SOURCE-DELTA-LAYER.md。
+冲突尚未裁决，或独立玩法（救援/复活、联防二段接力、全员离线冻结、房主浏览器代算）的适配器尚未接通时，组合都会标记 READY=false，不得部署。玩法源码保存在 .forge-source-features/，这只代表原样隔离保存，不代表已在运行时启用。详情见 SOURCE-DELTA-LAYER.md 和 docs/audit/2026-10-18-feature-isolation-and-conflicts.md。
 
 ## 资源与 Mod 边界
 

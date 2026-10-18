@@ -54,21 +54,23 @@
 - **建议组合**：保留目标上游 `rewards`，只把 `economy.poolCopiesOverrides.chess_char_6_11_a=4` 迁入组合配置；对来源缺失 `rewards` 的删除意图留给你确认，不自动删除上游奖励字段。
 - **当前状态**：`PENDING`，等待你确认奖励删除是不是有意为之；其余差异可按上面的定向合并处理，不应整文件二选一。
 
-### B. `server/lobby.js`（stronghold-server 配置）— 匹配、房间容量与大厅生命周期
+### B. `server/lobby.js`（stronghold-server profile）— 匹配、实验房间、插件房间生命周期
 
-- **上游方案的优点**：保留新上游的房间创建/加入、主机迁移、重连、观战位、房间清理以及与 Match 的接口演进。
-- **你这边方案的优点**：保留自定义公共匹配、实验性大房间/容量设置和现有大厅产品行为（仅迁入目标上游尚未具备的部分）。
-- **代价与风险**：这是共享生命周期入口。直接覆盖会把与玩法无关的上游修复丢掉；直接全选上游又可能遗漏尚未上游化的匹配行为。
-- **建议**：以上游大厅为底，独立接入匹配队列和容量适配器；对确实已被上游吸收的功能标记 `already-present-upstream`，不要重复注入。
-- **当前状态**：`PENDING`。
+固定来源文件约 1,531 行，目标上游版本约 1,885 行；这不是单纯多几行的差异，而是两种功能集合不同。
 
-### C. `shared/protocol.js` — 客户端/服务端协议
+- **上游方案的优点**：把插件/内容集生命周期做成正式房间协议，包括 `room.setPlugins`、`room.setMode`、`room.consent`、`room.contentReady`；还加入 `serial/queueEvent`、房间内容代际跟踪、可信运行时和插件变更流程，能防止异步断线/重连/内容变更与 Match 状态交错。
+- **你这边方案的优点**：具有 `queue.join/cancel/accept` 公共匹配队列、`room.setExperimental`、实验房间容量、`playerCapacityVersion`/ `matchmakingVersion` 握手、按 IP 限制房间/对局数，以及联防实验容量相关控制。这些是你现有玩家体验和扩容行为，不能因为上游换架构就直接丢掉。
+- **代价与风险**：整份选来源版会丢目标上游插件内容集/同意校验与异步事件队列；整份选上游又会丢自有匹配队列/实验容量规则。两边的消息处理与房间状态表也不对称。
+- **建议组合**：以目标上游 Lobby 为唯一房间状态机；匹配队列、实验容量、版本握手作为 Forge adapter 独立接入。进入高容量房间前仍要校验客户端能力；插件内容集与内容 hash/consent 不能被绕过。使用统一的串行事件入口处理 disconnect、host change、reconnect 和 room close。
+- **当前状态**：`PENDING` 作为高风险公共挂载点，未要求选整份文件；最终需要你裁决的是匹配/容量政策，而不是上游房间引擎是否保留。
 
-- **上游方案的优点**：消息结构、校验与当前客户端状态机同步，后续协议修复成本较低。
-- **你这边方案的优点**：保留自定义玩法消息、皮肤/干员预设/大厅面板等专有消息入口。
-- **代价与风险**：协议不是可单边替换的文件。服务端接受消息但客户端不处理、消息名/字段漂移、旧客户端发入未识别字段，都会形成运行时故障。
-- **建议**：上游协议为主；自定义消息用独立命名空间和成对注册表，由功能包声明并验证客户端与服务端 handler 完整性。
-- **当前状态**：`PENDING`；需要和每个独立功能包一起验收。
+### C. `shared/protocol.js` — 双端消息与数据校验
+
+- **上游方案的优点**：除常规消息字段校验外，当前版本支持插件模式的 `room.setPlugins`、`room.setMode`、`room.consent`、`room.contentReady`，以及 skin selection / operator potential 等更丰富的配置校验。它与上游 Lobby、客户端和 content hash 流程同步。
+- **你这边方案的优点**：协议定义了 `queue.join/cancel/accept`、`room.setExperimental`，以及 hello 握手中的 `matchmakingVersion`、`playerCapacityVersion`；还有服务负载状态 `SERVER_LOAD_STATES`、`normalizeServerLoad`、`normalizeLoadDetails`，便于客户端感知服务端负载并兼容实验容量。
+- **代价与风险**：不是“只添加几个消息字符串”即可。上游有 source 版本没有的插件/模式/内容确认消息；source 有上游没有的匹配队列与实验容量消息/字段。若只迁服务端消息定义，客户端可能不发；若只迁客户端，服务端校验会拒绝；版本握手或参数边界不同还可能导致旧客户端无法加入高容量房间。
+- **建议组合**：以目标上游 schema 为主；把自有功能消息作为单独扩展表注册，并由 Forge manifest 成对声明 client handler、server handler、版本/能力协商和负载字段。对每条扩展消息加未知版本、缺字段、越权操作和旧客户端测试，不替换整个协议表。
+- **当前状态**：`PENDING`；扩展消息的客户端与服务端成对接线必须和相应 feature adapter 一起验收。
 
 ### D. `server/index.js`（两个来源层各自有差异）— 进程启动、服务注册和关闭
 

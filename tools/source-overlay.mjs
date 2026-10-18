@@ -534,7 +534,7 @@ function help() {
     '  node tools/source-overlay.mjs audit [--include-groups runtime,build,operations,deployment] [--report <file>]',
     '  node tools/source-overlay.mjs compose --out <directory> [--profiles <ids>] [--include-groups <groups>] [--force]',
     '', 'audit compares immutable snapshots; compose creates an isolated upstream + delta tree.',
-    'Unresolved choices block READY. Source repositories are never written.',
+    'Unresolved choices or feature adapters block READY. Source repositories are never written.',
   ].join('\n'));
 }
 
@@ -571,7 +571,7 @@ async function main(argv=process.argv.slice(2)) {
   if(report.staleDecisions.length)console.log('[source-overlay] stale choices: '+report.staleDecisions.join(', '));
   if(a.command==='compose'){
     console.log('[source-overlay] output='+outDir+' READY='+report.ready);
-    if(!report.ready){process.exitCode=2;throw new Error('Unresolved owner decisions prevent a READY composition.');}
+    if(!report.ready){process.exitCode=2;throw new Error('Unresolved owner decisions or inactive feature adapters prevent a READY composition.');}
   } else console.log('[source-overlay] read-only audit completed; source repos were not modified.');
 }
 if(process.argv[1]&&pathToFileURL(path.resolve(process.argv[1])).href===import.meta.url){

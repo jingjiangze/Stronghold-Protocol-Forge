@@ -384,14 +384,17 @@ async function applyProfile(o) {
   const paths = [...new Set([...baseIndex.keys(), ...sourceIndex.keys()])].sort();
   for (const p of paths) {
     const be = baseIndex.get(p), se = sourceIndex.get(p);
-    const base = be ? readGitBlob(o.baseRoot, be) : null;
-    const source = se ? readGitBlob(o.sourceRoot, se) : null;
-    if (se && source === null) { pending(o.report,o.profile,p,'unsafe-source-path',null,'Source path is not a regular file.','<not read>','<unsupported>'); o.summary.pending++; continue; }
-    if (be && base === null) throw new Error('Cannot read baseline file: ' + p);
     if (!be && !se) continue;
+    let base = null, source = null;
+    if (se && se.mode === '120000') {
+      pending(o.report,o.profile,p,'unsafe-source-path',null,'Source path is not a regular file.','<not read>','<unsupported>');
+      o.summary.pending++; continue;
+    }
 
     const group = classifyPath(p), row = { profile:o.profile.id, path:p, group, features:tags(p) };
-    const sameToBase = !!(be && se && hash(base) === hash(source));
+    // Git blob IDs are content-addressed. Equality can be determined from the immutable tree
+    // without launching cat-file for every unchanged path.
+    const sameToBase = !!(be && se && be.blob === se.blob);
     const changed = !sameToBase;
     const featureBundleEntries = featureBundleEntriesForPath(o.featureManifest, o.profile.id, p);
     const featureBundleMap = new Map(featureBundleEntries.map((entry) => [entry.bundle.id, entry.bundle]));
@@ -407,7 +410,12 @@ async function applyProfile(o) {
     // Gameplay source is preserved byte-for-byte in a manager-owned namespace. The upstream
     // common-path file remains in the composed tree; only an explicit adapter may activate it.
     // This prevents a whole-file source/upstream choice from deciding independent mode behavior.
-    if (featureBundles.length && se && source !== null) {
+    if (featureBundles.length && se) {
+      source = readGitBlob(o.sourceRoot, se);
+      if (source === null) {
+        pending(o.report,o.profile,p,'unsafe-source-path',null,'Source path is not a regular file.','<not read>','<unsupported>');
+        o.summary.pending++; continue;
+      }
       const stagedPaths = [];
       for (const { bundle, kind } of featureBundleEntries) {
         const namespace = kind === 'feature' ? '.forge-source-features' : '.forge-source-references';
@@ -441,7 +449,6 @@ async function applyProfile(o) {
       o.report.applied.push(row);
       continue;
     }
-    if (sameToBase) continue;
     const key = o.profile.id + ':' + p, pathChoice = o.decisions.pathDecisions[key];
     if (pathChoice) o.used.add(key);
     if (Object.prototype.hasOwnProperty.call(o.decisions.reviewRequired,key) && !pathChoice) {
@@ -450,10 +457,16 @@ async function applyProfile(o) {
     }
     if (pathChoice === 'upstream') { row.status='owner-chose-upstream'; o.report.applied.push(row); o.summary.upstreamChoice++; continue; }
     if (pathChoice === 'source') {
+      if (se) source = readGitBlob(o.sourceRoot,se);
       if (source === null) await removeFile(o.outputRoot,p); else await writeFile(o.outputRoot,p,source,se.mode);
       row.status='owner-chose-source'; o.report.applied.push(row); o.summary.sourceChoice++; continue;
     }
+    if (sameToBase) continue;
 
+    if (be) base = readGitBlob(o.baseRoot,be);
+    if (se) source = readGitBlob(o.sourceRoot,se);
+    if (se && source === null) { pending(o.report,o.profile,p,'unsafe-source-path',null,'Source path is not a regular file.','<not read>','<unsupported>'); o.summary.pending++; continue; }
+    if (be && base === null) throw new Error('Cannot read baseline file: ' + p);
     const current = await readFile(o.outputRoot,p);
     const bh = base === null ? null : hash(base), sh = source === null ? null : hash(source), ch = current === null ? null : hash(current);
     if (!be && se) {

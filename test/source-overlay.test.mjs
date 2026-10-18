@@ -79,9 +79,10 @@ test('source comparison reads raw Git blob bytes rather than working-tree EOL co
   const sha = runGit(['rev-parse', 'HEAD:sample.txt']).toString('utf8').trim();
   const rawBlob = readGitBlob(root, { mode: '100644', blob: sha });
   // Simulate the CRLF checkout bytes enforced by the attribute, while the Git blob stays LF-normalized.
-  await fs.writeFile(path.join(root, 'sample.txt'), Buffer.from('alpha\\r\\nbeta\\r\\n', 'utf8'));
+  await fs.writeFile(path.join(root, 'sample.txt'), Buffer.from('alpha\r\nbeta\r\n', 'utf8'));
   const workingFile = await fs.readFile(path.join(root, 'sample.txt'));
   assert.deepEqual(rawBlob, Buffer.from('alpha\nbeta\n'));
+  assert.deepEqual(workingFile, Buffer.from('alpha\r\nbeta\r\n'));
   assert.notDeepEqual(workingFile, rawBlob, 'eol=crlf changes the checked-out bytes, not the committed Git blob');
 });
 
@@ -89,6 +90,7 @@ test('source comparison reads raw Git blob bytes rather than working-tree EOL co
 test('feature manifest treats mode paths as independent bundles and rejects unsafe paths', async () => {
   const { featureManifest } = await loadSourceDeltaConfig();
   assert.deepEqual(featureBundlesForPath(featureManifest, 'stronghold-server', 'server/match/unite.js').map((b) => b.id), ['unite-second-relay']);
+  assert.ok(featureBundlesForPath(featureManifest, 'stronghold-server', 'server/match/match/combat.js').some((b) => b.id === 'rescue-revival'));
   assert.deepEqual(featureBundlesForPath(featureManifest, 'stronghold-server-server-agent', 'server/lobby.js').map((b) => b.id), ['freeze-when-all-humans-offline']);
   assert.throws(() => validateFeatureManifest({ schemaVersion: 1, bundles: [{
     id: 'unsafe', profile: 'stronghold-server', name: 'unsafe', sourcePaths: ['../outside.js'],

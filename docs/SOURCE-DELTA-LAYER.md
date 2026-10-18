@@ -18,7 +18,7 @@ audit 只读比较；compose 在隔离目录生成组合树。存在未裁决冲
 - config/source-delta-decisions.json 只用于真正的公共挂载点/重叠 hunk；按 profile-id:relative/path 选择 source、upstream 或 merge，单段 hunk 选择 source/upstream。
 - config/source-delta-features.json 把救援/复活、联防二段接力、全员离线冻结、房主浏览器 AI 代算列为独立功能包。
 - 独立模块 Git blob 按原始字节保存到 .forge-source-features/<feature-id>/<profile>/<original-path>；仍与公共状态机交织的完整来源文件保存到 .forge-source-references/<feature-id>/<profile>/<original-path>，仅供适配器提取对照，绝不替换上游公共路径。救援/复活尚未抽成独立模块，必须保留 PENDING 标记。
-- 独立源码暂存不等于运行时激活。报告会单独列出 integrationPending；适配器未接通并通过回归前，READY 仍为 false。
+- 独立源码暂存不等于运行时激活。报告会单独列出 integrationPending；适配器未接通并通过回归前，READY 仍为 false。对于 referencePaths 这种混合公共文件，审计另外输出 deferredMixedPaths：明确列出来源文件相对基线/上游的剩余差异，但不把整文件当成玩法冲突，也不静默丢失非玩法改动。它们需继续拆分、独立审阅，不能直接覆盖上游。
 - 所有缓存与输出放在来源仓库、Forge 工作树之外；源仓库 commit 和文件不会被本工具改写。
 
 ## 分组和边界

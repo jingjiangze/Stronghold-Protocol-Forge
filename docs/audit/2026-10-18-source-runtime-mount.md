@@ -49,21 +49,19 @@
 4. 高风险路径预先要求所有者确认。未裁决时不产出 READY 构建。
 5. 所有缓存/输出写在来源仓库与 Forge 工作树之外，绝不回写源仓库。
 
-## 5. 高风险裁决：初始均为 PENDING
+## 5. 仍需所有者裁决的公共路径：初始均为 PENDING
 
-| 路径 | 选择 source 的优点/代价 | 选择 upstream 的优点/代价 |
-|---|---|---|
-| stronghold-server:data/config.json | 保留 Boss 血量/难度规则；可能丢上游新数值与经济表 | 跟进上游数据；失去自定义血量规则 |
-| stronghold-server:server/lobby.js | 保留匹配/实验房间；新版大厅接口可能不兼容 | 保留新版状态机；自定义匹配可能缺接线 |
-| stronghold-server:shared/protocol.js | 保留自定义消息；客户端/服务端必须成对运行 | 更容易跟上游；自定义功能消失 |
-| stronghold-server:server/match/match/settle.js | 保留复活救援；可能覆盖上游结算修复 | 保留上游结算；自定义复活可能消失 |
-| stronghold-server:server/match/unite.js | 保留联防二段接力；可能与新版协作流程冲突 | 跟进上游联防；丢二段接力 |
-| stronghold-server:server/index.js | 保留 Worker/监控；启动与关闭风险高 | 保留新版主入口；额外监控需重新挂载 |
-| server-agent:server/lobby.js | 保留代算/冻结接线；需和来源一大厅一起验证 | 保留上游大厅；Agent 功能可能失效 |
-| server-agent:server/match/match/prep.js | 保留 AI 代算；必须同时挂载 Worker 和回退 | 跟进新版准备阶段；代算需重新适配 |
-| server-agent:server/index.js | 保留素材/流量/Agent 接线；初始化顺序风险 | 保留新版入口；自定义接线需重新挂载 |
+玩法文件不在此表中：救援/复活、联防二段接力、全员离线冻结、房主浏览器 AI 代算已经转入独立功能包策略，见第 9 节和 `docs/audit/2026-10-18-feature-isolation-and-conflicts.md`。下面只保留真正需要上游公共接口取舍的候选路径。
 
-这些是预设高风险路径，不表示已确认每个都有冲突。真实 audit 会进一步列出无法自动合并的文件/hunk。
+| 路径 | 保留上游的优点 | 保留自有差异的优点 | 当前建议 |
+|---|---|---|---|
+| `stronghold-server:data/config.json` | 跟进上游首领/经济/配置结构与修复 | 保留自定义 Boss 血量比例与缩放规则 | 以上游数据为底，只挑选并迁入明确需要的键 |
+| `stronghold-server:server/lobby.js` | 保留上游房间生命周期、重连/主机迁移与 Match 接口 | 保留公共匹配、实验性容量/房间能力 | 上游大厅为底，把匹配与容量单独做 adapter |
+| `stronghold-server:shared/protocol.js` | 保持当前客户端、协议校验与服务端处理器一致 | 保留自定义玩法/UI 消息声明 | 以功能命名空间扩展协议，客户端和服务端成对登记 |
+| `stronghold-server:server/index.js` | 保留上游启动、退出和网络初始化顺序 | 保留 Worker、监控、健康/流量统计 | 上游入口 + 可关闭的 boot/shutdown 模块 |
+| `stronghold-server-server-agent:server/index.js` | 保留上游入口与依赖初始化契约 | 保留 Agent、资源缓存、运维观测能力 | 仅挂载明确需要的模块，不替换主入口 |
+
+这些是 owner-review 清单，不代表上述每一项在文本上都已出现无法自动合并的 hunk。最终需要你决定的**真实冲突**应来自原始 Git blob audit 的 `pending[]`；同一路径发生变化本身不等于冲突，也不能用未验证的旧统计替代。
 
 ## 6. 优缺点
 

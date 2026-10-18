@@ -417,6 +417,27 @@ async function applyProfile(o) {
         o.summary.pending++; continue;
       }
       const stagedPaths = [];
+      const referenceEntries = featureBundleEntries.filter((entry) => entry.kind === 'reference');
+      if (referenceEntries.length) {
+        const upstreamBytes = await readFile(o.outputRoot, p);
+        const sourceDiffersFromBaseline = !be || be.blob !== se.blob;
+        const upstreamDiffersFromSource = upstreamBytes === null || hash(upstreamBytes) !== hash(source);
+        if (sourceDiffersFromBaseline || upstreamDiffersFromSource) {
+          o.report.deferredMixedPaths.push({
+            profile: o.profile.id,
+            path: p,
+            group,
+            featureBundles: [...new Set(referenceEntries.map((entry) => entry.bundle.id))],
+            baselineBlob: be?.blob || null,
+            sourceBlob: se.blob,
+            sourceDiffersFromBaseline,
+            upstreamDiffersFromSource,
+            upstreamImplementationRetained: true,
+            sourceChangeStatus: 'deferred-mixed-source-reference',
+            note: 'The pinned source file is preserved in .forge-source-references only. Because it mixes feature wiring with shared behavior, non-feature changes inside this file are not auto-mounted or silently classified as gameplay conflicts; extract and review them separately.',
+          });
+        }
+      }
       for (const { bundle, kind } of featureBundleEntries) {
         const namespace = kind === 'feature' ? '.forge-source-features' : '.forge-source-references';
         const stagedPath = namespace + '/' + bundle.id + '/' + o.profile.id + '/' + p;
@@ -564,7 +585,7 @@ export async function buildSourceDeltaComposition(o) {
   await fs.mkdir(root,{recursive:true});
   const report={schemaVersion:2,baseCommit:o.catalog.upstream.baselineCommit,upstreamCommit:o.catalog.upstream.auditedTargetCommit,
     targetRef:o.catalog.upstream.targetRef,output:o.auditOnly?null:outputPath,includedGroups:o.groups,upstreamFiles:await copyTarget(o.snapshots.target,root),
-    ready:false,profiles:[],pending:[],featureBundles:[],integrationPending:[],omitted:[],applied:[],staleDecisions:[]};
+    ready:false,profiles:[],pending:[],featureBundles:[],integrationPending:[],deferredMixedPaths:[],omitted:[],applied:[],staleDecisions:[]};
   const used=new Set();
   for (const profile of o.catalog.profiles) {
     const summary=profileSummary(profile);
@@ -584,7 +605,7 @@ export async function buildSourceDeltaComposition(o) {
     sourceChangesMounted:report.profiles.reduce((n,p)=>n+p.sourceChangesMounted,0),alreadyPresent:report.profiles.reduce((n,p)=>n+p.alreadyPresent,0),
     featureSourcesStaged:report.profiles.reduce((n,p)=>n+p.featureSourcesStaged,0),
     referenceSourcesStaged:report.profiles.reduce((n,p)=>n+p.referenceSourcesStaged,0),independentBundles:report.featureBundles.length,
-    excluded:report.profiles.reduce((n,p)=>n+p.excluded,0),pending:report.pending.length,integrationPending:report.integrationPending.length};
+    excluded:report.profiles.reduce((n,p)=>n+p.excluded,0),pending:report.pending.length,integrationPending:report.integrationPending.length,deferredMixedPaths:report.deferredMixedPaths.length};
   report.ready=report.pending.length===0&&report.integrationPending.length===0;
   if (!o.auditOnly) {
     if (report.featureBundles.some((bundle) => bundle.stagedFiles.some((entry) => entry.kind === 'feature'))) {
@@ -668,6 +689,7 @@ async function main(argv=process.argv.slice(2)) {
   console.log('[source-overlay] base='+report.baseCommit+' upstream='+report.upstreamCommit+' summary='+JSON.stringify(report.summary));
   for(const p of report.profiles)console.log('[source-overlay] '+p.id+': delta='+p.deltaFiles+', cleanMerges='+p.autoMerged+', additions='+p.additionsMounted+', changes='+p.sourceChangesMounted+', featureFiles='+p.featureSourcesStaged+', excluded='+p.excluded+', pending='+p.pending+', groups='+JSON.stringify(p.byGroup));
   for(const f of report.integrationPending.slice(0,50))console.log('[source-overlay] PENDING-ADAPTER '+f.id+': '+f.name+' - '+f.reason);
+  for(const f of report.deferredMixedPaths.slice(0,100))console.log('[source-overlay] DEFERRED-MIXED '+f.profile+':'+f.path+' ['+f.featureBundles.join(', ')+'] - source path retained as reference; residual non-feature changes need separate review.');
   for(const p of report.pending.slice(0,100))console.log('[source-overlay] PENDING '+p.profile+':'+p.path+(p.id?' ['+p.id+']':'')+' - '+p.reason);
   if(report.pending.length>100)console.log('[source-overlay] remaining pending rows are in report.');
   if(report.staleDecisions.length)console.log('[source-overlay] stale choices: '+report.staleDecisions.join(', '));

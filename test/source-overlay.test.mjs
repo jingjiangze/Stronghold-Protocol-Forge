@@ -19,6 +19,10 @@ test('catalog pins a shared upstream baseline and two immutable sources', async 
   assert.ok(ids.includes('unite-second-relay'));
   assert.ok(ids.includes('freeze-when-all-humans-offline'));
   assert.ok(ids.includes('host-browser-ai-rehearsal'));
+  const rehearsal = featureManifest.bundles.find((bundle) => bundle.id === 'host-browser-ai-rehearsal');
+  assert.ok(rehearsal.sourcePaths.includes('public/js/battle/rehearsalWorker.js'));
+  assert.ok(rehearsal.sourcePaths.includes('server/sim/rehearsal.js'));
+  assert.ok(rehearsal.referencePaths.includes('public/js/main.js'));
   assert.equal(decisions.reviewRequired['stronghold-server:server/match/match/settle.js'], undefined);
   assert.equal(decisions.reviewRequired['stronghold-server-server-agent:server/match/match/prep.js'], undefined);
 });

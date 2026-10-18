@@ -20,7 +20,7 @@
 2. **共享路径参考层**：把依然承载两边逻辑的完整来源文件原样保存到 `.forge-source-references/<feature-id>/<profile>/<original-path>`。这些文件只是提取适配器时对照的参考，不会被当作独立可执行模块。
 3. **适配挂载点层**：把状态机、生命周期、协议、UI/Worker 的公共入口单独记录。当前 manifest 将四个功能标记为 `adapter-required`；管理器尚未证明适配器已经接通，所以即使没有路径级冲突，`READY` 仍然必须是 false。
 
-这是一种“独立源码 + 管理器适配器”的边界，不是把代码放进隔离目录就假装它已运行。AI 浏览器 Worker 的客户端实际路径仍要在下一轮完整树审计中核对；当前已确认并纳入清单的是服务端 `prep.js` 和 `rehearsal.js`。
+这是一种“独立源码 + 管理器适配器”的边界，不是把代码放进隔离目录就假装它已运行。已通过固定来源 Git tree 确认 AI 代算的浏览器与模拟模块路径，包括 `public/js/battle/rehearsal.js`、`public/js/battle/rehearsalWorker.js`、`server/sim/rehearsal.js` 和 `server/match/match/rehearsal.js`；这些已作为独立模块纳入清单。`public/js/main.js`、`server/match/Match.js`、`prep.js`、`lobby.js` 与 `server/index.js` 仍是接线参考。路径已确认，但与当前上游架构的接口适配和双端回归仍 PENDING。
 
 ## 2. 独立功能包：不再参与整文件二选一
 
@@ -29,7 +29,7 @@
 | 救援/复活 | `server/match/match/combat.js`、`server/match/match/settle.js` | 结算状态机、Match 状态/结果视图；必要时协议消息 | 源文件原样隔离；需单独适配，不能覆盖上游完整结算文件 |
 | 联防二段接力 | `server/match/unite.js`、`server/match/match/unitePhase.js`、共享的 `settle.js` | 联防阶段推进、跨轮次结果/奖励归因、客户端联防结果协议 | 玩法独立；公共结算和协议仍是挂载点 |
 | 全员离线冻结对局 | agent 层的 `server/lobby.js`、`server/match/match/frozen.js` | 房间成员生命周期、Match 计时器冻结/恢复、重连和房主/房间终止流程 | 功能独立；不能用 agent 版大厅整文件覆盖上游大厅 |
-| 房主浏览器 AI 代算 | agent 层的 `server/match/match/prep.js`、`server/match/match/rehearsal.js` | 准备阶段调度、当前房主、Worker 请求/响应、超时/掉线接管、服务端回退 | 服务端功能片段已隔离；前端 Worker 和协议的完整路径清点仍 PENDING |
+| 房主浏览器 AI 代算 | `.forge-source-features/`：`public/js/battle/rehearsal.js`、`public/js/battle/rehearsalWorker.js`、`server/match/match/rehearsal.js`、`server/sim/rehearsal.js` | `.forge-source-references/`：`public/js/main.js`、`server/match/Match.js`、`server/match/match/prep.js`、`server/lobby.js`、`server/index.js`；并需校验 `shared/protocol.js` | 客户端与服务端模块已纳入隔离清单；与目标上游新插件/Match 接口的适配、主机切换及超时回退回归仍 PENDING |
 
 **优点：** 自定义玩法的源码和版本身份保留；上游对同一公共文件的修复不会直接被来源整文件覆盖；每个玩法可以独立启用/停用和回归。
 
@@ -136,8 +136,8 @@
 | 独立玩法 bundle manifest 和隔离策略 | IMPLEMENTED |
 | 来源 blob 原样暂存、上游公共文件不被整份覆盖 | IMPLEMENTED；以新隔离回归测试验证 |
 | 四类功能的运行时适配器 | PENDING |
-| 浏览器端 AI Worker 的精确路径清点 | PENDING |
-| 原始 Git blob 下的完整来源快照 audit | PENDING，需等待本次 Actions 结果 |
+| 浏览器端 AI Worker 路径（来源固定 Git tree） | PASS：已确认 `public/js/battle/rehearsalWorker.js` 等模块并纳入 manifest |
+| 原始 Git tree/blob 下的完整来源快照 audit | PENDING：先前 Actions 流程测试通过，但发现 profile 源索引与 pinned tree 结果不一致；已将索引改为 `git ls-tree`，需以新一轮 artifact 确认 |
 | 其余真实冲突/hunk 的最终裁决 | PENDING |
 | 上游 + 功能适配器完整游戏回归 | PENDING |
 

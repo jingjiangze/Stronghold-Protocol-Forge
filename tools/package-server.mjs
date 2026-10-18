@@ -30,7 +30,7 @@ const isExcluded = (p) => SAMPLE_PREFIXES.some((prefix) => p.startsWith(prefix))
 /** A deterministic source allowlist, derived from the maintained player package allowlist. */
 export function selectServerFiles(root, paths = trackedFiles(root)) {
   const selected = selectTracked(paths).keep.filter((p) => !isExcluded(p));
-  // Server-specific instructions and the full-source runtime manager are manager control-plane files,
+  // Server instructions and the source-delta compatibility layer are manager control-plane files,
   // not game content; ship them explicitly rather than widening the general player-file allowlist.
   for (const rel of [SERVER_GUIDE, ...SOURCE_DELTA_FILES]) {
     if (paths.includes(rel) && !selected.includes(rel)) selected.push(rel);

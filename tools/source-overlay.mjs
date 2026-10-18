@@ -325,7 +325,7 @@ export async function threeWayMerge(home, relativePath, baseBytes, upstreamBytes
     await Promise.all([fs.writeFile(base, baseBytes), fs.writeFile(upstream, upstreamBytes), fs.writeFile(source, sourceBytes)]);
     const res = git(temp, ['merge-file', '-p', '-L', 'UPSTREAM', '-L', 'BASE', '-L', 'SOURCE', upstream, base, source], { allowFailure: true });
     if (res.status === 0) return { kind: 'clean', content: res.stdout, segments: [], blocks: [] };
-    if (res.status !== 1) throw new Error('git merge-file failed for ' + relativePath + ' (status=' + res.status + ')' + (res.stderr ? ': ' + String(res.stderr).trim().slice(0, 1000) : '') + (res.stdout ? ' output=' + String(res.stdout).trim().slice(0, 300) : ''));
+    if (res.status !== 1) return { kind: 'merge-tool-error', segments: [], blocks: [], error: 'git merge-file failed (status=' + res.status + ')' + (res.stderr ? ': ' + String(res.stderr).trim().slice(0, 1000) : '') + (res.stdout ? ' output=' + String(res.stdout).trim().slice(0, 300) : '') };
     const parsed = parseMergeConflicts(res.stdout);
     if (parsed.invalid || !parsed.blocks.length) return { kind: 'unparsed-conflict', segments: [], blocks: [] };
     return { kind: 'conflict', segments: parsed.segments, blocks: parsed.blocks };
@@ -549,7 +549,7 @@ async function applyProfile(o) {
     if (choice) o.used.add(id);
     if (choice==='source') { await writeFile(o.outputRoot,p,source,se.mode); row.status='binary-conflict-source-chosen'; o.report.applied.push(row); }
     else if (choice==='upstream') { row.status='binary-conflict-upstream-chosen'; o.report.applied.push(row); }
-    else { pending(o.report,o.profile,p,merge.kind,id,'Binary/unparsed conflict; choose source/upstream.','<binary/current>','<binary/source>'); o.summary.pending++; }
+    else { pending(o.report,o.profile,p,merge.kind,id,merge.kind==='merge-tool-error'?'Automatic merge tool error; not classified as a real source/upstream conflict. Manual review required. '+merge.error:'Binary/unparsed conflict; choose source/upstream.','<binary/current>','<binary/source>'); o.summary.pending++; }
   }
 }
 

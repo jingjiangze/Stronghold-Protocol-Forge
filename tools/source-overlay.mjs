@@ -210,16 +210,20 @@ async function prepareSnapshot(home, label, repository, ref, commit) {
 }
 
 function indexTracked(root) {
-  const raw = git(root, ['ls-files', '-s', '-z']).stdout;
+  // Audit immutable commit trees, not the checkout index. The index can differ from HEAD
+  // in partially checked-out/cached clones; source deltas must be reproducible from pinned Git objects.
+  const raw = git(root, ['ls-tree', '-r', '-z', '--full-tree', 'HEAD']).stdout;
   const out = new Map();
   for (const item of raw.split('\0')) {
     if (!item) continue;
     const tab = item.indexOf('\t');
     if (tab < 0) continue;
     const meta = item.slice(0, tab).split(' ');
+    const mode = meta[0] || '100644', type = meta[1] || '', blob = meta[2] || '';
+    if (type !== 'blob') continue; // Trees are recursive; gitlinks/submodules are not file contents.
     const p = safePath(item.slice(tab + 1));
     if (!p) throw new Error('Unsafe tracked path: ' + item.slice(tab + 1));
-    out.set(p, { mode: meta[0] || '100644', blob: meta[1] || '' });
+    out.set(p, { mode, blob });
   }
   return out;
 }

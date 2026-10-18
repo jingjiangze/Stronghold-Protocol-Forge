@@ -72,9 +72,10 @@ test('three-way merge reports same-hunk conflicts and does not choose a side',as
 test('three-way merge handles multiple conflicting hunks returned as exit status 2+', async (t) => {
   const home = await fs.mkdtemp(path.join(os.tmpdir(), 'source-overlay-multi-conflict-'));
   t.after(() => fs.rm(home, { recursive: true, force: true }));
-  const base = Buffer.from('alpha\nbase-one\nbridge-a\nbridge-b\nbridge-c\nbase-two\nomega\n');
-  const upstream = Buffer.from('alpha\nupstream-one\nbridge-a\nbridge-b\nbridge-c\nupstream-two\nomega\n');
-  const source = Buffer.from('alpha\nsource-one\nbridge-a\nbridge-b\nbridge-c\nsource-two\nomega\n');
+  const bridges = "bridge-1\\nbridge-2\\nbridge-3\\nbridge-4\\nbridge-5\\nbridge-6\\nbridge-7\\nbridge-8\\nbridge-9\\nbridge-10\\nbridge-11\\nbridge-12\\nbridge-13\\nbridge-14\\nbridge-15\\nbridge-16\\nbridge-17\\nbridge-18\\nbridge-19\\nbridge-20";
+  const base = Buffer.from('alpha\nbase-one\n' + bridges + '\nbase-two\nomega\n');
+  const upstream = Buffer.from('alpha\nupstream-one\n' + bridges + '\nupstream-two\nomega\n');
+  const source = Buffer.from('alpha\nsource-one\n' + bridges + '\nsource-two\nomega\n');
   const result = await threeWayMerge(home, 'multi-conflict.js', base, upstream, source);
   assert.equal(result.kind, 'conflict');
   assert.equal(result.blocks.length, 2, 'Git exit status 2 represents two conflicting hunks');

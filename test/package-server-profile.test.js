@@ -21,6 +21,7 @@ test('server file selection excludes game art payload, fonts, bundled packs and 
   assert.ok(files.includes('docs/DEPLOY-SERVER.md'));
   assert.ok(files.includes('config/source-delta-profiles.json'));
   assert.ok(files.includes('config/source-delta-decisions.json'));
+  assert.ok(files.includes('config/source-delta-features.json'));
   assert.ok(files.includes('tools/source-overlay.mjs'));
   assert.ok(files.includes('docs/SOURCE-DELTA-LAYER.md'));
   assert.ok(files.includes('data/assets.json'));

@@ -41,29 +41,33 @@
       "profile": "stronghold-server-server-agent",
       "name": "全员离线冻结对局",
       "sourcePaths": [
-        "server/lobby.js"
+        "server/lobby.js",
+        "server/match/match/frozen.js"
       ],
       "integrationPoints": [
         "server/lobby.js",
+        "server/match/match/frozen.js",
         "server/match/Match.js"
       ],
       "activationStatus": "adapter-required",
-      "rationale": "冻结/恢复逻辑作为独立功能保留；房间生命周期、定时器和重连回调需经管理器适配，不能以来源版大厅整文件覆盖上游。"
+      "rationale": "冻结/恢复逻辑作为独立功能保留；房间生命周期、Match 定时器和重连回调需经管理器适配，不能以来源版大厅或 Match 方法整文件覆盖上游。"
     },
     {
       "id": "host-browser-ai-rehearsal",
       "profile": "stronghold-server-server-agent",
       "name": "房主浏览器代算 AI 布阵",
       "sourcePaths": [
-        "server/match/match/prep.js"
+        "server/match/match/prep.js",
+        "server/match/match/rehearsal.js"
       ],
       "integrationPoints": [
         "server/match/match/prep.js",
+        "server/match/match/rehearsal.js",
         "server/lobby.js",
         "server/index.js"
       ],
       "activationStatus": "adapter-required",
-      "rationale": "浏览器 Worker 代算与服务端超时/掉线回退按完整功能切片保存；准备阶段入口、房主变更和 Worker 消息协议是适配点。不能只挂载 prep.js 或只挂客户端 Worker。"
+      "rationale": "服务端准备阶段、房主委托、超时接管和掉线回退作为完整功能切片保留。浏览器端 Worker/消息入口还需审计并纳入同一 bundle；准备阶段入口、房主变更和 Worker 消息协议是挂载点。源码区分离不等于已在客户端激活。"
     }
   ]
 }

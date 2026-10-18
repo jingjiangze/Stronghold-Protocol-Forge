@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { buildSourceDeltaComposition, classifyPath, conflictHunkId, featureBundlesForPath, isPathIncluded, loadSourceDeltaConfig, readGitBlob, threeWayMerge, validateCatalog, validateDecisions, validateFeatureManifest } from '../tools/source-overlay.mjs';
+import { buildSourceDeltaComposition, classifyPath, conflictHunkId, featureBundlesForPath, isPathIncluded, loadSourceDeltaConfig, readGitBlob, readGitBlobs, threeWayMerge, validateCatalog, validateDecisions, validateFeatureManifest } from '../tools/source-overlay.mjs';
 
 test('catalog pins a shared upstream baseline and two immutable sources', async () => {
   const { catalog, decisions, featureManifest } = await loadSourceDeltaConfig();
@@ -82,6 +82,8 @@ test('source comparison reads raw Git blob bytes rather than working-tree EOL co
   runGit(['commit', '-m', 'fixture']);
   const sha = runGit(['rev-parse', 'HEAD:sample.txt']).toString('utf8').trim();
   const rawBlob = readGitBlob(root, { mode: '100644', blob: sha });
+  const batchedBlob = readGitBlobs(root, [{ mode: '100644', blob: sha }]).get(sha);
+  assert.deepEqual(batchedBlob, rawBlob, 'batch read returns the same raw Git blob bytes');
   // Simulate the CRLF checkout bytes enforced by the attribute, while the Git blob stays LF-normalized.
   await fs.writeFile(path.join(root, 'sample.txt'), Buffer.from('alpha\r\nbeta\r\n', 'utf8'));
   const workingFile = await fs.readFile(path.join(root, 'sample.txt'));

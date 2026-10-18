@@ -4,7 +4,7 @@
   "pathDecisions": {},
   "hunkDecisions": {},
   "reviewRequired": {
-    "stronghold-server:data/config.json": "OWNER DECISION: Boss HP scaling differs. Source uses perPlayer=false, solo=0.25 and aliveScaling=true; upstream v0.2.5 uses a different per-player/coop model.",
+    "stronghold-server:data/config.json": "OWNER DECISION: Compared against the pinned target JSON, bossHpScale is unchanged. The actual shared-key conflict is rewards: source has no top-level rewards object (deleting the baseline reward model), while target upstream has newer rewards.milestones and rewards.daily; source separately adds economy.poolCopiesOverrides.chess_char_6_11_a=4. Prefer keeping target rewards and selectively importing only the custom economy override; do not replace the whole JSON file. Confirm whether removal of rewards was intentional.",
     "stronghold-server:server/lobby.js": "OWNER DECISION: public matchmaking, experimental room capacity and lobby lifecycle intersect upstream state/protocol changes.",
     "stronghold-server:shared/protocol.js": "OWNER DECISION: custom message types must stay paired with client and server handlers.",
     "stronghold-server:server/index.js": "OWNER DECISION: worker pool, health/traffic instrumentation and startup/shutdown are central lifecycle hooks.",

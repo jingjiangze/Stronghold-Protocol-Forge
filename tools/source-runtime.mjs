@@ -120,8 +120,12 @@ async function ensureHomeOutsideGitWorktree(home) {
   await fs.mkdir(home, { recursive: true });
   try {
     const root = await captureCommand('git', ['-C', home, 'rev-parse', '--show-toplevel'], { quiet: true });
-    if (root && pathIsWithin(path.resolve(root), path.resolve(home))) {
-      throw new Error('Runtime cache must be outside every Git worktree; refusing to write under ' + root);
+    if (root) {
+      const rootPath = path.resolve(root);
+      const homePath = path.resolve(home);
+      if (rootPath === homePath || pathIsWithin(rootPath, homePath)) {
+        throw new Error('Runtime cache must be outside every Git worktree; refusing to write under ' + root);
+      }
     }
   } catch (error) {
     if (String(error.message || error).startsWith('Runtime cache must be outside')) throw error;

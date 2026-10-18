@@ -117,11 +117,13 @@ export function featureBundlesForPath(manifest, profileId, relativePath) {
 }
 
 export async function loadSourceDeltaConfig() {
-  return {
-    catalog: validateCatalog(JSON.parse(await fs.readFile(CATALOG_URL, 'utf8'))),
-    decisions: validateDecisions(JSON.parse(await fs.readFile(DECISIONS_URL, 'utf8'))),
-    featureManifest: validateFeatureManifest(JSON.parse(await fs.readFile(FEATURES_URL, 'utf8'))),
-  };
+  const catalog = validateCatalog(JSON.parse(await fs.readFile(CATALOG_URL, 'utf8')));
+  const decisions = validateDecisions(JSON.parse(await fs.readFile(DECISIONS_URL, 'utf8')));
+  const featureManifest = validateFeatureManifest(JSON.parse(await fs.readFile(FEATURES_URL, 'utf8')));
+  const knownProfiles = new Set(catalog.profiles.map((profile) => profile.id));
+  const unknownProfiles = featureManifest.bundles.filter((bundle) => !knownProfiles.has(bundle.profile));
+  if (unknownProfiles.length) throw new Error('Feature manifest references unknown profile(s): ' + unknownProfiles.map((bundle) => bundle.profile).join(', '));
+  return { catalog, decisions, featureManifest };
 }
 
 export function sourceOverlayHome(env = process.env, home = os.homedir()) {
@@ -314,6 +316,18 @@ function pending(report, profile, pathValue, kind, id, reason, upstreamText, sou
 
 async function applyProfile(o) {
   const baseIndex = indexTracked(o.baseRoot), sourceIndex = indexTracked(o.sourceRoot);
+  const profileBundles = (o.featureManifest?.bundles || []).filter((bundle) => bundle.profile === o.profile.id);
+  for (const bundle of profileBundles) {
+    for (const p of bundle.sourcePaths) {
+      const entry = sourceIndex.get(p);
+      if (!entry || readGitBlob(o.sourceRoot, entry) === null) {
+        pending(o.report, o.profile, p, 'feature-source-missing', null,
+          'Feature bundle ' + bundle.id + ' references a missing or unsupported source blob; check the pinned source tree.',
+          '<source path unavailable>', '<feature bundle expects this path>');
+        o.summary.pending++;
+      }
+    }
+  }
   const paths = [...new Set([...baseIndex.keys(), ...sourceIndex.keys()])].sort();
   for (const p of paths) {
     const be = baseIndex.get(p), se = sourceIndex.get(p);
@@ -479,7 +493,7 @@ export async function buildSourceDeltaComposition(o) {
   for (const profile of o.catalog.profiles) {
     const summary=profileSummary(profile);
     await applyProfile({profile,baseRoot:o.snapshots.base,sourceRoot:o.snapshots.profiles[profile.id],outputRoot:root,
-      groups:o.groups,decisions:o.decisions,home:o.home,report,summary,used});
+      groups:o.groups,decisions:o.decisions,featureManifest:o.featureManifest,home:o.home,report,summary,used});
     report.profiles.push(summary);
   }
   report.staleDecisions=[...new Set([...Object.keys(o.decisions.pathDecisions),...Object.keys(o.decisions.hunkDecisions)])].filter((key)=>!used.has(key));

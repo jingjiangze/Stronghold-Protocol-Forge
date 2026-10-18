@@ -6,6 +6,9 @@
 // Who may use it: the same gate as the studio (server/studio/gate.js) — this machine or the local network, a local Host,
 // and for a write the owner's key (`plugins/.studio-key`, header `X-SP-Mod`). A read needs no key. Nothing here is
 // enabled by default: an import installs a plugin folder, and a room still has to switch it on.
+//
+// (i18n-ignore-file: the answers are bilingual by design, 中文 · English — the same rule server/http/common.js carries,
+// docs/I18N.md. The page itself (page.js) is bilingual for the same reason.)
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';

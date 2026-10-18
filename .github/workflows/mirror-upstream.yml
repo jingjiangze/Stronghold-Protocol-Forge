@@ -1,0 +1,234 @@
+name: mirror-upstream
+
+# 上游自动合并（换世系后 2026-10-19 重写的这一版）。
+#
+# 世系变更前，这条线有三个上游：维护方 `XiaMo233M/Stronghold-Protocol-Forge`（APP 层）、
+# 游戏本体 `sganggs/Stronghold-Protocol`（只探测落差不合并）。2026-10-19 业主裁决「换世系」：
+# 产品线改挂 **0.3.1 游戏本体树 + mod 管理器**，所以真上游只剩一个 —— `sganggs/Stronghold-Protocol`
+# （我们这条线的 merge-base 是 `b3deebda`，合并点 `c9d804f4` = 上游 0.3.2）。对它的合并是**零冲突**
+# 的干净快进式合并，不是旧 Forge 世系那 33 个文件的冲突面。
+#
+# 语义（照搬旧线已实测跑通的四条，只是换了上游与判据文件）：
+#   1. **merge，不 reset** —— 分支上的自有提交不被上游盖掉。
+#   2. **门控在 push 之前** —— 用 GITHUB_TOKEN 推分支不会再触发 ci.yml，测试必须在这里跑。
+#   3. **失败必须响** —— 冲突或门控红：推 `sync-conflict/<sha8>-<分支>`（只放清单，不推带 `<<<<<<<` 的树）
+#      + 开 issue + `exit 1`。绝不出现「job 绿但其实什么都没做」。
+#   4. **已合并就短路** —— `merge-base --is-ancestor` 通过就直接退 0，不推不发。
+#
+# ⚠ 节拍：本仓是 fork，GitHub **默认禁用 fork 的 scheduled workflows**（同级 fork 实测
+#   `event=schedule` 运行数 0，`PUT .../enable` 救不回来）。真节拍靠外部打 `repository_dispatch`
+#   （types: `mirror-upstream`）或手点 `workflow_dispatch`。schedule 这段保留，脱离 fork 后自动生效。
+#
+# 发布不在这里：`release-manager.yml` 接在本次成功之后（同 tag 已存在就跳过）。
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只合并 + 跑门控，不推分支、不发 Release（演练）'
+        type: boolean
+        default: false
+  repository_dispatch:
+    types: [mirror-upstream]
+  schedule:
+    - cron: '37 2,8,14,20 * * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: mirror-upstream
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_URL: https://github.com/sganggs/Stronghold-Protocol.git
+  UPSTREAM_REPO: sganggs/Stronghold-Protocol
+
+jobs:
+  sync:
+    name: 同步目标分支 ← 游戏本体（merge + 门控）
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      pushed: ${{ steps.push.outputs.pushed }}
+    # 同步目标 = 这次运行所在的分支。从一次性分支上 dispatch 就只是「演练」，绝不碰产品分支。
+    env:
+      TARGET: ${{ github.ref_name }}
+      DRY: ${{ github.event.inputs.dry_run == 'true' }}
+    steps:
+      - name: Check out the triggering branch (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve upstream, short-circuit if already merged
+        id: up
+        run: |
+          set -euo pipefail
+          git remote add upstream "$UPSTREAM_URL" 2>/dev/null || git remote set-url upstream "$UPSTREAM_URL"
+          git fetch -q --no-tags upstream master
+          SHA="$(git rev-parse refs/remotes/upstream/master)"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "上游 = $SHA ；本分支 = $(git rev-parse HEAD)"
+          if git merge-base --is-ancestor "$SHA" HEAD; then
+            echo "上游 $SHA 已在 $TARGET 里 —— 无事可做（不推、不发布）"
+            echo "done=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Merge upstream into the product branch (never reset)
+        if: steps.up.outputs.done != 'true'
+        id: merge
+        run: |
+          set -uo pipefail
+          SHA="${{ steps.up.outputs.sha }}"
+          PRE="$(git rev-parse HEAD)"
+          echo "pre=$PRE" >> "$GITHUB_OUTPUT"
+          git config user.name "stronghold-sync-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if git merge --no-edit "$SHA" -m "sync: upstream Stronghold-Protocol $SHA into $TARGET"; then
+            echo "merged=true" >> "$GITHUB_OUTPUT"
+          else
+            git diff --name-only --diff-filter=U > "${RUNNER_TEMP}/conflicts.txt" || true
+            git merge --abort || true
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            echo "::error::上游 $SHA 与 $TARGET 合并冲突"
+          fi
+
+      # GATE 1 —— 增量面：合并后相对上游**只多出**允许的东西（mod 管理器这一层 + 控制面）。
+      #   这条令是「纯 mod 管理器」的机器判据：出现白名单外的文件就红，分支不许悄悄长成别的产品线。
+      - name: GATE — 增量面（还是不是纯 mod 管理器）
+        if: steps.merge.outputs.merged == 'true'
+        run: |
+          set -uo pipefail
+          echo "--- 我方相对上游的增量文件 ---"
+          git diff --name-only "${{ steps.up.outputs.sha }}" HEAD | sort
+          echo "--- 其中上游也有的（将来上游再改会撞上的面）---"
+          for f in $(git diff --name-only "${{ steps.up.outputs.sha }}" HEAD); do
+            if git cat-file -e "${{ steps.up.outputs.sha }}:$f" 2>/dev/null; then echo "  上游也有  $f"; else echo "  我方新增  $f"; fi
+          done
+          # 受控例外：与上游同路径的三个文件。它们是管理器接进本体的挂点，必须在册；
+          # 册外再出现同路径文件 = 越界，红。
+          BODY_PATCHES="server/http/routes.js server/index.js server/plugins/forgeImport.js"
+          STRAY=0
+          for f in $(git diff --name-only "${{ steps.up.outputs.sha }}" HEAD); do
+            if git cat-file -e "${{ steps.up.outputs.sha }}:$f" 2>/dev/null; then
+              case " $BODY_PATCHES " in
+                *" $f "*) ;;
+                *) echo "::error::越界：$f 上游也有，但没登记为受控挂点"; STRAY=1 ;;
+              esac
+            fi
+          done
+          [ "$STRAY" = 0 ] || exit 1
+          echo "✓ 增量面全部在允许范围内"
+
+      # GATE 2 —— 契约面：管理器自己的那几格测试不许被上游改坏。「跑了 0 条」也算红。
+      - name: GATE — 契约面（管理器测试 + 复算）
+        if: steps.merge.outputs.merged == 'true'
+        run: |
+          set -uo pipefail
+          npm ci --no-audit --no-fund
+          # 这些文件就是我交给上游的功能被钉住的地方。文件不见了 = 那一格被挪走/删掉，必须当场红。
+          CONTRACT=(
+            test/mods/import.test.js
+          )
+          MISSING=0
+          for f in "${CONTRACT[@]}"; do
+            [ -f "$f" ] || { echo "::error::契约测试文件缺失：$f（那一格被上游删了或改名了）"; MISSING=1; }
+          done
+          [ "$MISSING" = 0 ] || exit 1
+          node --test --test-reporter=tap "${CONTRACT[@]}" > "${RUNNER_TEMP}/contract.tap" 2>&1 || true
+          tail -40 "${RUNNER_TEMP}/contract.tap"
+          PASS="$(grep -cE '^\s*ok ' "${RUNNER_TEMP}/contract.tap" || true)"
+          FAIL="$(grep -cE '^\s*not ok ' "${RUNNER_TEMP}/contract.tap" || true)"
+          echo "契约面：通过 ${PASS} 条 / 失败 ${FAIL} 条"
+          if [ "${PASS:-0}" -eq 0 ]; then
+            echo "::error::契约面一条测试都没跑到（跑了 0 条不等于绿）"; exit 1
+          fi
+          if [ "${FAIL:-0}" -ne 0 ]; then
+            echo "::error::契约面有 ${FAIL} 条失败 —— 同步不放行"; exit 1
+          fi
+          echo "✓ 契约门控通过"
+
+      # GATE 3 —— 复算：上游更新本身不该让 golden 移动（移动了 = 我们或上游误改了行为）。
+      #   与旧线的判据相同，只是新树自己的 golden 家族。
+      - name: GATE — golden 复算（行为不许漂）
+        if: steps.merge.outputs.merged == 'true'
+        timeout-minutes: 15
+        run: |
+          set -uo pipefail
+          if node tools/golden.mjs; then
+            echo "✓ golden 未移动"
+          else
+            echo "::error::golden 移动了 —— 停下来查，别放行"; exit 1
+          fi
+
+      # GATE 4 —— 打包链路：合并后的树必须还能出包，且产物里带管理器本体。
+      - name: GATE — 打包链路（出得了包，且带管理器）
+        if: steps.merge.outputs.merged == 'true'
+        timeout-minutes: 15
+        run: |
+          set -uo pipefail
+          node tools/package.mjs --lite --dry-run --list > "${RUNNER_TEMP}/pkg.list" 2>&1 || { echo "::error::打包器在新树上跑不通"; tail -20 "${RUNNER_TEMP}/pkg.list"; exit 1; }
+          tail -3 "${RUNNER_TEMP}/pkg.list"
+          MODS="$(grep -cE '^file server/mods/' "${RUNNER_TEMP}/pkg.list" || true)"
+          if [ "${MODS:-0}" -lt 4 ]; then
+            echo "::error::产物里 mod 管理器本体不足 4 个文件（实际 ${MODS:-0}）—— 这一格被上游改掉了"; exit 1
+          fi
+          echo "✓ 打包链路通，产物含 mod 管理器 ${MODS} 个文件"
+
+      - name: Push the synced branch
+        if: steps.merge.outputs.merged == 'true' && env.DRY != 'true'
+        id: push
+        run: |
+          set -euo pipefail
+          git push origin "HEAD:refs/heads/$TARGET"
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+          {
+            echo "### $TARGET 已同步"
+            echo "- 上游 sganggs：\`${{ steps.up.outputs.sha }}\`"
+            echo "- $TARGET -> \`$(git rev-parse HEAD)\`"
+            echo "- 本轮合入提交数：$(git rev-list --count '${{ steps.merge.outputs.pre }}..${{ steps.up.outputs.sha }}')"
+            echo "- 发布：\`release-manager.yml\` 会在这次成功之后自动接（同 tag 已存在就跳过）"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail loudly (conflict or red gate -> branch + issue, never a silent green)
+        if: always() && steps.up.outputs.done != 'true' && (steps.merge.outputs.merged != 'true' || failure())
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          SHA="${{ steps.up.outputs.sha }}"
+          SHORT="${SHA:0:8}"
+          if [ "${{ steps.merge.outputs.merged }}" = "true" ]; then
+            BR="sync-gatefail/$SHORT-$TARGET"; REASON="上游合进来了但门控红（增量面 / 契约面 / 复算 / 打包链路）—— \`$TARGET\` 未改动。"
+            git checkout -B "$BR"
+            git commit --allow-empty -m "blocked upstream sync (gate): $SHORT"
+          else
+            BR="sync-conflict/$SHORT-$TARGET"; REASON="上游 $SHORT 与 \`$TARGET\` 冲突，冲突文件清单见 SYNC-CONFLICTS.md。\`$TARGET\` 未改动。"
+            {
+              echo "# 上游 $SHA 没能同步进 $TARGET"
+              echo
+              echo '## 冲突文件'
+              echo '```'
+              cat "${RUNNER_TEMP}/conflicts.txt" 2>/dev/null || echo '(空：可能是改名/子模块冲突)'
+              echo '```'
+            } > SYNC-CONFLICTS.md
+            git checkout -B "$BR"
+            git add SYNC-CONFLICTS.md
+            git commit -m "conflict report: upstream $SHORT"
+          fi
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "演练模式：不推送、不开 issue（分支与清单只在 runner 里）"
+          else
+            git push -f origin "HEAD:refs/heads/$BR"
+            # GITHUB_TOKEN 开同仓 PR 会被拒（实测 GraphQL: Resource not accessible by integration），
+            # 所以「响」这条走 issue —— 同一个 sha 只开一条，不刷屏。
+            TITLE="上游同步被拦：upstream $SHORT → $TARGET"
+            if ! gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$TITLE" --json number --jq '.[].number' | grep -q .; then
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" \
+                --body "$REASON 分支 \`$BR\` 上有清单。"
+            fi
+          fi
+          exit 1

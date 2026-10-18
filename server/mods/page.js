@@ -1,6 +1,9 @@
 // server/mods/page.js — the /mod page. One self-contained HTML document (no build step, no external assets, a strict
 // CSP-friendly inline script): upload a zip, or let the server fetch one from an https address, then show what the
 // import wrote. Reads need no key; both writes send the owner's key (plugins/.studio-key) in X-SP-Mod.
+//
+// (i18n-ignore-file: the page is bilingual by design, 中文 · English — the same rule server/http/common.js carries,
+// docs/I18N.md.)
 
 /**
  * @param {{ inbox: string, keyHint: string }} opts

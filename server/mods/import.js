@@ -1,6 +1,9 @@
 // server/mods/import.js — one archive in, one answer out. The mod manager never opens a second loading path: a Forge
 // pack goes through upstream's forgeImport (which converts it into ordinary plugin folders), a plugin zip through
 // upstream's installPluginBytes (which checks and stages it). This module only decides which one is in front of it.
+//
+// (i18n-ignore-file: the reports it returns are bilingual by design, 中文 · English — the same rule
+// server/http/common.js carries, docs/I18N.md.)
 import { importForge, readUntrustedZip } from '../plugins/forgeImport.js';
 import { installPluginBytes, InstallError } from '../plugins/install.js';
 

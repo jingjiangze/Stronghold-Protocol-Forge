@@ -156,8 +156,8 @@ export function sourceOverlayHome(env = process.env, home = os.homedir()) {
 
 function git(cwd, args, opts = {}) {
   const res = spawnSync('git', args, {
-    cwd, encoding: opts.encoding === undefined ? 'utf8' : opts.encoding,
-    maxBuffer: 128 * 1024 * 1024, windowsHide: true,
+    cwd, input: opts.input, encoding: opts.encoding === undefined ? 'utf8' : opts.encoding,
+    maxBuffer: opts.maxBuffer || 128 * 1024 * 1024, windowsHide: true,
     stdio: opts.inherit ? 'inherit' : 'pipe', env: opts.env || process.env,
   });
   if (res.error) throw res.error;
@@ -232,6 +232,36 @@ export function readGitBlob(root, entry) {
   if (!entry || !/^[0-9a-f]{40}$/.test(entry.blob || '')) throw new Error('Invalid Git blob ID.');
   if (entry.mode === '120000') return null;
   return git(root, ['cat-file', 'blob', entry.blob], { encoding: null }).stdout;
+}
+
+// Read small batches of raw Git blobs in one process each. The target upstream contains many
+// files; spawning cat-file once per path made an audit unnecessarily slow. Keep batch memory bounded.
+export function readGitBlobs(root, entries, { batchSize = 24 } = {}) {
+  const regular = entries.filter((entry) => entry && entry.mode !== '120000');
+  for (const entry of regular) if (!/^[0-9a-f]{40}$/.test(entry.blob || '')) throw new Error('Invalid Git blob ID.');
+  const unique = [...new Set(regular.map((entry) => entry.blob))];
+  const blobs = new Map();
+  for (let i = 0; i < unique.length; i += batchSize) {
+    const ids = unique.slice(i, i + batchSize);
+    const output = git(root, ['cat-file', '--batch'], {
+      encoding: null, input: Buffer.from(ids.join('\n') + '\n'), maxBuffer: 128 * 1024 * 1024,
+    }).stdout;
+    let offset = 0;
+    for (const expected of ids) {
+      const lineEnd = output.indexOf(0x0a, offset);
+      if (lineEnd < 0) throw new Error('Malformed git cat-file --batch header.');
+      const header = output.subarray(offset, lineEnd).toString('ascii').split(' ');
+      if (header[0] !== expected || header[1] !== 'blob') throw new Error('Unexpected git cat-file object: ' + header.join(' '));
+      const size = Number(header[2]);
+      if (!Number.isSafeInteger(size) || size < 0) throw new Error('Invalid git blob size: ' + header[2]);
+      const start = lineEnd + 1, end = start + size;
+      if (end >= output.length || output[end] !== 0x0a) throw new Error('Truncated git blob: ' + expected);
+      blobs.set(expected, output.subarray(start, end));
+      offset = end + 1;
+    }
+    if (offset !== output.length) throw new Error('Trailing bytes in git cat-file --batch output.');
+  }
+  return blobs;
 }
 
 async function readFile(root, relativePath) {
@@ -490,12 +520,16 @@ async function applyProfile(o) {
 }
 
 async function copyTarget(targetRoot, outRoot) {
-  const index=indexTracked(targetRoot);
-  for (const [p,entry] of index) {
-    if (entry.mode==='120000') throw new Error('Unsupported symlink in upstream tree: '+p);
-    const bytes=readGitBlob(targetRoot,entry);
-    if (bytes===null) throw new Error('Cannot read upstream file: '+p);
-    await writeFile(outRoot,p,bytes,entry.mode);
+  const index=indexTracked(targetRoot), entries=[...index.entries()];
+  for (const [p,entry] of entries) if (entry.mode==='120000') throw new Error('Unsupported symlink in upstream tree: '+p);
+  for (let i=0;i<entries.length;i+=24) {
+    const batch=entries.slice(i,i+24);
+    const blobs=readGitBlobs(targetRoot,batch.map(([,entry])=>entry));
+    for (const [p,entry] of batch) {
+      const bytes=blobs.get(entry.blob);
+      if (bytes===undefined) throw new Error('Cannot read upstream file: '+p);
+      await writeFile(outRoot,p,bytes,entry.mode);
+    }
   }
   return index.size;
 }

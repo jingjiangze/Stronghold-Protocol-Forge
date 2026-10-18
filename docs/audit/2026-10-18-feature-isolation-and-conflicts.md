@@ -146,3 +146,47 @@
 | 上游 + 功能适配器完整游戏回归 | PENDING |
 
 `BASELINE` = 固定审计输入；`IMPLEMENTED` = 已提交代码/文档；`PASS` = 有可核对的实测结果；`PENDING` = 尚未完成/尚未证明。不可将 `IMPLEMENTED` 当成 `PASS`。
+
+## 6. 补充审计规则：玩法差异、真实冲突和混合挂载点分开记账
+
+本次按你的边界再次固定规则：**救援/复活、联防二段接力、冻结/恢复、房主 AI 代算本身不进入上游/来源的玩法二选一；每个玩法由独立功能包归属。** 同一路径有改动并不意味着玩法与上游冲突。共享协议、房间生命周期、Match、启动入口只属于挂载接口，不得用整文件 source/upstream 选择来裁定玩法。
+
+修正后的报告把三类事项分开：
+
+| 报告类别 | 含义 | 是否称为玩法冲突 | 处理方式 |
+|---|---|---|---|
+| pending 中的 three-way-hunk、add-add、delete-modified、modify-deleted、binary-conflict 等 | 固定 Git blob 上真正无法自动合成的公共代码差异 | 否；若 hunk 明确是玩法接线，转由对应功能适配器处理 | 只针对真实公共残差逐项审阅，不能用整文件覆盖 |
+| owner-review-required | 需要你决定的公共挂载策略，不一定存在文本重叠 | 否 | 按下方的上游/来源优劣选择接口保留策略，不默认替你选 |
+| deferredMixedPaths | 某个功能引用文件同时包含玩法接线与公共功能，整个来源文件只保存到 reference 区；其非玩法残差仍待拆分 | 不把它误记成玩法冲突，也不把未处理差异算作已解决 | 继续逐项抽取/合并文件中的非玩法改动；上游文件留在组合树 |
+
+### 玩法独立边界（执行规则）
+
+- **救援/复活**：其行为散布在战斗死亡/重新部署时序、道具、羁绊和干员规则中。现阶段来源快照只放在 reference 区供管理器提取，不声称已拆出可运行的独立实现。下一步是让 Forge adapter 以窄接口连接这些规则，保留资格判断、优先级、费用/SP、落点与部署事件语义。
+- **联防二段接力**：server/match/unite.js 和 server/match/match/unitePhase.js 属于独立玩法模块；settle.js 等公共结算只作 reference。公共结算与结果 view 保持目标上游主干，由联防 adapter 注册自己的阶段和结果。
+- **冻结/恢复**：server/match/match/frozen.js 属于独立功能；来源 server/lobby.js 不作为替代大厅，而是生命周期接线参考。Forge adapter 把冻结和恢复接到上游房间生命周期，并测试断线重连、房间关闭与阶段计时。
+- **房主浏览器 AI 代算**：浏览器调度、Worker、模拟评分和服务端 rehearsal 模块单独存放；main.js、prep.js、Match.js、lobby.js、server/index.js 是挂载参考。客户端 Worker 协议、房主迁移、超时/掉线回退和旧浏览器兼容必须一并测试。
+
+### 其他公共差异：优劣和建议汇总
+
+以下是公共接口/非玩法差异的审阅表；它们不是说整个路径存在文本冲突。实际冲突数及 hunk ID 只以最新 source-delta-audit artifact 为准。初始决策文件为空，未代你选边。
+
+| 项目 | 上游保留的优点 | 你这边保留的优点 | 建议策略 |
+|---|---|---|---|
+| stronghold-server:data/config.json 奖励/经济池 | 保留新版本 rewards.milestones/daily 和数据读取契约 | 保留 economy.poolCopiesOverrides.chess_char_6_11_a=4 | 保留上游奖励树，只选择性注入单个牌池键；来源缺失 rewards 是否有意为之仍待你定 |
+| stronghold-server:server/lobby.js | 新插件内容集、consent/contentReady、串行事件和重连/关闭生命周期完整 | 公共匹配队列、实验模式/容量、容量与匹配版本握手、IP 限额 | 上游作为唯一房间状态机；匹配和容量由单独 adapter 接入 |
+| stronghold-server:shared/protocol.js | 插件/模式/内容确认协议与上游客户端、校验逻辑一致 | queue.*、实验模式与容量字段、负载状态/诊断 | 上游 schema 为主；按 feature 注册扩展消息，客户端/服务端/版本协商成对 |
+| 两个来源 profile 的 server/index.js | 插件 registry、内容 hash/consent、每房间 Match host、trusted runtime、CSP 与资源索引 | Worker 池、独立 rehearsal 计算池、健康/流量、压缩、公告/OAuth、素材跳转与既有 ModBridge | 保留上游启动/关闭入口；自有能力按可关闭 boot/shutdown adapter 逐个接入 |
+| 客户端 public/** | 新 DOM、路由与工坊/插件页面结构一致，减少旧结构耦合 | 公告、伤害板、皮肤/干员预设、素材回退和原有交互 | 不覆盖整目录；新增页面独立挂载，同路径 UI 逐组件迁移 |
+| 资源寻址与 data/assets.json | 与当前生成器、hash 和加载器格式一致 | 自有 CDN 跳转、源探测、缓存与失败回退 | 清单由上游生成，自有解析/测速逻辑独立挂载；未跟踪资源需另验 |
+| WebSocket/网络/遥测 | 握手、鉴权、心跳、协议验证的单一事实来源 | 压缩、流量/健康监测及诊断 | 先保留上游协议；压缩/观测通过可关闭 adapter，测试背压/重连/旧客户端 |
+| build、依赖与 lockfile | 当前版本依赖和构建约定正确 | 自有校验、发布与诊断脚本 | 分开合并 scripts/runtime/devDependencies/lockfile；干净安装后全量打包 |
+| Stardust 部署/反代/sidecar | 默认部署简单且不绑定专用环境 | 保留实际生产集群、反代与运维自动化 | 只在 deployment profile 显式选入，不进默认游戏运行树 |
+| 来源分支删除但目标上游仍有的路径 | 保留新版本依赖与回归代码 | 自有分支可能已有替代实现或刻意清理 | 默认保留上游；只有引用与替代实现审计后才应用删除 |
+
+### 状态说明
+
+- 独立玩法清单和 reference 文件隔离：IMPLEMENTED。
+- 混合挂载路径 deferredMixedPaths 报告逻辑及回归测试：IMPLEMENTED，等待 Actions 实跑后才可标 PASS。
+- 最新 pinned source blobs 的真实冲突/hunk 列表：PENDING，不得用之前受换行/树索引影响的统计代替。
+- 玩法 adapter 的实际运行、联机测试与全量回归：PENDING。保存源文件不等于已挂载运行。
+- 你对非玩法公共接口取舍的决定：PENDING；不会默认选上游或来源整文件。

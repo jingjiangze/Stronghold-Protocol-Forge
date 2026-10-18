@@ -384,7 +384,14 @@ function openValidationView({ root, dataDir, pluginsDir, stage }) {
       try { st = fs.statSync(abs); } catch { return; }
       if (!st.isDirectory()) return;
       if (!fs.existsSync(path.join(abs, PLUGIN_MANIFEST))) return;
-      fs.symlinkSync(abs, dest);
+      try {
+        fs.symlinkSync(abs, dest);
+      } catch (e) {
+        // Windows without Developer Mode (or a privileged account) cannot create a symlink: EPERM. The view is a
+        // read-only validation registry, so a copy is equivalent — slower, and only of the packs this import adds.
+        if (!['EPERM', 'EACCES', 'ENOSYS', 'UNKNOWN'].includes(e?.code)) throw e;
+        fs.cpSync(abs, dest, { recursive: true, dereference: true });
+      }
     };
     if (pluginsDir && fs.existsSync(pluginsDir)) {
       for (const name of fs.readdirSync(pluginsDir)) take(name, path.join(pluginsDir, name));
@@ -3310,6 +3317,7 @@ export async function importForge(source, opts = {}) {
       issues.push({ code: e.code, detail: e.detail });
       return empty({ check: `${e.code}: ${e.detail}`, markdown: `# 导入报告 IMPORT-REPORT\n\n没有写入。\n\n- ${e.code}：${e.detail}\n` });
     }
+    console.error('[debug]', e && e.stack, e && e.code);
     if (typeof e?.code === 'string' && /^E[A-Z0-9]+$/.test(e.code)) {
       const detail = `the import could not be written (${e.code})`;
       issues.push({ code: 'PLUGIN_FORGE_ZIP', detail });

@@ -52,6 +52,7 @@ import { createMatchHosts } from './match/host/index.js';
 import { createTrustedRuntime } from './plugins/trustedRuntime.js';
 import { trustedHostAllowed } from './plugins/trusted.js';
 import { createStudio } from './studio/index.js';
+import { createMods } from './mods/index.js';
 import { MIME, COMPRESSIBLE, acceptsGzip, pickEncoding, parseRange } from './http/files.js';
 import { BUILD_INPUTS, computeBuildTag, buildTag, resetBuildTag } from './http/buildTag.js';
 import { createRequestHandler } from './http/routes.js';
@@ -77,12 +78,13 @@ export {
  *   ratePerSec?: number, rateBurst?: number, maxConnections?: number, maxRooms?: number,
  *   maxConnectionsPerAddr?: number, maxRoomsPerAddr?: number, maxMatchesPerAddr?: number, resyncMinGapMs?: number,
  *   heavyPerSec?: number, heavyBurst?: number, trustProxy?: 'auto' | boolean, soloReconnectWindowMs?: number,
- *   assetIndex?: boolean | { cacheFile?: string | null, delayMs?: number }, studio?: boolean,
+ *   assetIndex?: boolean | { cacheFile?: string | null, delayMs?: number }, studio?: boolean, mods?: boolean,
  *   matchHost?: object,
  * }} [opts]
  *   assetIndex: the content-hash index (default on; false or SP_ASSET_INDEX=0: off — config.js assetIndexOptionsFrom);
  *   studio: the plugin studio at /studio/ (default on for this machine and the local network — SP_STUDIO=local|off;
  *   false: none);
+ *   mods: the mod manager at /mod/ and the mod-inbox/ watcher (default on; false or SP_MODS=off: none);
  *   matchHost: options of the match hosts (server/match/host/index.js — watchdogMs, matchOptions …; tests)
  * @returns {Promise<{ port: number, host: string, url: string, server: http.Server, wss: import('ws').WebSocketServer,
  *                     lobby: import('./lobby.js').Lobby, network: import('./net.js').Network,
@@ -127,9 +129,13 @@ export async function startServer(opts = {}) {
   const hosts = createMatchHosts({ contents, log, options: { transport, maxWorkers: Math.max(1, policy.get().maxSets), ...(opts.matchHost || {}) } });
   const { registry, lobby, network } = createSessionStack(opts, { data, log, content, plugins: roomSets, hosts });
   const serveStatic = createStaticHandler({ publicDir, dataDir, sharedDir, simDir, packsDir, pluginsDir, packs, content, log, assetIndex, views, visual, contents });
-  // the plugin studio (DESIGN §32.9): its page and API for this machine and the local network; it watches plugins/ only
-  // once it is used (hot reload), and rooms whose host is the author or alone follow a plugin's changes by themselves
   const studio = opts.studio === false ? null : createStudio({ publicDir, pluginsDir, dataDir, registry: packs, lobby, sessions: registry, log, fetch: opts.fetch });
+  // the mod manager (server/mods/): the /mod page and the drop-in inbox. Imports go through the plugin system's own
+  // forgeImport / installPluginBytes — one loading chain, no second one. Off with opts.mods === false or SP_MODS=off.
+  const mods = opts.mods === false || String(process.env.SP_MODS || '').toLowerCase() === 'off' ? null : createMods({
+    root: ROOT, pluginsDir, dataDir, registry: packs, log, fetch: opts.fetch,
+    vanilla: (() => { try { return packs.vanillaAssets?.() || null; } catch { return null; } })(),
+  });
   const trustedRuntime = await createTrustedRuntime({registry:packs,log});
   lobby.trustedRuntime = trustedRuntime;
   const startedAt = Date.now();
@@ -138,7 +144,7 @@ export async function startServer(opts = {}) {
   buildTag();
 
   const traffic = createTrafficCounter();
-  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health }, log, trustProxy: network.opts.trustProxy, studio, trustedRuntime }));
+  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health }, log, trustProxy: network.opts.trustProxy, studio, mods, trustedRuntime }));
   server.on('clientError', answerClientError);
   const wss = attachWebSocket(server, { network, log, traffic });
 
@@ -186,6 +192,7 @@ export async function startServer(opts = {}) {
     network.close(); // stop heartbeat/sweep timers of the half-built server
     assetIndex?.close();
     studio?.close();
+    mods?.close();
     await trustedRuntime?.close();
     throw e;
   }
@@ -205,6 +212,7 @@ export async function startServer(opts = {}) {
       network.close();
       assetIndex?.close();
       studio?.close();
+      mods?.close();
       await trustedRuntime?.close();
       await new Promise((resolve) => {
         server.close(() => resolve());
@@ -216,7 +224,7 @@ export async function startServer(opts = {}) {
     return closing;
   }
 
-  return { port: actualPort, host: boundHost, url, server, wss, lobby, network, registry, packs, content, visual, contents, hosts, traffic, assetIndex, views, studio, close };
+  return { port: actualPort, host: boundHost, url, server, wss, lobby, network, registry, packs, content, visual, contents, hosts, traffic, assetIndex, views, studio, mods, close };
 }
 
 // `node server/index.js` / npm start: listen, print the banner, stop on SIGINT / SIGTERM (http/boot.js).

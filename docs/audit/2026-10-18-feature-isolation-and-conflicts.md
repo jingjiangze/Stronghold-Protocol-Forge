@@ -72,13 +72,15 @@
 - **建议组合**：以目标上游 schema 为主；把自有功能消息作为单独扩展表注册，并由 Forge manifest 成对声明 client handler、server handler、版本/能力协商和负载字段。对每条扩展消息加未知版本、缺字段、越权操作和旧客户端测试，不替换整个协议表。
 - **当前状态**：`PENDING`；扩展消息的客户端与服务端成对接线必须和相应 feature adapter 一起验收。
 
-### D. `server/index.js`（两个来源层各自有差异）— 进程启动、服务注册和关闭
+### D. `server/index.js`（两个来源 profile 各有差异）— 进程启动与运行时扩展
 
-- **上游方案的优点**：跟进上游网络服务初始化顺序、退出清理、错误处理和启动契约。
-- **你这边方案的优点**：保留 Worker 池、健康/流量观测、Agent/资源缓存与监控等运维能力。
-- **代价与风险**：这是共享启动根。来源整文件覆盖可能让上游新服务或安全校验没有注册；上游整文件替换则可能让监控或 Agent 未初始化。
-- **建议**：保留上游入口，将 Worker/监控/Agent 改成显式 boot/shutdown adapter，按依赖顺序注册并支持失败回滚；不要把来源版入口整文件换上来。
-- **当前状态**：`PENDING`。
+固定来源的 `stronghold-server/server/index.js` 使用 `CombatWorkerPool` 和独立 trial/rehearsal worker pool，提供 server-load/health metrics、WebSocket compression、asset-jump、announcement source、OAuth route，以及当前 modBridge/workshop server hooks。目标上游则引入正式 plugin registry、内容集 hash/consent、每个内容集的 match host（process/worker）、room sets、trusted runtime、plugin studio、CSP、traffic counter 与 asset index/views。
+
+- **上游方案的优点**：这是当前插件/内容集隔离架构的生命周期根；内容集的运行上下文和 Match host 分离，插件的崩溃/阻塞可局限在对应 host；CSP、流量统计、asset index、trusted runtime 和 studio 都与新插件系统对齐。
+- **你这边方案的优点**：固定 worker 池、单独 rehearsal pool、负载诊断、WebSocket 压缩、素材跳转、公告/OAuth 路由和现有 ModBridge 能直接解决你实际运行中的计算、资源、管理接线问题。
+- **代价与风险**：来源整份入口会缺失上游的 content-set / per-room host / trusted-plugin 生命周期；上游整份入口会丢现有 worker-pool 开关、负载诊断、asset jump 和部分服务接线。两个启动流程的依赖顺序、关闭流程和回退行为均不同。
+- **建议组合**：保留目标上游 `startServer`、plugin/content-set/host 架构；由 Forge 生成独立注册器把自有能力接成可关闭的 boot/shutdown adapters。先接通可观测性和 asset-jump，再按 feature profile 挂载 worker pool；不要将旧 ModBridge 当作新的主入口。服务启动时适配失败应显式禁用功能或让启动失败，不能静默半加载。
+- **当前状态**：`PENDING`；属于公共启动挂载点的架构取舍，不应整份选来源文件。
 
 ### E. `public/**` — 客户端大厅 UI、公告、伤害面板、皮肤/干员预设、素材加载
 

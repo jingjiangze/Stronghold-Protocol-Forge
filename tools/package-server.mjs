@@ -20,6 +20,7 @@ const SERVER_GUIDE = 'docs/DEPLOY-SERVER.md';
 const SOURCE_DELTA_FILES = [
   'config/source-delta-profiles.json',
   'config/source-delta-decisions.json',
+  'config/source-delta-features.json',
   'tools/source-overlay.mjs',
   'docs/SOURCE-DELTA-LAYER.md',
 ];

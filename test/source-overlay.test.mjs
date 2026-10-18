@@ -69,6 +69,21 @@ test('three-way merge reports same-hunk conflicts and does not choose a side',as
   assert.equal(result.blocks[0].upstream,'upstream-value');assert.equal(result.blocks[0].source,'source-value');
 });
 
+test('three-way merge handles multiple conflicting hunks returned as exit status 2+', async (t) => {
+  const home = await fs.mkdtemp(path.join(os.tmpdir(), 'source-overlay-multi-conflict-'));
+  t.after(() => fs.rm(home, { recursive: true, force: true }));
+  const base = Buffer.from('alpha\nbase-one\nbridge\nbase-two\nomega\n');
+  const upstream = Buffer.from('alpha\nupstream-one\nbridge\nupstream-two\nomega\n');
+  const source = Buffer.from('alpha\nsource-one\nbridge\nsource-two\nomega\n');
+  const result = await threeWayMerge(home, 'multi-conflict.js', base, upstream, source);
+  assert.equal(result.kind, 'conflict');
+  assert.equal(result.blocks.length, 2, 'Git exit status 2 represents two conflicting hunks');
+  assert.equal(result.blocks[0].upstream, 'upstream-one');
+  assert.equal(result.blocks[0].source, 'source-one');
+  assert.equal(result.blocks[1].upstream, 'upstream-two');
+  assert.equal(result.blocks[1].source, 'source-two');
+});
+
 test('source comparison reads raw Git blob bytes rather than working-tree EOL conversion', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'source-overlay-blob-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));

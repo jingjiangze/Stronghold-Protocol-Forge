@@ -55,7 +55,7 @@
 
 | 路径 | 保留上游的优点 | 保留自有差异的优点 | 当前建议 |
 |---|---|---|---|
-| `stronghold-server:data/config.json` | 跟进上游首领/经济/配置结构与修复 | 保留自定义 Boss 血量比例与缩放规则 | 以上游数据为底，只挑选并迁入明确需要的键 |
+| `stronghold-server:data/config.json` | 保留目标上游的 `rewards.milestones/daily` 新奖励结构 | 保留 `economy.poolCopiesOverrides.chess_char_6_11_a=4` 自有牌池数量 | 不整文件覆盖；保留上游 rewards，只迁入单个经济池键；来源缺失 rewards 是否有意删除待确认 |
 | `stronghold-server:server/lobby.js` | 保留上游房间生命周期、重连/主机迁移与 Match 接口 | 保留公共匹配、实验性容量/房间能力 | 上游大厅为底，把匹配与容量单独做 adapter |
 | `stronghold-server:shared/protocol.js` | 保持当前客户端、协议校验与服务端处理器一致 | 保留自定义玩法/UI 消息声明 | 以功能命名空间扩展协议，客户端和服务端成对登记 |
 | `stronghold-server:server/index.js` | 保留上游启动、退出和网络初始化顺序 | 保留 Worker、监控、健康/流量统计 | 上游入口 + 可关闭的 boot/shutdown 模块 |

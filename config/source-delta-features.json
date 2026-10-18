@@ -8,15 +8,17 @@
       "profile": "stronghold-server",
       "name": "救援/复活",
       "sourcePaths": [
+        "server/match/match/combat.js",
         "server/match/match/settle.js"
       ],
       "integrationPoints": [
-        "server/match/match/settle.js",
         "server/match/Match.js",
+        "server/match/match/combat.js",
+        "server/match/match/settle.js",
         "shared/protocol.js"
       ],
       "activationStatus": "adapter-required",
-      "rationale": "将玩法源码原样存放在独立功能区，不把来源版 settle.js 整文件覆盖到上游。结算状态机、协议消息和结果视图只在 Forge 适配器中接线；适配器完成前不可宣称玩法已启用。"
+      "rationale": "来源 combat.js 明确记录救援捐助者资格不能由 synthetic 结果冒充；settle.js 包含结算/结果视图的自有分支。两份源码原样隔离，公共结算和战斗入口保留上游版本，通过独立适配器接线，不以整文件覆盖裁决玩法。"
     },
     {
       "id": "unite-second-relay",

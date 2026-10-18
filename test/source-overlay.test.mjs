@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { classifyPath, conflictHunkId, isPathIncluded, loadSourceDeltaConfig, threeWayMerge, validateCatalog, validateDecisions } from '../tools/source-overlay.mjs';
+import { classifyPath, conflictHunkId, isPathIncluded, loadSourceDeltaConfig, readGitBlob, threeWayMerge, validateCatalog, validateDecisions } from '../tools/source-overlay.mjs';
 
 test('catalog pins a shared upstream baseline and two immutable sources', async () => {
   const { catalog, decisions } = await loadSourceDeltaConfig();
@@ -55,4 +56,23 @@ test('three-way merge reports same-hunk conflicts and does not choose a side',as
   const result=await threeWayMerge(home,'sample.js',base,upstream,source);
   assert.equal(result.kind,'conflict');assert.equal(result.blocks.length,1);
   assert.equal(result.blocks[0].upstream,'upstream-value');assert.equal(result.blocks[0].source,'source-value');
+});
+
+test('source comparison reads raw Git blob bytes rather than working-tree EOL conversion', async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'source-overlay-blob-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const runGit = (args) => execFileSync('git', args, { cwd: root, stdio: 'pipe' });
+  runGit(['init', '--quiet']);
+  runGit(['config', 'user.email', 'source-overlay-test@example.invalid']);
+  runGit(['config', 'user.name', 'Source Overlay Test']);
+  await fs.writeFile(path.join(root, '.gitattributes'), '*.txt text eol=crlf\n');
+  await fs.writeFile(path.join(root, 'sample.txt'), 'alpha\nbeta\n');
+  runGit(['add', '.gitattributes', 'sample.txt']);
+  runGit(['commit', '-m', 'fixture']);
+  runGit(['checkout', '--', 'sample.txt']);
+  const sha = runGit(['rev-parse', 'HEAD:sample.txt']).toString('utf8').trim();
+  const rawBlob = readGitBlob(root, { mode: '100644', blob: sha });
+  const workingFile = await fs.readFile(path.join(root, 'sample.txt'));
+  assert.deepEqual(rawBlob, Buffer.from('alpha\nbeta\n'));
+  assert.notDeepEqual(workingFile, rawBlob, 'eol=crlf changes the checked-out bytes, not the committed Git blob');
 });

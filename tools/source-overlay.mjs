@@ -164,9 +164,15 @@ function indexTracked(root) {
     const meta = item.slice(0, tab).split(' ');
     const p = safePath(item.slice(tab + 1));
     if (!p) throw new Error('Unsafe tracked path: ' + item.slice(tab + 1));
-    out.set(p, { mode: meta[0] || '100644' });
+    out.set(p, { mode: meta[0] || '100644', blob: meta[1] || '' });
   }
   return out;
+}
+
+export function readGitBlob(root, entry) {
+  if (!entry || !/^[0-9a-f]{40}$/.test(entry.blob || '')) throw new Error('Invalid Git blob ID.');
+  if (entry.mode === '120000') return null;
+  return git(root, ['cat-file', 'blob', entry.blob], { encoding: null }).stdout;
 }
 
 async function readFile(root, relativePath) {
@@ -277,8 +283,8 @@ async function applyProfile(o) {
   const paths = [...new Set([...baseIndex.keys(), ...sourceIndex.keys()])].sort();
   for (const p of paths) {
     const be = baseIndex.get(p), se = sourceIndex.get(p);
-    const base = be ? await readFile(o.baseRoot, p) : null;
-    const source = se ? await readFile(o.sourceRoot, p) : null;
+    const base = be ? readGitBlob(o.baseRoot, be) : null;
+    const source = se ? readGitBlob(o.sourceRoot, se) : null;
     if (se && source === null) { pending(o.report,o.profile,p,'unsafe-source-path',null,'Source path is not a regular file.','<not read>','<unsupported>'); o.summary.pending++; continue; }
     if (be && base === null) throw new Error('Cannot read baseline file: ' + p);
     if (be && se && hash(base) === hash(source)) continue;
@@ -371,7 +377,7 @@ async function copyTarget(targetRoot, outRoot) {
   const index=indexTracked(targetRoot);
   for (const [p,entry] of index) {
     if (entry.mode==='120000') throw new Error('Unsupported symlink in upstream tree: '+p);
-    const bytes=await readFile(targetRoot,p);
+    const bytes=readGitBlob(targetRoot,entry);
     if (bytes===null) throw new Error('Cannot read upstream file: '+p);
     await writeFile(outRoot,p,bytes,entry.mode);
   }

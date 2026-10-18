@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "policy": "independent-gameplay-bundles",
+  "description": "Gameplay behavior is preserved as exact source blobs in a manager-owned feature namespace. Common upstream files are not overwritten by these bundles. Runtime use requires a manager adapter and interface regression tests; staging alone is not activation.",
+  "bundles": [
+    {
+      "id": "rescue-revival",
+      "profile": "stronghold-server",
+      "name": "救援/复活",
+      "sourcePaths": [
+        "server/match/match/settle.js"
+      ],
+      "integrationPoints": [
+        "server/match/match/settle.js",
+        "server/match/Match.js",
+        "shared/protocol.js"
+      ],
+      "activationStatus": "adapter-required",
+      "rationale": "将玩法源码原样存放在独立功能区，不把来源版 settle.js 整文件覆盖到上游。结算状态机、协议消息和结果视图只在 Forge 适配器中接线；适配器完成前不可宣称玩法已启用。"
+    },
+    {
+      "id": "unite-second-relay",
+      "profile": "stronghold-server",
+      "name": "联防二段接力",
+      "sourcePaths": [
+        "server/match/unite.js",
+        "server/match/match/unitePhase.js",
+        "server/match/match/settle.js"
+      ],
+      "integrationPoints": [
+        "server/match/unite.js",
+        "server/match/match/unitePhase.js",
+        "server/match/match/settle.js",
+        "shared/protocol.js"
+      ],
+      "activationStatus": "adapter-required",
+      "rationale": "二段接力作为独立玩法包保留；联防阶段推进、结算归因和客户端结果消息属于挂载点，不以整文件 source/upstream 选择替代适配。"
+    },
+    {
+      "id": "freeze-when-all-humans-offline",
+      "profile": "stronghold-server-server-agent",
+      "name": "全员离线冻结对局",
+      "sourcePaths": [
+        "server/lobby.js"
+      ],
+      "integrationPoints": [
+        "server/lobby.js",
+        "server/match/Match.js"
+      ],
+      "activationStatus": "adapter-required",
+      "rationale": "冻结/恢复逻辑作为独立功能保留；房间生命周期、定时器和重连回调需经管理器适配，不能以来源版大厅整文件覆盖上游。"
+    },
+    {
+      "id": "host-browser-ai-rehearsal",
+      "profile": "stronghold-server-server-agent",
+      "name": "房主浏览器代算 AI 布阵",
+      "sourcePaths": [
+        "server/match/match/prep.js"
+      ],
+      "integrationPoints": [
+        "server/match/match/prep.js",
+        "server/lobby.js",
+        "server/index.js"
+      ],
+      "activationStatus": "adapter-required",
+      "rationale": "浏览器 Worker 代算与服务端超时/掉线回退按完整功能切片保存；准备阶段入口、房主变更和 Worker 消息协议是适配点。不能只挂载 prep.js 或只挂客户端 Worker。"
+    }
+  ]
+}

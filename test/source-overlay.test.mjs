@@ -152,3 +152,51 @@ test('independent feature source is staged exactly and does not overwrite upstre
   assert.equal(report.integrationPending.length, 1, 'runtime hook still needs a separate adapter');
   assert.equal(report.ready, false, 'unwired gameplay bundle must never claim READY');
 });
+
+test('mixed gameplay integration files are reported separately from true path conflicts', async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'source-overlay-mixed-reference-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const runGit = (cwd, args) => execFileSync('git', args, { cwd, stdio: 'pipe' });
+  async function repo(name, body) {
+    const cwd = path.join(root, name);
+    await fs.mkdir(path.join(cwd, 'server'), { recursive: true });
+    runGit(cwd, ['init', '--quiet']);
+    runGit(cwd, ['config', 'user.email', 'source-overlay-test@example.invalid']);
+    runGit(cwd, ['config', 'user.name', 'Source Overlay Test']);
+    await fs.writeFile(path.join(cwd, 'server/lobby.js'), body);
+    runGit(cwd, ['add', '-A']);
+    runGit(cwd, ['commit', '--quiet', '-m', 'fixture']);
+    return { root: cwd, sha: runGit(cwd, ['rev-parse', 'HEAD']).toString('utf8').trim() };
+  }
+  const rel = 'server/lobby.js';
+  const baseline = await repo('baseline', 'baseline shared lobby + old feature hook\n');
+  const target = await repo('target', 'upstream lobby lifecycle\n');
+  const source = await repo('source', 'source lobby + independent mode hook\n');
+  const managerRoot = path.join(root, 'manager');
+  await fs.mkdir(managerRoot);
+  const outDir = path.join(root, 'composed');
+  const profile = {
+    id: 'stronghold-server-server-agent', name: 'fixture', repository: 'https://github.com/example/agent.git',
+    ref: 'fixture', commit: source.sha, sourceVersion: 'test', groups: ['runtime']
+  };
+  const bundle = {
+    id: 'freeze-when-all-humans-offline', profile: profile.id, name: 'freeze',
+    sourcePaths: [], referencePaths: [rel], integrationPoints: [rel],
+    activationStatus: 'adapter-required', rationale: 'lobby is a mixed shared lifecycle file'
+  };
+  const report = await buildSourceDeltaComposition({
+    catalog: { upstream: { baselineCommit: baseline.sha, auditedTargetCommit: target.sha, targetRef: 'fixture' }, profiles: [profile] },
+    decisions: { pathDecisions: {}, hunkDecisions: {}, reviewRequired: {} },
+    featureManifest: { schemaVersion: 1, policy: 'test', bundles: [bundle] },
+    snapshots: { base: baseline.root, target: target.root, profiles: { [profile.id]: source.root } },
+    outDir, groups: ['runtime'], home: path.join(root, 'home'), force: false, auditOnly: false, managerRoot
+  });
+  assert.equal(await fs.readFile(path.join(outDir, rel), 'utf8'), 'upstream lobby lifecycle\n');
+  assert.equal(await fs.readFile(path.join(outDir, '.forge-source-references/freeze-when-all-humans-offline/' + profile.id + '/' + rel), 'utf8'), 'source lobby + independent mode hook\n');
+  assert.equal(report.pending.length, 0, 'a feature reference must not become a source/upstream hunk choice');
+  assert.equal(report.deferredMixedPaths.length, 1, 'mixed shared paths need an explicit audit row');
+  assert.equal(report.deferredMixedPaths[0].path, rel);
+  assert.equal(report.deferredMixedPaths[0].upstreamImplementationRetained, true);
+  assert.equal(report.integrationPending.length, 1);
+  assert.equal(report.ready, false);
+});

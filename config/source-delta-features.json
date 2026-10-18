@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "policy": "independent-gameplay-bundles",
-  "description": "Gameplay behavior is preserved as exact source blobs in a manager-owned feature namespace. Common upstream files are not overwritten by these bundles. Runtime use requires a manager adapter and interface regression tests; staging alone is not activation.",
+  "description": "Feature-owned source modules are preserved byte-for-byte under the manager's feature namespace; mixed source files are preserved under a reference-only namespace when their behavior cannot safely be extracted as a standalone module. Shared upstream paths are never overwritten by these bundles. Runtime activation requires a Forge adapter and interface regression tests.",
   "bundles": [
     {
       "id": "rescue-revival",

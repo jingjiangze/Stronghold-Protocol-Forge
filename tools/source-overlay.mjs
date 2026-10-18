@@ -399,7 +399,7 @@ async function applyProfile(o) {
           else o.summary.referenceSourcesStaged++;
         }
       }
-      row.status = changed ? 'independent-bundle-source-staged' : 'independent-bundle-source-preserved';
+      row.status = changed ? 'independent-bundle-blob-staged' : 'independent-bundle-blob-preserved';
       row.featureBundles = featureBundles.map((bundle) => bundle.id);
       row.stagedKinds = [...new Set(featureBundleEntries.map((entry) => entry.kind))];
       row.stagedPaths = stagedPaths;

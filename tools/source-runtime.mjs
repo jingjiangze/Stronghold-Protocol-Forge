@@ -327,6 +327,10 @@ export function createSourceRuntimeProxyServer(options) {
   const backendPort = options.backendPort;
   const getBackendState = typeof options.getBackendState === 'function'
     ? options.getBackendState : () => options.backendState || { alive: true, pid: null };
+  const publicProtocol = options.publicProtocol ?? null;
+  if (publicProtocol !== null && !['http', 'https'].includes(publicProtocol)) {
+    throw new Error('publicProtocol must be "http", "https", or null for direct-protocol detection');
+  }
   const sockets = new Set();
   const server = http.createServer((request, response) => {
     let pathname = '/';
@@ -365,7 +369,7 @@ export function createSourceRuntimeProxyServer(options) {
       port: backendPort,
       method: request.method,
       path: request.url || '/',
-      headers: buildProxyHeaders(request.headers, request.socket.remoteAddress, requestProtocol(request)),
+      headers: buildProxyHeaders(request.headers, request.socket.remoteAddress, publicProtocol || requestProtocol(request)),
       agent: false,
     }, (upstreamResponse) => {
       if (response.destroyed) return;
@@ -397,7 +401,7 @@ export function createSourceRuntimeProxyServer(options) {
       port: backendPort,
       method: request.method || 'GET',
       path: request.url || '/',
-      headers: buildProxyHeaders(request.headers, request.socket.remoteAddress, requestProtocol(request), { upgrade: true }),
+      headers: buildProxyHeaders(request.headers, request.socket.remoteAddress, publicProtocol || requestProtocol(request), { upgrade: true }),
       agent: false,
     });
     let completed = false;
@@ -582,6 +586,7 @@ async function serveProfile(profile, publicOptions, home) {
   const proxy = createSourceRuntimeProxyServer({
     profile,
     backendPort,
+    publicProtocol: publicOptions.publicProtocol,
     getBackendState: () => state,
   });
   try {
@@ -624,7 +629,15 @@ async function serveProfile(profile, publicOptions, home) {
 }
 
 function parseServeOptions(argumentsList) {
-  const options = { port: Number(process.env.PORT || 3000), host: process.env.SOURCE_RUNTIME_HOST || '127.0.0.1' };
+  const configuredProtocol = process.env.SOURCE_RUNTIME_PUBLIC_PROTOCOL || 'auto';
+  if (!['auto', 'http', 'https'].includes(configuredProtocol)) {
+    throw new Error('SOURCE_RUNTIME_PUBLIC_PROTOCOL must be auto, http, or https');
+  }
+  const options = {
+    port: Number(process.env.PORT || 3000),
+    host: process.env.SOURCE_RUNTIME_HOST || '127.0.0.1',
+    publicProtocol: configuredProtocol === 'auto' ? null : configuredProtocol,
+  };
   for (let index = 0; index < argumentsList.length; index += 1) {
     const key = argumentsList[index];
     if (key === '--port') {

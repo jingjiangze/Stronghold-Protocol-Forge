@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import net from 'node:net';
+import os from 'node:os';
+import path from 'node:path';
 import { once } from 'node:events';
 import {
   MANAGER_HEALTH_PATH,
@@ -57,16 +59,16 @@ test('catalog validation rejects mutable/unpinned or unsafe profile paths', () =
 
 test('runtime path resolution is pinned and rejects paths outside the configured home', () => {
   const profile = { id: 'stronghold-server', commit: 'b'.repeat(40) };
-  const home = '/tmp/source-runtime-home';
+  const home = path.resolve(os.tmpdir(), 'source-runtime-home');
   const target = runtimeInstallPath(profile, home);
-  assert.equal(target, '/tmp/source-runtime-home/stronghold-server/' + profile.commit);
+  assert.equal(target, path.join(home, 'stronghold-server', profile.commit));
   assert.equal(pathIsWithin(home, target), true);
   assert.equal(pathIsWithin(home, home), false);
-  assert.equal(pathIsWithin(home, '/tmp/outside-runtime'), false);
-  assert.equal(pathIsWithin(home, '/tmp/source-runtime-home/../outside-runtime'), false);
+  assert.equal(pathIsWithin(home, path.resolve(os.tmpdir(), 'outside-runtime')), false);
+  assert.equal(pathIsWithin(home, path.resolve(home, '..', 'outside-runtime')), false);
 });
 
-test('proxy replaces forwarded headers and removes hop-by-hop response headers', () => {
+test('proxy replaces forwarded headers, supports trusted outer HTTPS termination, and removes hop-by-hop headers', () => {
   const headers = buildProxyHeaders({
     host: 'game.example.test',
     connection: 'keep-alive, x-internal-hop',
@@ -80,6 +82,7 @@ test('proxy replaces forwarded headers and removes hop-by-hop response headers',
   assert.equal(headers['x-forwarded-host'], 'game.example.test');
   assert.equal(headers['x-internal-hop'], undefined);
   assert.equal(headers['content-length'], '3');
+  assert.equal(buildProxyHeaders({ 'x-forwarded-proto': 'http' }, '127.0.0.1', 'https')['x-forwarded-proto'], 'https');
 
   const responseHeaders = stripProxyResponseHeaders({
     'content-type': 'text/html',

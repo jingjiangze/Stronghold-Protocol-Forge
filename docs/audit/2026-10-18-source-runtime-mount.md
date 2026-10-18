@@ -53,10 +53,10 @@
 |---|---|---|
 | 只读审计两个源码树、管理器入口和保护门禁 | IMPLEMENTED | 记录四个仓库的 commit、版本、入口及不能直接复用的 ABI 边界 |
 | 新建 `chatgpt` 分支并冻结配置 SHA | IMPLEMENTED | 分支从 Forge `master` 当前提交建立；配置包含两个用户仓库和固定 SHA |
-| 实现配置验证、隔离安装、完整性检查 | PENDING | 非法 profile/路径被拒绝；安装只写入管理器隔离缓存；实际 checkout SHA 必须相等 |
-| 实现透明 HTTP + WebSocket 代理和子进程托管 | PENDING | 首页、客户端 JS/CSS、`/healthz`、`/ws` 可经代理工作；异常退出与关闭时清理子进程 |
-| 增加自动化测试与运行说明 | PENDING | 纯函数及代理头处理有测试；运行时验证脚本与文档命令一致 |
-| GitHub CI/运行时实测 | PENDING | 源码检验、测试、CI 完成后才可标为 PASS；未实测前不宣称通过 |
+| 实现配置验证、隔离安装、完整性检查 | IMPLEMENTED | 配置验证、固定 SHA、版本及必需文件检查已写入管理器脚本；真实远端安装仍需实测 |
+| 实现透明 HTTP + WebSocket 代理和子进程托管 | IMPLEMENTED | HTTP/WebSocket 转发与子进程生命周期实现已写入；CI 集成测试待确认 |
+| 增加自动化测试与运行说明 | IMPLEMENTED | 新增代理/配置测试和运行文档；测试是否通过以 CI 结果为准 |
+| GitHub CI/运行时实测 | PENDING | GitHub CI 正在运行；在全部必要 jobs 成功前不标为 PASS。实际源仓库克隆/启动也未在本地完成 |
 
 ### 最终验收清单
 

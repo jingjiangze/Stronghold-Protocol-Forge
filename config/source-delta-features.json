@@ -64,20 +64,31 @@
       "profile": "stronghold-server-server-agent",
       "name": "房主浏览器代算 AI 布阵",
       "sourcePaths": [
-        "server/match/match/rehearsal.js"
+        "public/js/battle/rehearsal.js",
+        "public/js/battle/rehearsalWorker.js",
+        "server/match/match/rehearsal.js",
+        "server/sim/rehearsal.js"
       ],
       "integrationPoints": [
+        "public/js/main.js",
+        "public/js/battle/rehearsal.js",
+        "public/js/battle/rehearsalWorker.js",
+        "server/match/Match.js",
         "server/match/match/prep.js",
         "server/match/match/rehearsal.js",
+        "server/sim/rehearsal.js",
         "server/lobby.js",
-        "server/index.js"
+        "server/index.js",
+        "shared/protocol.js"
       ],
       "activationStatus": "adapter-required",
-      "rationale": "房主浏览器 AI 代算逻辑本体单独位于 rehearsal.js；prep.js、lobby.js、server/index.js 承载共享的准备调度、房主/房间生命周期、启动注册，仅保存为参考 blob。浏览器 Worker 的准确源码路径仍需完整清点。",
+      "rationale": "完整功能切片包含浏览器安装模块 rehearsal.js、module Worker rehearsalWorker.js、服务器/浏览器共用的纯模拟与评分 server/sim/rehearsal.js，以及服务器侧 MatchRehearsal。public/js/main.js、prep.js、lobby.js、Match.js、index.js 只作为当前来源接线的参考快照，由 Forge 针对上游新入口适配；worker 的运行时路径和请求/响应协议必须双端验收。",
       "referencePaths": [
+        "public/js/main.js",
         "server/match/match/prep.js",
         "server/lobby.js",
-        "server/index.js"
+        "server/index.js",
+        "server/match/Match.js"
       ]
     }
   ]

@@ -91,7 +91,7 @@ test('feature manifest treats mode paths as independent bundles and rejects unsa
   const { featureManifest } = await loadSourceDeltaConfig();
   assert.deepEqual(featureBundlesForPath(featureManifest, 'stronghold-server', 'server/match/unite.js').map((b) => b.id), ['unite-second-relay']);
   assert.ok(featureBundlesForPath(featureManifest, 'stronghold-server', 'server/match/match/combat.js').some((b) => b.id === 'rescue-revival'));
-  assert.deepEqual(featureBundlesForPath(featureManifest, 'stronghold-server-server-agent', 'server/lobby.js').map((b) => b.id), ['freeze-when-all-humans-offline']);
+  assert.deepEqual(featureBundlesForPath(featureManifest, 'stronghold-server-server-agent', 'server/lobby.js').map((b) => b.id).sort(), ['freeze-when-all-humans-offline', 'host-browser-ai-rehearsal']);
   assert.throws(() => validateFeatureManifest({ schemaVersion: 1, bundles: [{
     id: 'unsafe', profile: 'stronghold-server', name: 'unsafe', sourcePaths: ['../outside.js'],
     integrationPoints: [], activationStatus: 'adapter-required'

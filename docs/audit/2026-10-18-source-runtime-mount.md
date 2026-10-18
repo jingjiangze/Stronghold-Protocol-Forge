@@ -89,3 +89,17 @@ BASELINE=确认输入；IMPLEMENTED=代码/文档已提交；PASS=实测通过�
 第一次 Actions 审计检测到审计器按工作树字节比较文件，可能受 .gitattributes 的换行转换影响；该次文件差异数量已作废，不作为冲突决策依据。
 
 已将来源/基线/目标文件比较改为 Git 对象库的原始 blob 字节，并新增 eol=crlf 回归测试。下一次 source-delta-audit 成功的结果才作为有效审计基线。
+
+
+## 9. 2026-10-18 分类修正：玩法不再按整文件冲突裁决
+
+本节覆盖上文第 3 节和第 5 节中将 `settle.js`、`unite.js`、agent `server/lobby.js`、agent `prep.js` 直接列为 source/upstream 高风险二选一的旧分类。它们是独立玩法或其接线，不再通过公共路径整文件覆盖进行取舍。
+
+- 独立玩法映射见 `config/source-delta-features.json`，细化权衡见 `docs/audit/2026-10-18-feature-isolation-and-conflicts.md`。
+- 来源玩法源码以原始 Git blob 放到 `.forge-source-features/`，公共主树仍保留目标上游同路径文件。
+- 上述路径不再生成普通的 `owner-review-required` / hunk 冲突；它们转成 `integrationPending`，表示需要管理器适配器接通。
+- 这个更改没有宣称玩法已经启动。只要功能包仍是 `adapter-required`，`READY=false`。其余实际冲突仍按新的原始 blob audit 报告和所有者决定处理。
+
+剩余的公共挂载点候选项是：`data/config.json`、stronghold-server 层的 `server/lobby.js`、`shared/protocol.js`、两个 profile 的 `server/index.js`，以及 UI/资源/网络/build/deployment 差异。具体优缺点和建议逐项列在新审计文档中。
+
+当前有效测试/审计状态不变：此前按工作树字节得出的统计无效；原始 Git blob 审计及新隔离测试的 Actions 结果尚待核实，不能标为 PASS。

@@ -7,18 +7,19 @@
       "id": "rescue-revival",
       "profile": "stronghold-server",
       "name": "救援/复活",
-      "sourcePaths": [
-        "server/match/match/combat.js",
-        "server/match/match/settle.js"
-      ],
+      "sourcePaths": [],
       "integrationPoints": [
-        "server/match/Match.js",
         "server/match/match/combat.js",
         "server/match/match/settle.js",
+        "server/match/Match.js",
         "shared/protocol.js"
       ],
       "activationStatus": "adapter-required",
-      "rationale": "来源 combat.js 明确记录救援捐助者资格不能由 synthetic 结果冒充；settle.js 包含结算/结果视图的自有分支。两份源码原样隔离，公共结算和战斗入口保留上游版本，通过独立适配器接线，不以整文件覆盖裁决玩法。"
+      "rationale": "当前固定来源快照中，combat.js 负责保留真实战斗结果来源（synthetic 结果不能冒充救援捐助者），settle.js 承载结算/结果视图；它们仍是共享 Match 方法模块，因此只按原始 Git blob 保存到 reference 区，不假称为独立可执行模块。需由 Forge adapter 将救援规则抽到独立功能层。",
+      "referencePaths": [
+        "server/match/match/combat.js",
+        "server/match/match/settle.js"
+      ]
     },
     {
       "id": "unite-second-relay",
@@ -26,8 +27,7 @@
       "name": "联防二段接力",
       "sourcePaths": [
         "server/match/unite.js",
-        "server/match/match/unitePhase.js",
-        "server/match/match/settle.js"
+        "server/match/match/unitePhase.js"
       ],
       "integrationPoints": [
         "server/match/unite.js",
@@ -36,14 +36,16 @@
         "shared/protocol.js"
       ],
       "activationStatus": "adapter-required",
-      "rationale": "二段接力作为独立玩法包保留；联防阶段推进、结算归因和客户端结果消息属于挂载点，不以整文件 source/upstream 选择替代适配。"
+      "rationale": "联防规则与 UNITE 阶段本身有独立源码模块，可单独保存；结算奖励/结果 view 仍与公共 settle.js 交织，所以 settle.js 只作为原始参考 blob 留存，运行时不整文件替换。",
+      "referencePaths": [
+        "server/match/match/settle.js"
+      ]
     },
     {
       "id": "freeze-when-all-humans-offline",
       "profile": "stronghold-server-server-agent",
       "name": "全员离线冻结对局",
       "sourcePaths": [
-        "server/lobby.js",
         "server/match/match/frozen.js"
       ],
       "integrationPoints": [
@@ -52,14 +54,16 @@
         "server/match/Match.js"
       ],
       "activationStatus": "adapter-required",
-      "rationale": "冻结/恢复逻辑作为独立功能保留；房间生命周期、Match 定时器和重连回调需经管理器适配，不能以来源版大厅或 Match 方法整文件覆盖上游。"
+      "rationale": "冻结计时与恢复的 Match 方法独立保存在 frozen.js；agent 版 server/lobby.js 是共享房间生命周期文件，仅作为参考 blob 保存，由适配器挂入重连/房间清理流程，不覆盖上游大厅。",
+      "referencePaths": [
+        "server/lobby.js"
+      ]
     },
     {
       "id": "host-browser-ai-rehearsal",
       "profile": "stronghold-server-server-agent",
       "name": "房主浏览器代算 AI 布阵",
       "sourcePaths": [
-        "server/match/match/prep.js",
         "server/match/match/rehearsal.js"
       ],
       "integrationPoints": [
@@ -69,7 +73,12 @@
         "server/index.js"
       ],
       "activationStatus": "adapter-required",
-      "rationale": "服务端准备阶段、房主委托、超时接管和掉线回退作为完整功能切片保留。浏览器端 Worker/消息入口还需审计并纳入同一 bundle；准备阶段入口、房主变更和 Worker 消息协议是挂载点。源码区分离不等于已在客户端激活。"
+      "rationale": "房主浏览器 AI 代算逻辑本体单独位于 rehearsal.js；prep.js、lobby.js、server/index.js 承载共享的准备调度、房主/房间生命周期、启动注册，仅保存为参考 blob。浏览器 Worker 的准确源码路径仍需完整清点。",
+      "referencePaths": [
+        "server/match/match/prep.js",
+        "server/lobby.js",
+        "server/index.js"
+      ]
     }
   ]
 }

@@ -13,20 +13,20 @@
       "bytes": 2774
     },
     "economy.js": {
-      "sha256": "2b952de72a636aadf4ff192b3c2a7f5137ae446b6160e0a4de8c15c3ba972836",
-      "bytes": 57319
+      "sha256": "e453d01ad621e365eaa886e8974c298167831ae8f76935fca0094f7343e516c7",
+      "bytes": 58500
     },
     "match.js": {
-      "sha256": "66c0e92245402118291ed4fb67d9711e5ad0277decb54f4751133c89cb353f6b",
-      "bytes": 5244
+      "sha256": "93290be2b57cd3fcadecfff2680c74f8fb6e9142a403b7631fb2bc32608ef80e",
+      "bytes": 5300
     },
     "plugin.json": {
       "sha256": "d9e3a4b79f0bc2071d6c14c99ca5c9c8674df562598f8fa5d91a779be390cf18",
       "bytes": 427
     },
     "revival.js": {
-      "sha256": "14278b712227b559b8978331934664ab1c56bc4d624e67b5287fb68e4a6f4594",
-      "bytes": 12149
+      "sha256": "7f3c64e8e4f27d6053c783e97f1730b31ed91f95aa54dc355ffee95894f46843",
+      "bytes": 11930
     },
     "rules.js": {
       "sha256": "595e100d8d2c596af952e971d288ed0003a7ac031d90111e9e87ccd38d464b0b",

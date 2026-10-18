@@ -22,6 +22,9 @@ import { botEconRespond } from './econBot.js';
 import { economyRules } from './rules.js';
 import { msg, N_ } from '../../shared/i18n.js';
 
+/** 赏金加时 (bounty): buy prep time out of the team reserve — escalating costs, three buys a round, +20 s each. */
+export const ECON_BOUNTY = Object.freeze({ costs: Object.freeze([4, 6, 8]), seconds: 20, maxPerRound: 3 });
+
 
 /** 借钱喊话（业主：「随机几句借钱的话」）。服务端从这张表里选一句挂在那条广播上。 */
 // 每条都过 `N_()`（标记为 msgid）：文案随视图下发到客户端，由客户端 `t()` 翻译（test/i18n 的门禁要求服务端消息
@@ -46,7 +49,7 @@ export class MatchEconomy {
     this.econRequests = new Map();
     /** 进行中的升级提案（同一时刻至多一条）：{ id, project, level, cost, by, agree:Set, reject:Set } | null */
     this.projectVote = null;
-    this.econRound = { round: 0, spent: 0, byPlayer: new Map(), perfectGranted: 0 };
+    this.econRound = { round: 0, spent: 0, byPlayer: new Map(), perfectGranted: 0, bounty: 0 };
     /** The ids this player has already been refused by this round (被拒后可换人再借, user decision 2026-10-08). */
     this.econDeniedBy = new Map();
     /**
@@ -135,6 +138,7 @@ export class MatchEconomy {
     this.econRound.round = this.round;
     this.econRound.spent = 0;
     this.econRound.perfectGranted = 0;
+    this.econRound.bounty = 0;
     this.econRound.byPlayer.clear();
     this.econDeniedBy.clear();
     // 救济 is per round like everything else here: the team allowance and every player's count re-arm together
@@ -297,6 +301,12 @@ export class MatchEconomy {
           left: Math.max(0, this.teamEcon.relief.perPlayerPerRound - (this.econReliefByPlayer.get(ps.playerId) || 0)),
         }
         : null,
+      // 赏金加时: the next purchase's price, how many are left this round, and whether the pool can pay
+      bounty: this.teamEcon.borrowOnly ? null : (() => {
+        const bought = this.econRound.bounty || 0;
+        const cost = ECON_BOUNTY.costs[Math.min(bought, ECON_BOUNTY.costs.length - 1)];
+        return { left: ECON_BOUNTY.maxPerRound - bought, cost, seconds: ECON_BOUNTY.seconds, affordable: this.teamReserve >= cost };
+      })(),
       // 后勤项目（含 maxed/affordable）与进行中的升级提案 —— 面板据此渲染「发起提案/同意/拒绝」。
       projects: this.teamEcon.borrowOnly ? [] : Object.keys(this.teamProjects).map((id) => {
         const level = this.teamProjects[id];
@@ -644,6 +654,33 @@ export class MatchEconomy {
     ps.addFunds(rl.amount, { reason: 'relief' });
     ps.dirty();
     this.toast(ps, 'info', msg('从协同资金领取了 {n} 资金', { n: rl.amount }));
+    this.markPublic();
+    this.markPrivate(ps);
+    return OK;
+  }
+
+  /**
+   * 赏金加时: buy prep time out of the team reserve (4 / 6 / 8, at most three a round, +20 s each). The phase's own
+   * timeout is re-armed with the same callback, so the clock is extended, never reset. Refusals carry the reason the
+   * client shows: `untimed`, `reserve` (the shared pool cannot pay), `cap`, `borrow-only`.
+   */
+  econBuyTime(ps) {
+    if (!this.teamEcon) return fail(ERR.BAD_MSG);
+    if (this.teamEcon.borrowOnly) return fail(ERR.WRONG_PHASE, 'borrow-only');
+    const g = this.econGate(ps);
+    if (g) return g;
+    const bought = this.econRound.bounty || 0;
+    if (bought >= ECON_BOUNTY.maxPerRound) return fail(ERR.ALREADY, 'cap');
+    // an untimed round has no clock to extend (solo / the fixed presentation steps publish deadline 0)
+    const left = this.deadline > 0 ? (this.deadline - this.sched.now()) / 1000 : 0;
+    if (!(left > 0)) return fail(ERR.WRONG_PHASE, 'untimed');
+    const cost = ECON_BOUNTY.costs[Math.min(bought, ECON_BOUNTY.costs.length - 1)];
+    if (this.teamReserve < cost) return fail(ERR.NO_FUNDS, 'reserve');
+    this.teamReserve -= cost;
+    this.econRound.bounty = bought + 1;
+    // extend, never reset: the prep's own timeout callback is the one re-armed
+    this.setDeadline(left + ECON_BOUNTY.seconds, () => this.prepDeadline());
+    this.toast(ps, 'info', msg('从协同资金购买 {n} 秒准备时间', { n: ECON_BOUNTY.seconds }));
     this.markPublic();
     this.markPrivate(ps);
     return OK;

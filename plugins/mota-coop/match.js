@@ -62,6 +62,7 @@ export function activate(match) {
       'g.econ.project': (m, ps, msg) => { const b = msg.body || msg; return self.econBuyProject(ps, b.project); },
       'g.econ.vote': (m, ps, msg) => { const b = msg.body || msg; return self.econVote(ps, b.id, b.approve); },
       'g.econ.relief': (m, ps) => self.econRelief(ps),
+      'g.econ.bounty': (m, ps) => self.econBuyTime(ps),
       'g.econ.repay': (m, ps, msg) => { const b = msg.body || msg; return self.econRepay(ps, { to: b.to ?? null }); },
       'g.econ.nudge': (m, ps, msg) => { const b = msg.body || msg; return self.econNudge(ps, b.to); },
       'g.revive': (m, ps, msg) => { const b = msg.body || msg; return self.reviveConsent(ps, b.playerId, { round: b.round }); },

@@ -11,6 +11,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const CATALOG_URL = new URL('../config/source-delta-profiles.json', import.meta.url);
 const DECISIONS_URL = new URL('../config/source-delta-decisions.json', import.meta.url);
+const FEATURES_URL = new URL('../config/source-delta-features.json', import.meta.url);
 const DEFAULT_GROUPS = ['runtime', 'build', 'operations', 'deployment'];
 const GROUPS = ['runtime', 'build', 'operations', 'deployment', 'docs', 'tests', 'automation', 'metadata'];
 const PATH_CHOICES = new Set(['source', 'upstream', 'merge']);
@@ -85,10 +86,41 @@ export function validateDecisions(doc) {
   return doc;
 }
 
+export function validateFeatureManifest(doc) {
+  if (!doc || doc.schemaVersion !== 1 || !Array.isArray(doc.bundles)) throw new Error('Invalid independent-feature manifest.');
+  const ids = new Set();
+  const bundles = doc.bundles.map((bundle) => {
+    if (!bundle || typeof bundle.id !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(bundle.id) || ids.has(bundle.id)) {
+      throw new Error('Invalid or duplicate feature bundle ID.');
+    }
+    ids.add(bundle.id);
+    if (typeof bundle.profile !== 'string' || typeof bundle.name !== 'string' || !bundle.name.trim()) throw new Error('Invalid feature bundle identity: ' + bundle.id);
+    if (!Array.isArray(bundle.sourcePaths) || !bundle.sourcePaths.length || bundle.sourcePaths.some((p) => !safePath(p) || safePath(p) !== p)) {
+      throw new Error('Invalid sourcePaths for feature bundle: ' + bundle.id);
+    }
+    if (!Array.isArray(bundle.integrationPoints) || bundle.integrationPoints.some((p) => !safePath(p) || safePath(p) !== p)) {
+      throw new Error('Invalid integrationPoints for feature bundle: ' + bundle.id);
+    }
+    if (!['adapter-required', 'ready'].includes(bundle.activationStatus)) throw new Error('Invalid activationStatus for feature bundle: ' + bundle.id);
+    return Object.freeze({
+      ...bundle,
+      sourcePaths: [...new Set(bundle.sourcePaths)],
+      integrationPoints: [...new Set(bundle.integrationPoints)],
+    });
+  });
+  return Object.freeze({ schemaVersion: 1, policy: String(doc.policy || 'independent-feature-bundles'), bundles: Object.freeze(bundles) });
+}
+
+export function featureBundlesForPath(manifest, profileId, relativePath) {
+  if (!manifest || !Array.isArray(manifest.bundles)) return [];
+  return manifest.bundles.filter((bundle) => bundle.profile === profileId && bundle.sourcePaths.includes(relativePath));
+}
+
 export async function loadSourceDeltaConfig() {
   return {
     catalog: validateCatalog(JSON.parse(await fs.readFile(CATALOG_URL, 'utf8'))),
     decisions: validateDecisions(JSON.parse(await fs.readFile(DECISIONS_URL, 'utf8'))),
+    featureManifest: validateFeatureManifest(JSON.parse(await fs.readFile(FEATURES_URL, 'utf8'))),
   };
 }
 
@@ -287,15 +319,54 @@ async function applyProfile(o) {
     const source = se ? readGitBlob(o.sourceRoot, se) : null;
     if (se && source === null) { pending(o.report,o.profile,p,'unsafe-source-path',null,'Source path is not a regular file.','<not read>','<unsupported>'); o.summary.pending++; continue; }
     if (be && base === null) throw new Error('Cannot read baseline file: ' + p);
-    if (be && se && hash(base) === hash(source)) continue;
     if (!be && !se) continue;
 
     const group = classifyPath(p), row = { profile:o.profile.id, path:p, group, features:tags(p) };
-    o.summary.deltaFiles++;
-    o.summary.byGroup[group] = (o.summary.byGroup[group] || 0) + 1;
-    if (!o.groups.includes(group) || !o.profile.groups.includes(group)) {
-      row.status='excluded-group'; o.report.omitted.push(row); o.summary.excluded++; continue;
+    const sameToBase = !!(be && se && hash(base) === hash(source));
+    const changed = !sameToBase;
+    const featureBundles = featureBundlesForPath(o.featureManifest, o.profile.id, p);
+    if (changed) {
+      o.summary.deltaFiles++;
+      o.summary.byGroup[group] = (o.summary.byGroup[group] || 0) + 1;
     }
+    if (!o.groups.includes(group) || !o.profile.groups.includes(group)) {
+      if (changed) { row.status='excluded-group'; o.report.omitted.push(row); o.summary.excluded++; }
+      continue;
+    }
+    // Gameplay source is preserved byte-for-byte in a manager-owned namespace. The upstream
+    // common-path file remains in the composed tree; only an explicit adapter may activate it.
+    // This prevents a whole-file source/upstream choice from deciding independent mode behavior.
+    if (featureBundles.length && se && source !== null) {
+      const stagedPaths = [];
+      for (const bundle of featureBundles) {
+        const stagedPath = '.forge-source-features/' + bundle.id + '/' + o.profile.id + '/' + p;
+        await writeFile(o.outputRoot, stagedPath, source, se.mode);
+        stagedPaths.push(stagedPath);
+        let featureRecord = o.report.featureBundles.find((entry) => entry.id === bundle.id);
+        if (!featureRecord) {
+          featureRecord = {
+            id: bundle.id, profile: bundle.profile, name: bundle.name,
+            activationStatus: bundle.activationStatus,
+            rationale: bundle.rationale || '',
+            sourcePaths: bundle.sourcePaths,
+            integrationPoints: bundle.integrationPoints,
+            stagedFiles: [],
+          };
+          o.report.featureBundles.push(featureRecord);
+        }
+        if (!featureRecord.stagedFiles.some((entry) => entry.sourcePath === p)) {
+          featureRecord.stagedFiles.push({ sourcePath: p, outputPath: stagedPath, gitBlob: se.blob });
+          o.summary.featureSourcesStaged++;
+        }
+      }
+      row.status = changed ? 'independent-feature-source-staged' : 'independent-feature-source-preserved';
+      row.featureBundles = featureBundles.map((bundle) => bundle.id);
+      row.stagedPaths = stagedPaths;
+      row.note = 'Exact source blob staged separately; upstream common-path implementation is not overwritten and runtime activation waits for an adapter.';
+      o.report.applied.push(row);
+      continue;
+    }
+    if (sameToBase) continue;
     const key = o.profile.id + ':' + p, pathChoice = o.decisions.pathDecisions[key];
     if (pathChoice) o.used.add(key);
     if (Object.prototype.hasOwnProperty.call(o.decisions.reviewRequired,key) && !pathChoice) {
@@ -387,7 +458,7 @@ async function copyTarget(targetRoot, outRoot) {
 function profileSummary(profile) {
   return {id:profile.id,commit:profile.commit,sourceVersion:profile.sourceVersion,deltaFiles:0,excluded:0,
     additionsMounted:0,deletionsMounted:0,sourceChangesMounted:0,autoMerged:0,alreadyPresent:0,
-    sourceChoice:0,upstreamChoice:0,hunkChoicesApplied:0,pending:0,byGroup:{}};
+    sourceChoice:0,upstreamChoice:0,hunkChoicesApplied:0,featureSourcesStaged:0,pending:0,byGroup:{}};
 }
 
 export async function buildSourceDeltaComposition(o) {
@@ -399,9 +470,9 @@ export async function buildSourceDeltaComposition(o) {
   }
   const root=o.auditOnly ? await fs.mkdtemp(path.join(o.home,'audit-output-')) : outputPath;
   await fs.mkdir(root,{recursive:true});
-  const report={schemaVersion:1,baseCommit:o.catalog.upstream.baselineCommit,upstreamCommit:o.catalog.upstream.auditedTargetCommit,
+  const report={schemaVersion:2,baseCommit:o.catalog.upstream.baselineCommit,upstreamCommit:o.catalog.upstream.auditedTargetCommit,
     targetRef:o.catalog.upstream.targetRef,output:o.auditOnly?null:outputPath,includedGroups:o.groups,upstreamFiles:await copyTarget(o.snapshots.target,root),
-    ready:false,profiles:[],pending:[],omitted:[],applied:[],staleDecisions:[]};
+    ready:false,profiles:[],pending:[],featureBundles:[],integrationPending:[],omitted:[],applied:[],staleDecisions:[]};
   const used=new Set();
   for (const profile of o.catalog.profiles) {
     const summary=profileSummary(profile);
@@ -410,17 +481,33 @@ export async function buildSourceDeltaComposition(o) {
     report.profiles.push(summary);
   }
   report.staleDecisions=[...new Set([...Object.keys(o.decisions.pathDecisions),...Object.keys(o.decisions.hunkDecisions)])].filter((key)=>!used.has(key));
+  report.integrationPending=report.featureBundles.filter((bundle)=>bundle.activationStatus!=='ready').map((bundle)=>({
+    id:bundle.id,profile:bundle.profile,name:bundle.name,status:bundle.activationStatus,
+    integrationPoints:bundle.integrationPoints,stagedFiles:bundle.stagedFiles,
+    reason:bundle.rationale||'Runtime adapter has not been confirmed.',
+  }));
   report.summary={
     profiles:report.profiles.length,deltaFiles:report.profiles.reduce((n,p)=>n+p.deltaFiles,0),
     cleanMerges:report.profiles.reduce((n,p)=>n+p.autoMerged,0),additionsMounted:report.profiles.reduce((n,p)=>n+p.additionsMounted,0),
     sourceChangesMounted:report.profiles.reduce((n,p)=>n+p.sourceChangesMounted,0),alreadyPresent:report.profiles.reduce((n,p)=>n+p.alreadyPresent,0),
-    excluded:report.profiles.reduce((n,p)=>n+p.excluded,0),pending:report.pending.length};
-  report.ready=report.pending.length===0;
+    featureSourcesStaged:report.profiles.reduce((n,p)=>n+p.featureSourcesStaged,0),independentBundles:report.featureBundles.length,
+    excluded:report.profiles.reduce((n,p)=>n+p.excluded,0),pending:report.pending.length,integrationPending:report.integrationPending.length};
+  report.ready=report.pending.length===0&&report.integrationPending.length===0;
   if (!o.auditOnly) {
+    if (report.featureBundles.length) {
+      const featureDir=path.join(root,'.forge-source-features');
+      await fs.mkdir(featureDir,{recursive:true});
+      await fs.writeFile(path.join(featureDir,'FEATURES.json'),JSON.stringify({
+        schemaVersion:1,policy:'immutable-source-isolation',runtimeEnabled:false,
+        message:'Feature source is preserved byte-for-byte; this directory is not executed or imported automatically. Each bundle needs an explicit adapter before READY.',
+        bundles:report.featureBundles,
+      },null,2)+'\n');
+    }
     await fs.writeFile(path.join(root,'SOURCE-DELTA-REPORT.json'),JSON.stringify(report,null,2)+'\n');
     await fs.writeFile(path.join(root,'SOURCE-DELTA-READY.json'),JSON.stringify({
       ready:report.ready,baseCommit:report.baseCommit,upstreamCommit:report.upstreamCommit,
       profiles:report.profiles.map((p)=>({id:p.id,commit:p.commit})),pendingDecisions:report.pending.length,
+      pendingFeatureAdapters:report.integrationPending.length,
       report:'SOURCE-DELTA-REPORT.json'},null,2)+'\n');
   } else await fs.rm(root,{recursive:true,force:true}).catch(()=>{});
   return report;
@@ -452,7 +539,7 @@ function help() {
 }
 
 async function main(argv=process.argv.slice(2)) {
-  const a=parseArgs(argv), cfg=await loadSourceDeltaConfig(), catalog=cfg.catalog, decisions=cfg.decisions;
+  const a=parseArgs(argv), cfg=await loadSourceDeltaConfig(), catalog=cfg.catalog, decisions=cfg.decisions, featureManifest=cfg.featureManifest;
   if(['help','--help','-h'].includes(a.command))return help();
   if(a.command==='list'){
     console.log('Baseline: '+catalog.upstream.baselineCommit);
@@ -473,10 +560,12 @@ async function main(argv=process.argv.slice(2)) {
   };
   for(const p of profiles)snapshots.profiles[p.id]=await prepareSnapshot(home,p.name,p.repository,p.ref,p.commit);
   const outDir=a.out||path.join(home,'composed','upstream-'+catalog.upstream.auditedTargetCommit.slice(0,8));
-  const report=await buildSourceDeltaComposition({catalog:chosen,decisions,snapshots,outDir,groups,home,force:a.force,auditOnly:a.command==='audit',managerRoot});
+  const chosenFeatures={...featureManifest,bundles:featureManifest.bundles.filter((bundle)=>profiles.some((p)=>p.id===bundle.profile))};
+  const report=await buildSourceDeltaComposition({catalog:chosen,decisions,featureManifest:chosenFeatures,snapshots,outDir,groups,home,force:a.force,auditOnly:a.command==='audit',managerRoot});
   if(a.report){const dest=path.resolve(a.report);await fs.mkdir(path.dirname(dest),{recursive:true});await fs.writeFile(dest,JSON.stringify(report,null,2)+'\n');}
   console.log('[source-overlay] base='+report.baseCommit+' upstream='+report.upstreamCommit+' summary='+JSON.stringify(report.summary));
-  for(const p of report.profiles)console.log('[source-overlay] '+p.id+': delta='+p.deltaFiles+', cleanMerges='+p.autoMerged+', additions='+p.additionsMounted+', changes='+p.sourceChangesMounted+', excluded='+p.excluded+', pending='+p.pending+', groups='+JSON.stringify(p.byGroup));
+  for(const p of report.profiles)console.log('[source-overlay] '+p.id+': delta='+p.deltaFiles+', cleanMerges='+p.autoMerged+', additions='+p.additionsMounted+', changes='+p.sourceChangesMounted+', featureFiles='+p.featureSourcesStaged+', excluded='+p.excluded+', pending='+p.pending+', groups='+JSON.stringify(p.byGroup));
+  for(const f of report.integrationPending.slice(0,50))console.log('[source-overlay] PENDING-ADAPTER '+f.id+': '+f.name+' - '+f.reason);
   for(const p of report.pending.slice(0,100))console.log('[source-overlay] PENDING '+p.profile+':'+p.path+(p.id?' ['+p.id+']':'')+' - '+p.reason);
   if(report.pending.length>100)console.log('[source-overlay] remaining pending rows are in report.');
   if(report.staleDecisions.length)console.log('[source-overlay] stale choices: '+report.staleDecisions.join(', '));

@@ -31,6 +31,10 @@ zip ──┬─ 有 pack.json   → server/plugins/forgeImport.js  （Forge 包
 - **上传**：`POST /mod/upload`，请求体就是 zip 原始字节。同名插件已存在时加 `?force=1` 覆盖。
 - **抓取**：`POST /mod/fetch`，JSON `{ url, sha256?, force? }`。只接受公开 https（上游 `fetchHttps` 的地址规则）；
   给了 `sha256` 就校验，不给就按包内清单判定类型。
+- **启用 / 停用**：`POST /mod/enable`，JSON `{ id, on }`。写的是业主策略文件 `plugins/config.json` 的 `default`
+  列表（上游 `server/plugins/policy.js`：新房间一开始就带的插件）；`on:true` 加入（重复不会写两遍），`on:false` 移除。
+  文件里的其他字段（`rooms`、`allow`、`classes`、`limits` …）原样保留，写入用临时文件 + 改名，不会留下半截 JSON。
+  未知 id 返回 404 `PLUGIN_UNKNOWN`。已开的房间不受影响——`default` 只决定新房间的起点。
 
 页面不依赖任何外部资源，内联脚本 + 内联样式，CSP 友好。
 

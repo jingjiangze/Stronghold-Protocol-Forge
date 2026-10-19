@@ -995,17 +995,20 @@ export class Lobby {
   setMode(session, { modeId }) {
     const room = this.roomOf(session);
     if (!room) return fail(ERR.NOT_IN_ROOM);
+    if (room.hostId !== session.playerId) return fail(ERR.NOT_HOST);
     if (room.match) return fail(ERR.ROOM_STARTED);
-    if (team !== null && !TEAMS.includes(team)) return fail(ERR.BAD_MSG, 'unknown team');
-    let seat;
-    if (seatIdx === undefined || seatIdx === null) {
-      seat = room.seats.find((x) => x && x.playerId === session.playerId);
-      if (!seat) return fail(ERR.NOT_IN_ROOM);
+    const official = DIFFICULTIES.find((d) => modeIdFor(room.mode, d) === modeId);
+    let difficulty = room.difficulty;
+    let content = room.content;
+    if (official) {
+      difficulty = official;
+      if (content?.modeId) { const rest = { ...content }; delete rest.modeId; content = Object.freeze(rest); }
     } else {
-      // 给别人分队：只有房主可以
-      if (room.hostId !== session.playerId) return fail(ERR.NOT_HOST, 'only the host assigns other seats');
-      seat = room.seats[seatIdx] || null;
-      if (!seat) return fail(ERR.BAD_TARGET, 'that seat is empty');
+      const mode = Array.isArray(content?.modes) ? content.modes.find((m) => m && m.id === modeId) : null;
+      if (!mode) return fail(ERR.BAD_TARGET, 'not a mode of this room');
+      if (mode.roomMode !== room.mode) return fail(ERR.BAD_TARGET, `a mode of ${mode.roomMode} rooms`);
+      if (DIFFICULTIES.includes(mode.difficulty)) difficulty = mode.difficulty;
+      if (content.modeId !== modeId) content = Object.freeze({ ...content, modeId });
     }
     if (difficulty === room.difficulty && content === room.content) return OK;
     this.dropReplay(room, session.playerId);
@@ -1312,9 +1315,10 @@ export class Lobby {
    */
   skins(session, { skins }) {
     const data = this.safeData();
-    const res = checkSkins(skins, (id) => lookup('chess', id, data));
+    const hasOperator = (id) => !!lookup('chess', id, data);
+    const res = checkSkinSelection(skins, hasOperator);
     if (!res || res.error) return fail(res && isErrCode(res.error) ? res.error : ERR.BAD_MSG, res && res.detail);
-    const sel = freezeSkins(res.skins);
+    const sel = freezeSkins(skins, hasOperator) || Object.freeze({});
     session.skins = sel;
     const room = this.roomOf(session);
     if (!room) return OK;

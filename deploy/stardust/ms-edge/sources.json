@@ -2,17 +2,17 @@
   "_comment": "边缘层的分流表。容器的 /assets/** 与 /fonts/** 按这里的顺序 302 出去，字节从不落在容器上。镜像对应：r2 = 第一镜像（weishucdn）；openi = 第二镜像（OpenI，浏览器 CORS 不可用，仅 ?sp_source=openi 点名可达）；modelscope = 第三镜像（ModelScope 创空间）的 HTTP 运行时形态——创空间 cdn 分支本身无文件直链、只作 git 镜像，其同族数据集即本条目，也是默认 302 目标。",
   "_order_note": "这是静态顺序，不是实时测速：容器在 ModelScope 机房，玩家在全国各地，容器量出来的链路速度不代表玩家的。真正按玩家网络选最快是客户端 pick.js 的事，两者分工。客户端可用 ?sp_source=<id> 覆盖这里的顺序。",
   "_order_basis": "顺序按直连实测（本机 --noproxy，非代理）：小文件 TTFB modelscope 0.21s / r2 0.66s；855 KB 大文件 modelscope 0.26s(3.3 MB/s) / r2 1.9s(0.4 MB/s)。",
-  "_order_reason": "2026-10-14 用户指令：停止 speedcdn 分发玩家素材，R2 仅作最后备选源，门牌回到 weishucdn。顺序逆序为 modelscope → r2：**省钱与提速同向**——2026-10-14 实测 R2 Class B 31,093,153 次/30d（免费额度 10M，超限 21.1M 次，月账单 $7.59），而 modelscope 抽样 120/120 全覆盖、TTFB 中位 149 ms vs R2 1771 ms（快 11.9×）。把 modelscope 放首跳后 Class B 大头转嫁给 ModelScope（0 成本），R2 退回 10M 免费额度内 ⇒ $7.59 → $0。注意 rank 只能在这些已配置源之间重排，不会把列表外的源拉进来。",
+  "_order_reason": "2026-10-19 用户指令：modelscope 第一、r2 垫底。数据集一公开就吃首跳；未公开时健康探测会把 modelscope 判 down（健康路径 404），自动顺延到 r2。openi 不进 order（浏览器 CORS 不可用，仅 ?sp_source=openi 点名）。",
   "schemaVersion": 1,
   "order": [
-    "r2",
-    "modelscope"
+    "modelscope",
+    "r2"
   ],
   "sources": [
     {
       "id": "modelscope",
       "base": "https://modelscope.cn/datasets/jingjiangze/Stronghold-Protocol-Assets/resolve/master/releases/v1-trial",
-      "note": "自建数据集镜像（公开；= 第三镜像 ModelScope 创空间 的运行时入口，见本文件 _comment）。15,979 assets + 7 fonts，逐字节校验过，Range 返 206，ACAO 可用，直连比 r2 快约 3×。**不钉 40hex**（2026-10-11 决定）：镜像还在追加文件，钉死后新素材要等换版才可见；路径本身不变，可变 master 不会让同一路径指向不同内容。",
+      "note": "自建 ModelScope 数据集镜像。2026-10-18 起私有（匿名 resolve 404 / repo/tree 403）；公开后作为**第一顺位**。健康探测每轮打一条必然存在的素材：4xx 即判 down 并顺延，所以「未公开 → 自动落到 r2」不需要改配置。",
       "redirects": [
         "https://cdn-lfs-cn-1.modelscope.cn"
       ]
@@ -20,7 +20,7 @@
     {
       "id": "r2",
       "base": "https://speedcdn.jiangjiangze.icu",
-      "note": "R2 桶门牌（用户 2026-10-18 指定 speedcdn，同桶同字节）。"
+      "note": "**兜底源**（2026-10-19 用户指令：r2 垫底）。speedcdn 是 R2 自定义域，公开、无鉴权、与 weishucdn/weishucdn2 同桶同字节。"
     },
     {
       "id": "openi",

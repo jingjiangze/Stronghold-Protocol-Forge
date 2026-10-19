@@ -1,0 +1,18 @@
+{
+  "trusted": {
+    "mota-coop": "b1ed43cd3ed500790a534085eaf104d028aca22af5804820597d37a0e592c432",
+    "mota": "79256405218eb4b20f3af56ddeb7b740856cdca7a7fad0335df7c500b4ca7e50",
+    "ai-scoring": "d88c4ce98c13e378bcf690890ec8e67b4260bc2339e985760f031b92cd867c38",
+    "operator-skins": "aeedb155ce99dd6ef57cc30df362a44eaf4dd2d3465899ce6f201b0be5e52020",
+    "alliance-20": "3ae89007a17f2db9781c3a141b1122dc222e2adbeb971503a0005b51c135cb90"
+  },
+  "default": [
+    "mota",
+    "operator-skins",
+    "alliance-20",
+    "ai-scoring"
+  ],
+  "required": [
+    "mota"
+  ]
+}

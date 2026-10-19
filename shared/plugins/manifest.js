@@ -183,7 +183,7 @@ const SETTING_TYPES = ['boolean', 'integer', 'number', 'enum'];
 /** Top-level fields of manifest 2 (anything else is warned about and ignored). */
 const V2_FIELDS = new Set(['$schema', 'manifest', 'id', 'name', 'englishName', 'description', 'version', 'app', 'api', 'class', 'scope',
   'authors', 'credits', 'license', 'homepage', 'sourceLang', 'requires', 'optional', 'conflicts', 'loadAfter', 'loadBefore', 'priority',
-  'settings', 'permissions', 'overrides', 'rules', 'entry', 'slots', 'notices', 'files', 'lang', 'base', 'fallback', 'complete', 'machineTranslated', 'numberUnits', ...Object.keys(PARTS)]);
+  'settings', 'permissions', 'overrides', 'rules', 'entry', 'code', 'slots', 'notices', 'files', 'lang', 'base', 'fallback', 'complete', 'machineTranslated', 'numberUnits', ...Object.keys(PARTS)]);
 /** Those fields, sorted, for the frozen API table (docs/PLUGIN-API.md). */
 export const MANIFEST_FIELDS = Object.freeze([...V2_FIELDS].sort());
 /** Fields only a lang plugin has. */
@@ -758,6 +758,8 @@ export function readPluginManifest(raw, ctx) {
     manifest: 2, id, class: cls, type: kind.packType, name, englishName, names, description, version, app: range, compatible, api, scope,
     authors: authorsOf(m.authors), credits: str(m.credits, 500), license: str(m.license, 100), homepage, sourceLang: sourceLang || SOURCE_LANG,
     requires, optional, conflicts, loadAfter, loadBefore, priority, settings, permissions, parts, entry, slots, files: {},
+    // 无损插件：服务端代码根 / 客户端覆盖表 / 整份数据（只对 trusted 有意义）。
+    ...(m.code && typeof m.code === 'object' && !Array.isArray(m.code) ? { code: m.code } : {}),
     ...(m.overrides !== undefined ? { overrides } : {}),
     ...(parts.theme?.themeVars ? { themeVars: parts.theme.themeVars } : {}),
     ...(notices ? { notices } : {}),

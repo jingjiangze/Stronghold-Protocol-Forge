@@ -125,6 +125,8 @@ export function createRoomSets({ registry, visual, contents, policy }) {
     // Catalogue hint only: language plugins can publish notices even when the unofficial count is zero.
     hasNotices: () => registry.plugins?.().some((p) => p.status === 'loaded' && p.manifest?.notices?.length > 0) || false,
     defaults: () => { const p = policy?.get(); return p && p.rooms !== 'off' ? [...p.default] : []; },
+    /** The plugins every room must keep (plugins/config.json required): a host cannot switch them off. */
+    required: () => { const p = policy?.get(); return p && p.rooms !== 'off' ? [...(p.required || [])] : []; },
     /** The plugins every room must play (plugins/config.json rooms: fixed), else null. */
     fixed: () => { const p = policy?.get(); return p && p.rooms === 'fixed' ? [...p.default] : null; },
     /** The merged data of a content set (the lobby's checks of loadouts and 自选 picks in its rooms), or null. */

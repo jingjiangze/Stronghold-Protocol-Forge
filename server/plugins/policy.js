@@ -35,7 +35,7 @@ const noopLog = { info() {}, warn() {}, error() {}, debug() {} };
 
 /** The defaults (no file). */
 export const DEFAULT_POLICY = Object.freeze({
-  rooms: 'host', default: Object.freeze([]), allow: Object.freeze(['*']),
+  rooms: 'host', default: Object.freeze([]), required: Object.freeze([]), allow: Object.freeze(['*']),
   classes: Object.freeze({ cosmetic: true, content: true }), maxSets: DEFAULT_MAX_SETS, allowIncompatible: false,
 });
 
@@ -54,6 +54,10 @@ export function readPolicy(json, { env = process.env } = {}) {
   if (o.default !== undefined) {
     if (Array.isArray(o.default) && o.default.length <= 32 && o.default.every(isPluginId)) p.default = [...new Set(o.default)];
     else problems.push('"default" must be a list of plugin ids');
+  }
+  if (o.required !== undefined) {
+    if (Array.isArray(o.required) && o.required.length <= 32 && o.required.every(isPluginId)) p.required = [...new Set(o.required)];
+    else problems.push('"required" must be a list of plugin ids');
   }
   if (o.allow !== undefined) {
     if (Array.isArray(o.allow) && o.allow.every((x) => x === '*' || isPluginId(x))) p.allow = [...o.allow];
@@ -75,7 +79,7 @@ export function readPolicy(json, { env = process.env } = {}) {
   if (o.allowIncompatible !== undefined) { if (typeof o.allowIncompatible === 'boolean') p.allowIncompatible = o.allowIncompatible; else problems.push('"allowIncompatible" must be true or false'); }
   const e = String(env?.SP_PLUGINS ?? '').trim().toLowerCase();
   if (e) { if (ROOMS.includes(e)) p.rooms = e; else problems.push(`SP_PLUGINS=${e} is not one of ${ROOMS.join(', ')}`); }
-  return { policy: Object.freeze({ ...p, default: Object.freeze(p.default), allow: Object.freeze(p.allow), classes: Object.freeze(p.classes) }), problems };
+  return { policy: Object.freeze({ ...p, default: Object.freeze(p.default), required: Object.freeze(p.required || []), allow: Object.freeze(p.allow), classes: Object.freeze(p.classes) }), problems };
 }
 
 /**

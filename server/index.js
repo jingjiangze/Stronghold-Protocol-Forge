@@ -4,7 +4,8 @@
 //   http/config.js     ROOT, the served directories, the environment (PORT 3000, HOST '::' dual-stack, TRUST_PROXY auto, DEBUG),
 //                      which startServer() options go to net.js / lobby.js, the console logger
 //   http/websocket.js  session wiring (SessionRegistry → Lobby → Network) and the WebSocket at /ws (maxPayload 64 KB,
-//                      permessage-deflate from 1 KB; refused at upgrade with 404 / 429 per network / 503)
+//                      permessage-deflate from server/wsCompression.js — WS_COMPRESSION=off|on|safe, default on;
+//                      refused at upgrade with 404 / 429 per network / 503)
 //   http/static.js     the static mounts (/ → public/, /data/, /shared/, /sim/ `.js` only), the /data.js browser stand-in,
 //                      the language packs (/packs/index.json, /packs/<id>/<file>), the plugin catalogue
 //                      (/plugins/index.json — the registry is plugins/registry.js), the vanilla content set's manifest
@@ -40,7 +41,12 @@ import path from 'node:path';
 import { getData, loadData } from './data.js';
 import { ROOT, listenAddress, bindCandidates, serveDirs, makeLogger, parseTrustProxy, assetIndexOptionsFrom } from './http/config.js';
 import { WS_MAX_PAYLOAD, createSessionStack, attachWebSocket } from './http/websocket.js';
+import { resolveWsTransport } from './wsCompression.js';
 import { siteCsp } from './http/csp.js';
+import fs from 'node:fs';
+import { createAssetJump, DEFAULT_SOURCES_PATH } from './http/asset-jump.js';
+import { createPlatformLink, platformConfigFromEnv } from './platform.js';
+import { outboxEnabled, createLineupOutbox, lineupDir, lineupRemoteSpec, setLineupFlushHook, publishOneMode } from './mods-lineup.js';
 import { DATA_SHIM_JS, createStaticHandler } from './http/static.js';
 import { createPluginRegistry } from './plugins/registry.js';
 import { computeVanillaContent } from './plugins/identity.js';
@@ -126,8 +132,74 @@ export async function startServer(opts = {}) {
   // a child process per content set; SP_MATCH_HOST=worker asks for a worker thread instead (match/host/index.js header:
   // an out-of-memory abort in a worker thread ends the whole server)
   const transport = String(process.env.SP_MATCH_HOST || '').trim().toLowerCase() === 'worker' ? 'worker' : 'process';
-  const hosts = createMatchHosts({ contents, log, options: { transport, maxWorkers: Math.max(1, policy.get().maxSets), ...(opts.matchHost || {}) } });
+  const hosts = createMatchHosts({ contents, log, options: { transport, maxWorkers: Math.max(1, policy.get().maxSets), ...(String(process.env.SP_MATCH_VIRTUAL || '') === '1' ? { virtualTime: true } : {}), ...(opts.matchHost || {}) } });
   const { registry, lobby, network } = createSessionStack(opts, { data, log, content, plugins: roomSets, hosts });
+  // WebSocket transport (permessage-deflate): one process-level decision, named at boot. The same object is
+  // put on `welcome.transport`, so a client reads the effective value instead of inferring it
+  // (`ctx.net.transport()`); the mode is `WS_COMPRESSION` / the historical `SP_WS_COMPRESSION`.
+  const wsTransport = resolveWsTransport({ log, maxPayload: WS_MAX_PAYLOAD });
+  lobby.transport = wsTransport.transport;
+  log.info(`[ws] transport ${wsTransport.mode}: ${wsTransport.describe.summary}`);
+  // P2P 平台握手（openp2p「只做握手」）：建房时注册、销毁时释放；平台只回一个 302，不转发对局流量。
+  const platformCfg = platformConfigFromEnv(process.env);
+  lobby.platformLink = platformCfg ? createPlatformLink(platformCfg, { log }) : null;
+  if (lobby.platformLink) log.info?.(`[platform] ${platformCfg.mode} link → ${platformCfg.base}`);
+  // 素材 302 分流（ms 创空间 overlay）：sources.json 门牌表 + rank 合格集 + 源健康顺延。
+  const assetJump = createAssetJump({ log });
+  // 布阵学习库（无损插件）：SP_LINEUP_LIBRARY 指向目录/文件才开；outbox 负责离线缓存与结算即传。
+  let lineupOutbox = null;
+  try {
+    lineupOutbox = outboxEnabled() && !lineupRemoteSpec() && lineupDir()
+      ? createLineupOutbox({ dir: lineupDir(), log, publish: ({ key, records }) => publishOneMode({ key, records, log, env: process.env }) })
+      : null;
+    if (lineupOutbox) lineupOutbox.start();
+    setLineupFlushHook(lineupOutbox ? () => lineupOutbox.requestFlush() : null);
+    if (lineupOutbox) log.info?.(`[lineup] outbox → ${lineupDir()}`);
+  } catch (e) { log.warn?.(`[lineup] library off: ${e.message}`); }
+
+  // 无损插件的客户端覆盖：默认内容集里声明了 code.client 的插件，其 client/** 顶替同路径页面资源。
+  // 只允许 **loaded** 的插件覆盖：一个被 owner gate 拒掉的 trusted/script 插件（PLUGIN_SCRIPTS_DISABLED /
+  // PLUGIN_TRUST_PIN …）也不能改页面 —— 否则首页会出现服务端根本没挂载的 mod，房间页却用不了
+  // （本轮实测到的正是这一条：mota 显示在首页、房间默认插件报 PLUGIN_SCRIPTS_DISABLED）。
+  const clientOverlay = new Map();
+  try {
+    const loadedPlugins = new Set((typeof packs.plugins === 'function' ? packs.plugins() : [])
+      .filter((p) => p && p.status === 'loaded')
+      .map((p) => p.id));
+    // 多代码根：按 loadOrder（缺省 0）再按 id 排序，后者覆盖同路径。
+    const order = [];
+    for (const id of (fs.existsSync(pluginsDir) ? fs.readdirSync(pluginsDir) : [])) {
+      if (!loadedPlugins.has(id)) continue;
+      const man = path.join(pluginsDir, id, 'plugin.json');
+      if (!fs.existsSync(man)) continue;
+      let m; try { m = JSON.parse(fs.readFileSync(man, 'utf8')); } catch { continue; }
+      if (m && m.code) order.push({ id, m });
+    }
+    order.sort((x, y) => (Number(x.m.loadOrder) || 0) - (Number(y.m.loadOrder) || 0) || x.id.localeCompare(y.id));
+    for (const { id, m } of order) {
+      const c = m.code;
+      if (!c || !Array.isArray(c.client)) continue;
+      for (const rel of c.client) {
+        const abs = path.join(pluginsDir, id, 'client', ...rel.split('/'));
+        if (!fs.existsSync(abs)) continue;
+        clientOverlay.set(rel, { body: fs.readFileSync(abs), type: MIME[path.extname(rel)] || 'application/octet-stream' });
+      }
+      // 插件自带的 shared/**（魔塔独有的 shared 模块）也按同路径顶替。
+      const sharedDirP = path.join(pluginsDir, id, 'shared');
+      if (fs.existsSync(sharedDirP)) {
+        const walkShared = (d, rel) => {
+          for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+            const child = rel ? rel + '/' + e.name : e.name;
+            if (e.isDirectory()) walkShared(path.join(d, e.name), child);
+            else clientOverlay.set('shared/' + child, { body: fs.readFileSync(path.join(d, e.name)), type: MIME[path.extname(child)] || 'application/octet-stream' });
+          }
+        };
+        walkShared(sharedDirP, '');
+      }
+    }
+  } catch (e) { log.warn?.(`[plugins] client overlay: ${e.message}`); }
+  if (clientOverlay.size) log.info?.(`[plugins] client overlay: ${clientOverlay.size} files`);
+  const serveStatic = createStaticHandler({ publicDir, dataDir, sharedDir, simDir, packsDir, pluginsDir, packs, content, log, assetIndex, views, visual, contents, assetJump, clientOverlay });
   const studio = opts.studio === false ? null : createStudio({ publicDir, pluginsDir, dataDir, registry: packs, lobby, sessions: registry, log, fetch: opts.fetch });
   // the mod manager (server/mods/): the /mod page and the drop-in inbox. Imports go through the plugin system's own
   // forgeImport / installPluginBytes — one loading chain, no second one. Off with opts.mods === false or SP_MODS=off.
@@ -143,9 +215,9 @@ export async function startServer(opts = {}) {
   buildTag();
 
   const traffic = createTrafficCounter();
-  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health }, log, trustProxy: network.opts.trustProxy, studio, mods, trustedRuntime }));
+  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir, { sourcesPath: process.env.SP_EDGE_SOURCES || DEFAULT_SOURCES_PATH }), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health }, log, trustProxy: network.opts.trustProxy, studio, mods, trustedRuntime }));
   server.on('clientError', answerClientError);
-  const wss = attachWebSocket(server, { network, log, traffic });
+  const wss = attachWebSocket(server, { network, log, traffic, perMessageDeflate: wsTransport.perMessageDeflate });
 
   // The address actually bound. The default may fall back to IPv4; the returned host and url follow that.
   let boundHost;

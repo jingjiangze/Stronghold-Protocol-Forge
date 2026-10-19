@@ -56,9 +56,10 @@
 // an empty manifest.
 // Files go out through files.js serveFile.
 
+import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
-import { MEDIA_PREFIX } from '../../shared/media.js';
+import { MEDIA_PREFIX, AUDIO_EXTS } from '../../shared/media.js';
 import { splitHashedPath } from '../../shared/assetPaths.js';
 import { ROOT, noopLog } from './config.js';
 import { sendError, sendJson } from './common.js';
@@ -124,7 +125,7 @@ const CS_FILE = /^\/cs\/([0-9a-f]{16})\/([A-Za-z0-9._\/-]{1,200})$/;
  */
 export function createStaticHandler({ publicDir, dataDir, sharedDir, simDir = path.join(ROOT, 'server', 'sim'), packsDir = path.join(ROOT, 'packs'),
   pluginsDir = path.join(path.dirname(path.resolve(packsDir)), 'plugins'), packs = null, content = null, log = noopLog,
-  assetIndex = null, views = null, visual = null, contents = null }) {
+  assetIndex = null, views = null, visual = null, contents = null, assetJump = null, clientOverlay = null }) {
   const registry = packs || createPluginRegistry({ publicDir, dataDir, packsDir, pluginsDir }, { log: /** @type {any} */ (log) });
   const sets = visual || (typeof registry.pluginFile === 'function' ? createVisualSets({ registry, log }) : null);
   let vanilla = content;
@@ -147,12 +148,55 @@ export function createStaticHandler({ publicDir, dataDir, sharedDir, simDir = pa
   const shimTag = `"shim-${shimBody.length.toString(16)}"`;
   const gzipCache = new CompressCache(); // brotli and gzip bodies (files.js)
 
+  /**
+   * Does this jumpable URL resolve to a file on THIS disk? The 302 layer is a fallback for files the local
+   * tree does not have (asset-jump.js header) — asking it before checking the disk redirects files that are
+   * right here, which is the regression the static tests catch. The caller strips the hash segment first;
+   * `/media/` is resolved through the same audio extensions `serveMedia` uses.
+   * @param {string} pathname
+   */
+  const localExists = (pathname) => {
+    const root = path.resolve(publicDir);
+    const under = (abs) => abs === root || abs.startsWith(root + path.sep);
+    if (pathname.startsWith(MEDIA_PREFIX)) {
+      const segments = pathname.slice(MEDIA_PREFIX.length).split('/').filter(Boolean);
+      if (!segments.length || segments.some((s) => s === '..' || s === '.')) return false;
+      const last = segments[segments.length - 1];
+      const given = path.extname(last).toLowerCase();
+      const wanted = AUDIO_EXTS.includes(given) ? given : '';
+      const stem = wanted ? last.slice(0, -wanted.length) : last;
+      if (!stem || stem.startsWith('.')) return false;
+      const dir = path.resolve(root, 'assets', 'audio', ...segments.slice(0, -1));
+      if (!under(dir)) return false;
+      return (wanted ? [wanted] : AUDIO_EXTS).some((ext) => fs.existsSync(path.join(dir, stem + ext)));
+    }
+    const abs = path.resolve(root, `.${pathname}`);
+    return under(abs) && fs.existsSync(abs);
+  };
+
   return async function serveStatic(req, res, rawPath, query) {
     let decoded;
     try { decoded = decodeURIComponent(rawPath); } catch { sendError(req, res, 400, '请求地址无效 · Bad request'); return; }
     if (!decoded.startsWith('/') || decoded.includes('\0') || decoded.includes('\\')) {
       sendError(req, res, 400, '请求地址无效 · Bad request');
       return;
+    }
+    // 素材 302 分流（ms 创空间 overlay）：/assets /fonts /media 未命中走 CDN 门牌；本机素材包 /assets/local 例外。
+    // 无损插件：插件 client/** 里的文件顶替同路径的页面资源（与 delta 线把合并结果放进树里等价）。
+    if (clientOverlay) {
+      const hit = clientOverlay.get(decoded.slice(1));
+      if (hit) {
+        res.writeHead(200, { 'Content-Type': hit.type, 'Cache-Control': 'no-cache', 'Content-Length': hit.body.length });
+        res.end(req.method === 'HEAD' ? undefined : hit.body); return;
+      }
+    }
+    // 本机素材：磁盘上有就从磁盘出，没有才问 CDN（asset-jump 是 fallback，不是前置）。hash 段先剥掉，
+    // /media/ 按 serveMedia 的扩展名解析 —— 否则存在的本机文件会被 302 掉（static 测试抓到的回归）。
+    const jumpable = /^(\/assets\/|\/fonts\/|\/media\/)/.test(decoded);
+    const onDiskLocal = jumpable && localExists(splitHashedPath(decoded).path);
+    if (assetJump && jumpable && !onDiskLocal) {
+      const jumped = assetJump(decoded, query, req.method, assetJump.config ? assetJump.config() : null);
+      if (jumped) { res.writeHead(jumped.status, jumped.headers); res.end(); return; }
     }
     // the plugin studio's page is never a static file (server/studio/index.js isStudioPath: any spelling of /studio/)
     if (isStudioPath(decoded)) { sendError(req, res, 404, '页面不存在 · Not found', decoded.length <= 200 ? decoded : ''); return; }
@@ -181,6 +225,16 @@ export function createStaticHandler({ publicDir, dataDir, sharedDir, simDir = pa
         // data files — a URL naming its content, so cached for good; 404 for a set this server does not keep
         const m = CS_FILE.exec(decoded);
         const f = m && contents && !m[2].split('/').some((s) => s === '' || s === '.' || s === '..' || s.startsWith('.')) ? contents.file(m[1], m[2]) : null;
+        // 无损插件的客户端入口：/cs/<cs16>/ 给一份把入口脚本指到该前缀的 index.html。
+        if (!f && m && contents && m[2] === '' && contents.byCs) {
+          const set = contents.byCs(m[1]);
+          if (set && set.code) {
+            const html = await fsp.readFile(path.join(publicDir, 'index.html'), 'utf8');
+            const body = Buffer.from(html.replace('/js/main.js', `/cs/${m[1]}/js/main.js`));
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+            res.end(req.method === 'HEAD' ? undefined : body); return;
+          }
+        }
         if (!f) { sendError(req, res, 404, '页面不存在 · Not found', decoded.length <= 200 ? decoded : ''); return; }
         await serveBuffer(req, res, { body: f.body, hash: `cs-${m[1]}-${(f.sha256 || 'index').slice(0, 8)}`, type: f.type || MIME['.json'], cacheControl: IMMUTABLE_JSON, key: `cs:${decoded}`, cache: gzipCache });
         return;

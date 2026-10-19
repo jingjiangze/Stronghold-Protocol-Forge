@@ -83,7 +83,8 @@ export function modPage({ inbox, keyHint }) {
       <span class="dim">收件目录 · inbox: <code>${esc(inbox)}</code>（把 zip 丢进去即安装 · drop a zip in to install）</span>
     </div>
     <div class="row" style="margin-bottom:10px"><span id="platform" class="dim"></span></div>
-    <table><thead><tr><th>id</th><th>名称</th><th>版本</th><th>类别</th><th>状态</th></tr></thead><tbody id="rows"></tbody></table>
+    <table><thead><tr><th>id</th><th>名称</th><th>版本</th><th>类别</th><th>状态</th><th>房间默认</th></tr></thead><tbody id="rows"></tbody></table>
+    <p class="dim">「房间默认」= 新建房间开局带上的插件（plugins/config.json 的 default）。改完对**新房间**生效，已开房间保持原集合。</p>
   </section>
 
   <section>
@@ -112,13 +113,33 @@ export function modPage({ inbox, keyHint }) {
       const state = p.status === 'loaded' ? '<span class="ok">loaded</span>'
         : p.status === 'disabled' ? '<span class="bad">disabled</span>'
         : '<span class="dim">' + (p.status || 'skipped') + '</span>';
-      return '<tr><td><code>' + p.id + '</code></td><td>' + p.name + '</td><td>' + p.version + '</td><td>' + (p.class || '') + '</td><td>' + state + '</td></tr>';
+      const toggle = p.required
+        ? '<span class="dim">必需</span>'
+        : '<button class="alt" data-toggle="' + p.id + '" data-on="' + (p.enabled ? '0' : '1') + '">' + (p.enabled ? '停用' : '启用') + '</button>';
+      return '<tr><td><code>' + p.id + '</code></td><td>' + p.name + '</td><td>' + p.version + '</td><td>' + (p.class || '') + '</td><td>' + state + '</td><td>' + toggle + '</td></tr>';
     });
-    $('rows').innerHTML = rows.join('') || '<tr><td colspan="5" class="dim">（没有插件 · none）</td></tr>';
+    $('rows').innerHTML = rows.join('') || '<tr><td colspan="6" class="dim">（没有插件 · none）</td></tr>';
     return j;
   }
 
   $('reload').onclick = async () => { try { const j = await status(); show({ installed: (j.plugins || []).length, inbox: j.inbox }); } catch (e) { show(String(e)); } };
+
+  // 启用 / 停用（房间开局集合）。写操作同样要钥匙。
+  $('rows').onclick = async (e) => {
+    const btn = e.target.closest('[data-toggle]');
+    if (!btn) return;
+    if (!key()) return show('先填钥匙 · enter the key first');
+    btn.disabled = true;
+    try {
+      const r = await fetch('/mod/enable', {
+        method: 'POST', headers: { 'X-SP-Mod': key(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: btn.dataset.toggle, on: btn.dataset.on === '1' }),
+      });
+      const j = await r.json();
+      show(j);
+      await status();
+    } catch (err) { show(String(err)); } finally { btn.disabled = false; }
+  };
 
   $('upload').onclick = async () => {
     const f = $('file').files[0];

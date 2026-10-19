@@ -32,6 +32,7 @@
 import { parentPort, workerData } from 'node:worker_threads';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
+import path from 'node:path';
 import { getData, setData } from '../../data.js';
 import { installOfficialBounds } from '../../../shared/plugins/officialBounds.js';
 import { contentHashOf } from '../../../shared/plugins/identity.js';
@@ -166,7 +167,28 @@ async function boot() {
   }
   // After setData, before Match: Match reads opts.registry || getDefaultRegistry(), the same singleton.
   dslGrants = await installPrepDsl(data);
-  const mod = await import(typeof options.matchModule === 'string' && options.matchModule ? pathToFileURL(options.matchModule).href : '../Match.js');
+  // 无损插件：代码根里的 Match（相对路径按插件目录解析），否则用上游的 Match。
+  const codeRoots = options.code && Array.isArray(options.code.roots) ? options.code.roots
+    : (options.code && typeof options.code.root === 'string' ? [options.code] : []);
+  const codeRoot = codeRoots.length ? codeRoots[codeRoots.length - 1].root : null;
+  if (codeRoots.length) {
+    // 插件自带的整份数据（魔塔的 config.json 等）在该内容集里原样覆盖上游数据。
+    const fs = await import('node:fs');
+    // data 已经被内容集冻结：先浅拷贝再覆盖，不能原地写。
+    const merged = { ...data };
+    for (const r of codeRoots) for (const rel of (r.data || [])) {
+      const abs = path.join(r.root, ...rel.split('/'));
+      if (!fs.existsSync(abs)) continue;
+      const name = path.basename(rel, '.json');
+      merged[name] = JSON.parse(fs.readFileSync(abs, 'utf8'));
+    }
+    setData(merged);
+    void 0;
+  }
+  const matchRoot = [...codeRoots].reverse().find((r) => r.match);
+  const matchPath = matchRoot ? pathToFileURL(path.join(matchRoot.root, ...matchRoot.match.split('/'))).href
+    : (typeof options.matchModule === 'string' && options.matchModule ? pathToFileURL(options.matchModule).href : '../Match.js');
+  const mod = await import(matchPath);
   const Inner = mod.Match || mod.default;
   if (typeof Inner !== 'function') throw new Error('the match module exports no Match');
   // [ASSUMED] Grant the prep EffectRefs after super(), once players exist (DESIGN §32.7).

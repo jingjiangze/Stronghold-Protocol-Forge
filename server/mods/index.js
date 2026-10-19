@@ -54,6 +54,11 @@ function readBody(req, limit) {
 function statusRows(registry, pluginsDir) {
   let list = [];
   try { list = registry ? registry.plugins() : []; } catch { list = []; }
+  // plugins/config.json 的 default / required：房间开局的插件集合，以及关不掉的那几个。
+  let policy = {};
+  try { policy = JSON.parse(fs.readFileSync(path.join(pluginsDir, 'config.json'), 'utf8')) || {}; } catch { policy = {}; }
+  const enabled = new Set(Array.isArray(policy.default) ? policy.default : []);
+  const required = new Set(Array.isArray(policy.required) ? policy.required : []);
   const rows = list.filter((p) => p && p.id && !String(p.id).startsWith('_')).map((p) => ({
     id: p.id,
     name: (p.manifest && p.manifest.name) || p.name || p.id,
@@ -61,11 +66,13 @@ function statusRows(registry, pluginsDir) {
     class: p.class || (p.manifest && p.manifest.class) || '',
     status: p.status || '',
     supported: p.supported !== false,
+    enabled: enabled.has(p.id),
+    required: required.has(p.id),
     ...(p.disabled ? { disabled: p.disabled } : {}),
   })).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   let inbox = null;
   try { inbox = fs.readdirSync(path.join(path.dirname(pluginsDir), 'mod-inbox')).filter((n) => n.endsWith('.zip')).length; } catch { inbox = null; }
-  return { plugins: rows, inbox };
+  return { plugins: rows, inbox, default: [...enabled], required: [...required] };
 }
 
 /**
@@ -155,6 +162,37 @@ export function createMods({ root, pluginsDir, dataDir, registry = null, vanilla
         const r = await importArchive(buf, { root, pluginsDir, dataDir, vanilla, force: parsed?.force === true });
         registry?.rescan?.();
         sendJson(req, res, r.ok ? 200 : 400, r);
+        return;
+      }
+
+      // 启用 / 停用（房间开局集合 = plugins/config.json 的 default）。required 的插件关不掉。
+      // 策略文件按 mtime 自动重读（server/plugins/policy.js），所以新房间立刻生效，已开的房间保持原集合。
+      if (rawPath === '/mod/enable') {
+        if (method !== 'POST') { sendError(req, res, 405, '不支持的请求方法 · Method not allowed'); return; }
+        if (!changeAllowed(req)) { sendError(req, res, 403, '拒绝跨站写入 · cross-site write refused'); return; }
+        if (!keyOk(req, query)) { sendError(req, res, 403, '缺少或错误的 X-SP-Mod 钥匙 · missing or wrong key'); return; }
+        let body;
+        try { body = await readBody(req, MAX_JSON_BYTES); } catch (e) { sendError(req, res, 413, String(e.message || e)); return; }
+        let parsed;
+        try { parsed = JSON.parse(body.toString('utf8') || '{}'); } catch { sendError(req, res, 400, '请求体不是 JSON · body is not JSON'); return; }
+        const id = typeof parsed?.id === 'string' ? parsed.id.trim() : '';
+        const on = parsed?.on;
+        if (!id || typeof on !== 'boolean') { sendError(req, res, 400, '需要 { id, on } · id and on are required'); return; }
+        let known = [];
+        try { known = (registry ? registry.plugins() : []).map((p) => p && p.id).filter(Boolean); } catch { known = []; }
+        if (!known.includes(id)) { sendJson(req, res, 404, { ok: false, error: 'PLUGIN_UNKNOWN', detail: id }); return; }
+        const file = path.join(pluginsDir, 'config.json');
+        let cfg = {};
+        try { cfg = JSON.parse(fs.readFileSync(file, 'utf8')) || {}; } catch { cfg = {}; }
+        const required = new Set(Array.isArray(cfg.required) ? cfg.required : []);
+        if (!on && required.has(id)) { sendJson(req, res, 400, { ok: false, error: 'PLUGIN_BLOCKED', detail: `this server requires: ${id}` }); return; }
+        const current = Array.isArray(cfg.default) ? cfg.default : [];
+        const next = on ? [...new Set([...current, id])] : current.filter((x) => x !== id);
+        const saved = { ...cfg, default: next };
+        const tmp = `${file}.${process.pid}.tmp`;
+        fs.writeFileSync(tmp, `${JSON.stringify(saved, null, 2)}\n`);
+        fs.renameSync(tmp, file);
+        sendJson(req, res, 200, { ok: true, default: next, required: [...required] });
         return;
       }
 

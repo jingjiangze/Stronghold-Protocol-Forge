@@ -550,7 +550,7 @@ export function readPluginFolder(dir, { app = APP_VERSION, api = PLUGIN_API, whe
   if (manifest.class === 'lang') for (const [role, rel] of Object.entries(manifest.files)) served[role] = { rel, abs: path.join(dir, ...rel.split('/')), url: fileUrl(id, rel) };
   /** @type {Plugin} */
   const plugin = {
-    id, type: manifest.type, class: manifest.class, status, source: 'plugins', layout: 'folder', where: at,
+    id, type: manifest.type, class: manifest.class, status, source: 'plugins', layout: 'folder', where: at, dir,
     supported: status === 'loaded' && manifest.class === 'lang', manifest, files: served, bytes: check.bytes, count: check.count,
   };
   if ((manifest.class === 'cosmetic' || manifest.class === 'ui' || (['content','script','trusted'].includes(manifest.class) && manifest.parts.assets)) && status === 'loaded') {

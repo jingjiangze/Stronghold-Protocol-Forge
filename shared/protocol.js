@@ -1,7 +1,7 @@
 // Normative message catalogue (DESIGN §8). Used by server (validation) and client (building requests).
 // Every client→server message is `{ t, rid?, ...fields }`. Unknown `t` or invalid fields ⇒ ERR.BAD_MSG.
 
-import { DIFFICULTIES, NAME_MAX_LEN, ROOM_CODE_LEN, MAX_SEATS, EMOTES, GEO } from './constants.js';
+import { DIFFICULTIES, NAME_MAX_LEN, ROOM_CODE_LEN, MAX_SEATS, EMOTES, GEO, TEAMS } from './constants.js';
 import { isDroppableChess } from './standIn.js';
 import { diySlotIds, validateDiyPicks } from './diy.js';
 import { cultivatedStats, isPotential, isCultivate, POTENTIAL_DEFAULT, CULTIVATE_DEFAULT, hasPotentialData } from './potential.js';
@@ -498,9 +498,17 @@ export const C2S = {
   ping: { c: (v) => typeof v === 'number' && Number.isFinite(v) },
   // test: only the literal true (DESIGN §34.8). Omit it for a normal room — `false` is a bad field, so a
   // string cannot sneak in as "not a test". The server still refuses it unless SP_TEST_MODE is on.
-  'room.create': { mode: (v) => v === 'solo' || v === 'coop', difficulty: (v) => DIFFICULTIES.includes(v), test: (v) => v === true, $optional: ['test'] },
+  'room.create': { mode: (v) => v === 'solo' || v === 'coop', difficulty: (v) => DIFFICULTIES.includes(v), private: (v) => v === true || v === false, variant: (v) => v == null || (typeof v === 'string' && v.length > 0 && v.length <= 64 && /^[A-Za-z0-9_.:-]+$/.test(v)), test: (v) => v === true, $optional: ['test', 'variant', 'private'] },
   'room.join': { $optional: ['testAck'], testAck: (v) => v === true, code: (v) => isStr(v, ROOM_CODE_LEN + 2) && /^[A-Za-z0-9]+$/.test(v) },
   'room.leave': {},
+  // 20 人分组（mod）：换队（team=null 清空；seat 只有房主能给）与房间座位上限
+  'room.setTeam': { $optional: ['seat'], team: (v) => v === null || (typeof v === 'string' && TEAMS.includes(v)), seat: (v) => v === undefined || isInt(v, 0, MAX_SEATS - 1) },
+  'room.setMaxSeats': { n: (v) => isInt(v, 1, MAX_SEATS) },
+  // 房间人数上限（客户端滑条）：code 防陈旧标签页改到别的房间；4 的倍数由服务端再校验一次
+  'room.setSeatCap': { code: (v) => isStr(v, ROOM_CODE_LEN + 2) && /^[A-Za-z0-9]+$/.test(v), seatCap: (v) => isInt(v, 1, MAX_SEATS) },
+  'room.list': {},
+  // host, before the match: the room's public/private switch (the mota client's 私密房间 checkbox).
+  'room.setPrivate': { private: (v) => typeof v === 'boolean' },
   'room.ready': { ready: isBool },
   'room.setDifficulty': { difficulty: (v) => DIFFICULTIES.includes(v) },
   // the co-op room option 「AI 队友最后选择」 (GitHub #338; host, before the match): the strategy and 机变 drafts order every
@@ -589,6 +597,19 @@ export const C2S = {
   // the stats the own board's units start their next battle with (user playtest #4 item 7; prep phases): answered by
   // the push m.unitStats { seq, round, units: [unitStatsEntry] }; `seq` is echoed so the client keeps the newest answer
   'g.unitStats': { seq: (v) => isInt(v, 0, 2 ** 31), $optional: ['seq'] },
+  // 协同共竞 (mota plugin): the client sends these only after m.public.econ advertises the rule set; the
+  // room's Match (the plugin's) handles them. Kept here because server/net.js validates every C2S frame
+  // against this table before the lobby/match sees it.
+  'g.publicFull': {},
+  'g.econ.request': { to: (v) => v == null || isId(v), amount: (v) => isInt(v, 1, 99), $optional: ['to'] },
+  'g.econ.respond': { id: isId, approve: isBool },
+  'g.econ.project': { project: isId },
+  'g.econ.vote': { id: isId, approve: isBool },
+  'g.revive': { playerId: isId, round: (v) => isInt(v, 1, 99) },
+  'g.econ.relief': {},
+  'g.econ.bounty': {},
+  'g.econ.repay': { to: (v) => v == null || isId(v), $optional: ['to'] },
+  'g.econ.nudge': { to: isId },
   'g.leave': {},
   // host test commands (DESIGN §34.8 phase 2). The server applies them only in a test match. `args` is checked
   // again by shared/testMode.js parseTestArgs (ids, bounds). Unknown keys inside args fail there, not here.

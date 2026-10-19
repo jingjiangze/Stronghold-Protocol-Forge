@@ -18,7 +18,14 @@ export const DEV_BUILD = /-dev$/.test(APP_VERSION);
  */
 export const PLUGIN_API = Object.freeze({ current: 2, min: 1 });
 
-export const MAX_SEATS = 4;
+// 座位上限：原版 4。放开到 20（20 人方案阶段 1）。
+// DEFAULT_SEATS 是「默认房间大小」——UI 的「人数上限」只在 MAX_SEATS > DEFAULT_SEATS 时出现。
+export const MAX_SEATS = 20;
+export const DEFAULT_SEATS = 4;
+/** 分队（阶段 2）：4 个颜色组，每组最多 TEAM_MAX 人 */
+export const TEAMS = Object.freeze(['red', 'yellow', 'blue', 'green']);
+export const TEAM_NAMES = Object.freeze({ red: '红队', yellow: '黄队', blue: '蓝队', green: '绿队' });
+export const TEAM_MAX = 5;
 /**
  * Spectator seats of a co-op room (community report #26, owner's decision 2026-10-04) — a remake feature: the official
  * room has 1–4 players and no spectator seat (there only eliminated players and 联防 bystanders watch, research 09 §3.1).
@@ -33,9 +40,19 @@ export const DIFFICULTIES = ['FUNNY', 'NORMAL', 'HARD', 'ABYSS'];
 export const DIFFICULTY_NAMES = { FUNNY: N_('标准模拟'), NORMAL: N_('险境模拟'), HARD: N_('绝境模拟'), ABYSS: N_('终极模拟') };
 export const DIFFICULTY_COLORS = { FUNNY: '#f6a329', NORMAL: '#e85a1a', HARD: '#e73118', ABYSS: '#ff0024' };
 
-// modeId in data/config.json = `mode_${type}_${difficulty.toLowerCase()}` with type single|multi
-export const modeIdFor = (roomMode, difficulty) =>
-  `mode_${roomMode === 'solo' ? 'single' : 'multi'}_${difficulty.toLowerCase()}`;
+// 救援（促融共竞 / DESIGN §29）: LP 归零不再当场淘汰。结算期开一个窗口，**其余全体存活队友同意**后，从共享池
+// 按人头各扣 REVIVAL_COST_PER 点（第 2 次起每人 +REVIVAL_COST_STEP，依次叠加）把目标救回 1 点 LP。
+// 窗口只在结算期、且队伍还没输（teamLp 仍为 null）时开放。
+export const REVIVAL_COST_PER = 5;
+export const REVIVAL_COST_STEP = 5;
+/** Why a downed player could not be rescued — carried on the player and shown to the room (never a raw code). */
+export const REVIVAL_UNAVAILABLE_REASONS = Object.freeze(['left', 'already-used', 'disabled', 'match-ended', 'no-voter', 'pool', 'window-closed', 'window-expired']);
+
+
+// modeId in data/config.json = `mode_${type}_${difficulty.toLowerCase()}` with type single|multi; a room `variant`
+// (e.g. 'xie' = 协同共竞) overrides the type, giving `mode_<variant>_<difficulty>` (DESIGN §29).
+export const modeIdFor = (roomMode, difficulty, variant = null) =>
+  `mode_${variant || (roomMode === 'solo' ? 'single' : 'multi')}_${difficulty.toLowerCase()}`;
 
 export const PHASE = Object.freeze({
   LOBBY: 'LOBBY',
@@ -293,3 +310,26 @@ export const emoteArtGroup = (id) => { const e = emoteInfo(id); return e ? `emot
 export const emoteArtPath = (id) => { const e = emoteInfo(id); return e ? `/assets/local/emoticon/${e.dir}/${e.picId}.png` : null; };
 export const EMOTE_COOLDOWN_MS = 1000; // activity_table autoChessData.constData.chatCD (s)
 export const EMOTE_BUBBLE_MS = 3000;   // constData.chatTime (s): how long a bubble stays up
+
+export const DEPLOY_CAP_MAX = 12;
+
+// ===== 协同共竞 mod 口径层需要的常量（自 coop 分支补入；variants/behaviour/morph 使用）=====
+
+// 协同共竞: SP_BOSS_HIT_LIMIT 解析（coop Match.js 的限伤 override 用）
+export function bossHitLimitFrom(env) {
+  const raw = env ? env.SP_BOSS_HIT_LIMIT : undefined;
+  if (raw == null) return undefined;
+  const s = String(raw).trim().toLowerCase();
+  if (s === '') return undefined;
+  if (s === 'off' || s === 'infinity' || s === 'inf') return Infinity;
+  const n = Number(s);
+  if (!Number.isFinite(n)) return undefined;
+  if (n === 0) return Infinity;                 // the constant's own "0 = off"
+  return n > 0 ? n : undefined;                 // negative / junk → the built-in default
+}
+
+// 协同共竞: 语音语言表（Forge voiceDubs / extensions 用）
+export const VOICE_LANGS = Object.freeze(['cn', 'jp', 'en', 'kr']);
+
+// 协同共竞: 房间座位下限（Forge B5 裁决的 seatCap 滑块；room.js 的 seatCapRoomRange 用）
+export const MIN_SEATS = 2;

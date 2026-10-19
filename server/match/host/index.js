@@ -100,7 +100,7 @@ export function createMatchHosts({ contents, log = noopLog, options = {} }) {
         // PLUGIN API v2: the set's interaction windows (docs/PLUGINS.md §10b) — data only; the host injects them into
         // every match it runs (server/match/host/entry.js), so the engine owns the window and no plugin code runs here
         offers: Array.isArray(set.offers) ? set.offers : [],
-        options: { heartbeatMs: o.heartbeatMs, matchOptions: o.matchOptions || {}, matchModule: o.matchModule || null, virtualTime: !!o.virtualTime },
+        options: { heartbeatMs: o.heartbeatMs, matchOptions: o.matchOptions || {}, matchModule: o.matchModule || null, code: set.code || null, virtualTime: !!o.virtualTime },
       };
       const failed = (e) => {
         log.error?.(`[plugins] match host ${this.tag} (${this.plugins}) failed: ${e?.code || ''} ${e?.message || e}`);

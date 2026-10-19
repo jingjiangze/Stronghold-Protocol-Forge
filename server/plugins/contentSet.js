@@ -306,6 +306,27 @@ function composeContentSet({ registry, ids = [], checkDataOnly = false }) {
   if (tr.problems.length) return { problems: tr.problems };
   // Checking declarative references must never execute a dependency's script setup/preflight.
   if (checkDataOnly) return { data, problems: [] };
+  // 多代码根：所有带 code 的插件按 loadOrder（缺省 0，再按 id）排序，后加载者覆盖同路径。
+  const codeRoots = plugins.filter((p) => p.manifest?.code && p.dir)
+    .sort((a, b) => (Number(a.manifest.loadOrder) || 0) - (Number(b.manifest.loadOrder) || 0) || String(a.id).localeCompare(String(b.id)))
+    .map((p) => ({ id: p.id, root: p.dir, match: p.manifest.code.match || null,   // 对局入口只认 code.match；entry.server 是 trusted 运行时钩子，不是 Match
+      client: Array.isArray(p.manifest.code.client) ? p.manifest.code.client : [],
+      data: Array.isArray(p.manifest.code.data) ? p.manifest.code.data : [] }));
+  const code = codeRoots.length ? { roots: codeRoots,
+    match: [...codeRoots].reverse().find((r) => r.match)?.match || null,
+    client: [...new Set(codeRoots.flatMap((r) => r.client))],
+    data: [...new Set(codeRoots.flatMap((r) => r.data))] } : null;
+  // 无损插件：code.data 里的整份配置原样成为该内容集的 config（与 delta 线把合并结果放进树里等价）。
+  if (code) {
+    // 多根：最后一个带 data/config.json 的根胜出（后加载者覆盖）。
+    for (const r of codeRoots) {
+      if (!r.data.includes('data/config.json')) continue;
+      const cfgPath = path.join(r.root, 'data/config.json');
+      if (!fs.existsSync(cfgPath)) continue;
+      if (data === base.data || Object.isFrozen(data)) data = clone(data);
+      data.config = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+    }
+  }
   const bodies = new Map(base.files), files = {}, hashes = {};
   for (const [name, rec] of Object.entries(data)) {
     const rel = `data/${name}.json`;
@@ -361,13 +382,23 @@ function composeContentSet({ registry, ids = [], checkDataOnly = false }) {
   // The interaction windows of the set (PLUGIN API v2, docs/PLUGINS.md §10b): the registry already checked each
   // file, including transitive option sources in content.files: every offer byte participates in cs.
   const offers = plugins.flatMap(p => (p.offers || []).map(o => ({ pluginId: p.id, ...o })));
+  // 无损插件（manifest 2 的 `code`）：代码根、服务端入口、客户端覆盖表与整份数据。
   const index = vanilla ? base.identity.index : { ...base.identity.index, cs, vanilla: false, plugins: parts, settings, data: {}, i18n: {}, bounds: {}, ...(scripts.length ? {scripts:{}, execution} : {}), ...(rules ? { rules } : {}) };
   if (!vanilla) for (const [rel, f] of Object.entries(files)) {
     const url = base.files.get(rel)?.equals(bodies.get(rel)) ? `/data/${rel.replace(/^(data\/)/, '')}?v=${f.sha256.slice(0, 8)}` : `/cs/${csUrlPart(cs)}/${rel}`;
     const [section, name] = rel.split('/');
     index[section][name.slice(0, -5)] = { url, ...f };
   }
-  const set = deepFreeze({ cs, vanilla, plugins: plugins.map(p => ({ id: p.id, version: p.manifest.version, hash: p.content.hash })),
+  // 客户端覆盖：按 /cs/<cs16>/<rel> 提供（与数据文件同一条 served 表，静态层不必再认识插件）。
+  // `code` 是多根（roots，按 loadOrder 排序），不是单个 root —— 后加载的根覆盖同路径（与上面的合并规则一致）。
+  if (code) for (const r of code.roots) for (const rel of r.client) {
+    const abs = path.join(r.root, 'client', ...rel.split('/'));
+    if (!fs.existsSync(abs)) continue;
+    const body = fs.readFileSync(abs);
+    bodies.set(rel, body);
+    files[rel] = { sha256: nodeSha256(body), bytes: body.length };
+  }
+  const set = deepFreeze({ cs, vanilla, ...(code ? { code } : {}), plugins: plugins.map(p => ({ id: p.id, version: p.manifest.version, hash: p.content.hash })),
     data, files, ...(scripts.length ? {scripts, execution} : {}), ...(rules ? { rules } : {}), modes: Object.values(data.config.modes), problems: [], warnings, index, settings, bounds: boundsSnap,
     kitted: [...KITTED_CHARS, ...Object.keys(data.backups.units).filter(id => !own(base.data.backups.units, id))],
     // PLUGIN API v2 (docs/PLUGINS.md §10b): the interaction windows the set declares, tagged with their plugin. Data

@@ -175,6 +175,8 @@ export function createContentSets({ registry, vanillaData, log = noopLog, maxSet
     if (contentHashOf(hashInput) !== built.cs) return null;
     return {
       cs: built.cs, plugins: built.plugins || [], data: built.data,
+      // 无损插件的代码根（多根按 loadOrder）：adopt 会重建对象，这里必须显式带上，否则宿主永远加载上游 Match。
+      ...(built.code ? { code: built.code } : {}),
       hashInput,
       modes: pluginModes(built.modes, vanillaData),
       kitted: Array.isArray(built.kitted) ? built.kitted : null,

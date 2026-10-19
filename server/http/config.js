@@ -96,6 +96,9 @@ export function netOptionsFrom(opts) {
   for (const k of NET_OPTION_KEYS) {
     if (opts[k] != null) netOptions[k] = opts[k];
   }
+  // 服主自建：允许用环境变量放宽单连接令牌桶（默认 40/s，连点或自动化探针会撞 RATE）。
+  if (netOptions.ratePerSec == null && process.env.SP_RATE_PER_SEC) netOptions.ratePerSec = Number(process.env.SP_RATE_PER_SEC);
+  if (netOptions.rateBurst == null && process.env.SP_RATE_BURST) netOptions.rateBurst = Number(process.env.SP_RATE_BURST);
   if (netOptions.trustProxy == null) netOptions.trustProxy = parseTrustProxy(process.env.TRUST_PROXY);
   return netOptions;
 }

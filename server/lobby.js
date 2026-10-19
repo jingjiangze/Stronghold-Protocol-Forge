@@ -339,6 +339,8 @@ export class Room {
     return {
       t: 'room.state',
       code: this.code,
+      // 私密房：只在 true 时出现，普通 room.state 逐字节不变（mota 客户端的「私密房间」勾选框读这一格）。
+      ...(this.private ? { private: true } : {}),
       hostId: this.hostId,
       mode: this.mode,
       difficulty: this.difficulty,
@@ -640,6 +642,7 @@ export class Lobby {
       case 'room.leave': return this.leave(session);
       case 'room.ready': return this.ready(session, msg);
       case 'room.setDifficulty': return this.setDifficulty(session, msg);
+      case 'room.setPrivate': return this.setPrivate(session, msg);
       case 'room.setAiPicksLast': return this.setAiPicksLast(session, msg);
       case 'room.addBot': return this.addBot(session);
       case 'room.removeBot': return this.removeBot(session, msg);
@@ -870,6 +873,22 @@ export class Lobby {
       for (const s of room.seats) if (s && !s.isBot && s.playerId !== room.hostId) s.ready = false;
       this.broadcastState(room);
     }
+    return OK;
+  }
+
+  /**
+   * 私密开关 (host, before the match): a private room stays out of room.list; it is still joinable by code.
+   * The mota client sends this after creating a room (room.create's `private` is the initial value).
+   */
+  setPrivate(session, { private: v }) {
+    const room = this.roomOf(session);
+    if (!room) return fail(ERR.NOT_IN_ROOM);
+    if (room.hostId !== session.playerId) return fail(ERR.NOT_HOST);
+    if (room.match) return fail(ERR.ROOM_STARTED);
+    const next = v === true;
+    if (room.private === next) return OK;
+    room.private = next;
+    this.broadcastState(room);
     return OK;
   }
 

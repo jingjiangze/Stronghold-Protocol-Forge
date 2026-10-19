@@ -1308,38 +1308,6 @@ export class Lobby {
   }
 
   /**
-   * room.skins (docs/SKINS.md): check the 干员皮肤 selection against the game data (lenient — an entry of a chess this
-   * build does not know is dropped, shared/protocol.js checkSkins), store it on the session and the seat, and — unlike
-   * the loadout — hand it to a RUNNING match at once: a skin is cosmetic and PUBLIC (a teammate sees it), so there is
-   * no phase gate and no "next match" (server/match/Match.js setSkins).
-   */
-  skins(session, { skins }) {
-    const data = this.safeData();
-    const hasOperator = (id) => !!lookup('chess', id, data);
-    const res = checkSkinSelection(skins, hasOperator);
-    if (!res || res.error) return fail(res && isErrCode(res.error) ? res.error : ERR.BAD_MSG, res && res.detail);
-    const sel = freezeSkins(skins, hasOperator) || Object.freeze({});
-    session.skins = sel;
-    const room = this.roomOf(session);
-    if (!room) return OK;
-    const seat = room.seatOf(session.playerId);
-    if (seat) seat.skins = sel;
-    if (!room.match || !seat) return OK; // a spectator's choice stays on its session, never reaching the match
-    if (typeof room.match.setSkins !== 'function') return OK; // a platform without skins: stored, nothing to hand over
-    let r;
-    try {
-      r = room.match.setSkins(session.playerId, sel);
-    } catch (e) {
-      this.log.error(`[lobby] ${room.code} match.setSkins threw`, e);
-      return fail(ERR.INTERNAL);
-    }
-    if (r && typeof r === 'object' && r.error) {
-      return fail(isErrCode(r.error) ? r.error : ERR.INTERNAL, typeof r.detail === 'string' ? r.detail : undefined);
-    }
-    return OK;
-  }
-
-  /**
    * room.ownership (0.2.0 补位): keep the droppable chess of the not-owned list, store it on the session and the seat
    * (see the header). A running match never takes it: it keeps the list its seat had at its start.
    */

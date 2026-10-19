@@ -1162,14 +1162,14 @@ export class Lobby {
 
   /**
    * 房间人数上限（客户端滑条）：`code` 必须是**当前这个房间**（陈旧标签页改不到别的房间），
-   * 人数必须是 4 的倍数 —— 20 人房按 4/8/12/16/20 五档，分队（TEAM_MAX=5）才排得满。
+   * 人数必须是**偶数**（4/6/8/…/20）—— 滑条按 2 递增，分队仍然排得开。
    */
   setSeatCap(session, { code, seatCap } = {}) {
     const room = this.roomOf(session);
     if (!room) return fail(ERR.NOT_IN_ROOM);
     if (typeof code === 'string' && code.toUpperCase() !== room.code) return fail(ERR.NOT_IN_ROOM, 'the room changed');
     const n = Number(seatCap);
-    if (!Number.isInteger(n) || n < 4 || n > MAX_SEATS || n % 4 !== 0) return fail(ERR.BAD_MSG, 'seat count must be a multiple of 4');
+    if (!Number.isInteger(n) || n < 4 || n > MAX_SEATS || n % 2 !== 0) return fail(ERR.BAD_MSG, 'seat count must be an even number (4..20)');
     return this.setMaxSeats(session, { n });
   }
 

@@ -99,14 +99,22 @@ jobs:
           grep -c "OK$" "${RUNNER_TEMP}/ziptest.log" | sed 's/^/条目 CRC OK: /'
           tail -3 "${RUNNER_TEMP}/ziptest.log"
           # 第二关：条目清单判据。管理器本体必须在档里；游戏素材 / 开发面必须不在。
-          MODS=$(unzip -Z1 "$ZIP" | grep -c '^Stronghold-Protocol/server/mods/' || true)
+          # 只数**文件**条目（unzip -Z1 里目录以 / 结尾），否则父目录会把「1 个放行文件」算成 3 条。
+          MODS=$(unzip -Z1 "$ZIP" | grep '^Stronghold-Protocol/server/mods/' | grep -vc '/$' || true)
           if [ "${MODS:-0}" -lt 4 ]; then
             echo "::error::产物里 mod 管理器本体不足 4 个文件（实际 ${MODS:-0}）—— 别发"; exit 1
           fi
           echo "管理器本体文件数：${MODS}"
-          for bad in 'Stronghold-Protocol/public/assets/' 'Stronghold-Protocol/test/' 'Stronghold-Protocol/.github/' 'Stronghold-Protocol/public/dev/'; do
-            N=$(unzip -Z1 "$ZIP" | grep -c "^$bad" || true)
-            if [ "${N:-0}" -ne 0 ]; then echo "::error::产物不该包含 $bad（${N} 条）"; exit 1; fi
+          # test/ 只有上游明确放行的插件作者 harness（tools/package.mjs 的 AUTHOR_TEST_FILES）可以进包。
+          TESTF=$(unzip -Z1 "$ZIP" | grep '^Stronghold-Protocol/test/' | grep -vc '/$' || true)
+          STRAY=$(unzip -Z1 "$ZIP" | grep '^Stronghold-Protocol/test/' | grep -vc '/$\|battleHarness\.js$' || true)
+          if [ "${STRAY:-0}" -ne 0 ]; then
+            echo "::error::产物里 test/ 只允许 battleHarness.js（上游 AUTHOR_TEST_FILES），多出 ${STRAY} 条"; exit 1
+          fi
+          echo "test/ 条目 ${TESTF} 条（battleHarness.js 是上游放行的作者 harness）"
+          for bad in 'Stronghold-Protocol/public/assets/' 'Stronghold-Protocol/.github/' 'Stronghold-Protocol/public/dev/'; do
+            N=$(unzip -Z1 "$ZIP" | grep "^$bad" | grep -vc '/$' || true)
+            if [ "${N:-0}" -ne 0 ]; then echo "::error::产物不该包含 $bad 的文件（${N} 条）"; exit 1; fi
           done
           # 改名成一眼认得出是这条线的产物
           OUTDIR="${RUNNER_TEMP}/publish"

@@ -24,6 +24,9 @@ import { html, Icon, Tooltip } from './components.js';
 import { PlayerAvatar, LpTower, GIcon, LocalSprite } from './gameComponents.js';
 import { EmoteBubble } from './emotes.js';
 import { STATUS_META, sortedPlayers, teamFrameIds } from './gameLogic.js';
+
+/** The phases a battle runs in — a teammate's settled board is only offered while one is up (g.watch 'n:<id>'). */
+const PHASE_COMBAT_SET = new Set([PHASE.COMBAT, PHASE.UNITE, PHASE.FINAL_ASSAULT, PHASE.HIDDEN_CORE]);
 import { MissTag, uniteRemaining } from './hud.js';
 import { localAsset } from '../data.js';
 import { t } from '../../../shared/i18n.js';
@@ -113,10 +116,14 @@ export function rowLpTip(lp, cap = 10) {
  * @param {{ pub:any, myId:string, watching:string|null, bubbles: Map<string,{id:string,seq:number}>, onWatch:(p:any)=>void,
  *   compact?: boolean, teamLp?: number|null, self?: { lp?: number|null, pending: number, unite: boolean, left?: number|null } | null,
  *   cap?: number, uniteLocal?: Record<string, number> | null,
+ *   lineupWatch?: boolean, onToggleLineup?: (() => void)|null, onWatchLineup?: ((p:any) => void)|null,
  *   observe?: null | { canObserve: (p:any) => { fieldId?: string, reason?: string|null, back?: boolean }, observing: boolean, onBack: () => void } }} props
  *   uniteLocal: the local 联防 replica's per-leaker counts while it is on screen (battle runner state().uniteLeft), else null
+ *   lineupWatch / onToggleLineup / onWatchLineup: 战斗中观看他人布阵 (g.watchLineup, owner decision 2026-10-20) — the
+ *   viewer's own switch and its toggle, plus the per-row 「布阵」 action (g.watch 'n:<id>'; the server relays the settled
+ *   board and simulates nothing). Omitted ⇒ the panel renders exactly as before.
  */
-export function TeamPanel({ pub, myId, watching, bubbles, onWatch, compact = false, observe = null, self: selfLive = null, cap = 10, uniteLocal = null }) {
+export function TeamPanel({ pub, myId, watching, bubbles, onWatch, compact = false, observe = null, self: selfLive = null, cap = 10, uniteLocal = null, lineupWatch = false, onToggleLineup = null, onWatchLineup = null }) {
   const [openPid, setOpenPid] = useState(null);
   // the playerId whose avatar just called onWatch, so the other click of a double-click does not open the view again
   const askedAt = useRef(/** @type {{ id: string|null, at: number }} */ ({ id: null, at: 0 }));
@@ -195,6 +202,12 @@ export function TeamPanel({ pub, myId, watching, bubbles, onWatch, compact = fal
             onClick=${() => { setOpenPid(null); onWatch(p); }}><span class="btn__label">${t('前往查看')}</span></button>` : null}
           ${back ? html`<button type="button" class="btn btn--secondary btn--sm team__back"
             onClick=${() => observe.onBack()}><span class="btn__label">${t('返回战场')}</span></button>` : null}
+          ${lineupWatch && onWatchLineup && !self && p.alive !== false && !p.isBot
+            && PHASE_COMBAT_SET.has(pub?.phase) ? html`<button type="button" class="btn btn--secondary btn--sm team__lu"
+            onClick=${() => onWatchLineup(p)} title=${t('查看 {name} 的布阵（只读，服务器不计算）', { name: p.name || t('博士') })}><span class="btn__label">${t('布阵')}</span></button>` : null}
+          ${self && onToggleLineup ? html`<button type="button" class="btn btn--secondary btn--sm team__lu"
+            onClick=${() => onToggleLineup()} title=${t('战斗中观看其他人的布阵（自愿开启，服务器只转发、不计算）')}>
+            <span class="btn__label">${lineupWatch ? t('观看布阵·开') : t('观看布阵·关')}</span></button>` : null}
         </div>
         ${bubble ? html`<${EmoteBubble} key=${bubble.seq} id=${bubble.id} class="team__bubble" />` : null}
       </div>`;

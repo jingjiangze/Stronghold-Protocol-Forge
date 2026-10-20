@@ -154,6 +154,9 @@ export class MatchViews {
       fieldId: this.fieldOf(ps),
       status: this.statusOf(ps),
       autoplay: ps.autoplay,
+      // 战斗中观看他人布阵 (g.watchLineup, owner decision 2026-10-20): the viewer's own switch — every row carries it so a
+      // player's UI knows which teammates may read a board right now (and its own row mirrors the button's state)
+      watchLineup: ps.watchLineup,
       // the LP this round's own battle will cost at settlement so far (COMBAT / 联防 only, omitted when 0)
       ...this._pendingLpView(ps),
     };

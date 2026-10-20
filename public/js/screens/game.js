@@ -128,8 +128,6 @@ export function GameScreen() {
   const ended = useStore((s) => !!s.room && !s.room.inMatch && !!s.match.public);
   const away = useStore((s) => s.away, Object.is, awayStore);
   const autoplay = useStore((s) => !!(Array.isArray(s.match.public?.players) && s.match.public.players.find((p) => p && p.playerId === s.me.playerId)?.autoplay));
-  // 战斗中观看他人布阵 (g.watchLineup, owner decision 2026-10-20): the viewer's own switch, mirrored back via m.public
-  const lineupWatch = useStore((s) => !!(Array.isArray(s.match.public?.players) && s.match.public.players.find((p) => p && p.playerId === s.me.playerId)?.watchLineup));
   const gd = useGameData();
   if (!pub || !gd.ready) {
     return html`<div class="screen gload">
@@ -162,6 +160,8 @@ function MatchScreen() {
   const conn = useStore((s) => s.connection, shallowEqual);
   const emotes = useStore((s) => s.emotes);
   const roomSolo = useStore((s) => s.room?.mode === 'solo');
+  // 战斗中观看他人布阵 (g.watchLineup, owner decision 2026-10-20): the viewer's own switch, mirrored back via m.public
+  const lineupWatch = useStore((s) => !!(Array.isArray(s.match.public?.players) && s.match.public.players.find((p) => p && p.playerId === s.me.playerId)?.watchLineup));
   const spectator = useStore((s) => isSpectating(s.room, s.me.playerId));
   // the room's spectator seats for the top bar's 观战席 capsule (ui/hud.js SpectatorPill; GitHub #120): room.state keeps coming
   // during the match, the list is replaced only when a seat changes — shallowEqual keeps an unrelated push from re-rendering

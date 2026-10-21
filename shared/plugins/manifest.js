@@ -297,7 +297,8 @@ export function appVersionMatches(range, version = APP_VERSION) {
  *   entry: Record<string, string>, slots: string[], files: Record<string, string>, overrides?: string[],
  *   themeVars?: Record<string, string>, notices?: PluginNotice[],
  *   lang?: string, base?: string | null, fallback?: string[], complete?: boolean, machineTranslated?: boolean,
- *   numberUnits?: string[] | null, rules?: Record<string, string> }} PluginManifest
+ *   numberUnits?: string[] | null, rules?: Record<string, string>,
+ *   csp?: { off?: true, directives?: Record<string, string[]> } }} PluginManifest
  *   One shape for both versions. type: the manifest 1 type (lang, assets, data; the class name for the classes that
  *   have none). files: the lang class's role → path. parts / entry: manifest 2 (empty for manifest 1).
  * @typedef {PluginManifest} PackManifest

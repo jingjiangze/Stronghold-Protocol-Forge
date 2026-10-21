@@ -1,5 +1,8 @@
 // shared/plugins/compat.js — mod 兼容判定（纯函数，无 IO）
 //
+// (i18n-ignore-file: the compatibility reasons are author-facing and bilingual by design, 中文 · English — as
+// shared/plugins/errors.js and server/plugins/forgeImport.js; never player UI)
+//
 // 为什么单独一层：Forge 工坊包的 pack.json 可以声明 `gameVersion` / `game` / `api`，manifest 2 插件声明
 // `app` / `api`。在此之前的导入器把 pack.json 的三个版本字段当作「已知字段」直接跳过，产物又硬写
 // `app: '>=0.3.0 <0.4.0'`、`api: 1` —— 于是「这个 mod 原本面向哪个版本」在导入报告里完全消失。

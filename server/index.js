@@ -66,6 +66,7 @@ import { createAssetIndex } from './http/assetIndex.js';
 import { createManifestViews } from './http/assetViews.js';
 import { answerClientError } from './http/common.js';
 import { lanUrls, displayHost, isProcessEntry, runMain } from './http/boot.js';
+import { shadowEntry, spawnShadow } from './plugins/engineOverlay.js';
 
 // The public API of this module (tests and tools import it from here); the code lives in ./http/.
 export {
@@ -300,4 +301,10 @@ export async function startServer(opts = {}) {
 }
 
 // `node server/index.js` / npm start: listen, print the banner, stop on SIGINT / SIGTERM (http/boot.js).
-if (isProcessEntry(import.meta.url)) runMain(startServer);
+// An engine-level plugin (`plugins/config.json` → `overlay`) starts the server from the shadow root it builds instead;
+// nothing configured means the branch below is not taken at all (server/plugins/engineOverlay.js).
+if (isProcessEntry(import.meta.url)) {
+  const shadow = shadowEntry({ root: ROOT, pluginsDir: path.join(ROOT, 'plugins') });
+  if (shadow) spawnShadow({ entry: shadow.entry });
+  else runMain(startServer);
+}

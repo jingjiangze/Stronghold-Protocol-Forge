@@ -438,6 +438,7 @@ function readCsp(raw, cls, list) {
     return { off: true };
   }
   if (!isObj(raw)) { list.problem('PLUGIN_CSP', '"csp" is "off" or { "<directive>": ["https://…"] }', { at: ['csp'] }); return null; }
+  /** @type {Record<string, string[]>} */
   const directives = {};
   for (const [key, value] of Object.entries(raw)) {
     if (!PLUGIN_CSP_DIRECTIVES.includes(key)) {

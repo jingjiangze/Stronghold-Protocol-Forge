@@ -94,6 +94,24 @@ const SIM_PRIVATE = new Set(['nodedata.js']); // lower-case (compared case-insen
 /** Optional per-machine art manifests (tools/local-extract: the local art, the official effects' files — DESIGN §33)
  * and the empty stand-in served when one is absent. */
 const LOCAL_ART_MANIFESTS = new Set(['local-assets.json', 'local-fx.json']);
+
+/**
+ * Where a missing art file may come from instead: the mirror named by `SP_ASSET_FALLBACK`, or null.
+ * Only `/assets/…` and `/fonts/…` are mirrored — a missing page stays a 404, and an install with no mirror set
+ * behaves exactly as before. The `~<hash>` segment is already stripped by the caller (it is this server's cache
+ * key, not a path the mirror knows).
+ * @param {string} decoded the request path, normalized
+ * @param {{ base?: string }} [opts]
+ * @returns {string | null}
+ */
+export function assetFallback(decoded, { base = process.env.SP_ASSET_FALLBACK } = {}) {
+  const mirror = String(base || '').trim().replace(/\/+$/, '');
+  if (!/^https?:\/\//i.test(mirror)) return null;
+  const first = decoded.split('/')[1] || '';
+  if (first !== 'assets' && first !== 'fonts') return null;
+  return `${mirror}${decoded}`;
+}
+
 const EMPTY_LOCAL_ART = Buffer.from(JSON.stringify({ version: 1, source: 'none', count: 0, groups: {} }));
 
 /** The content-set manifest's cache policy: its URL names its content (the `cs`), so it never changes. */
@@ -314,6 +332,13 @@ export function createStaticHandler({ publicDir, dataDir, sharedDir, simDir = pa
         res.writeHead(200, { 'Content-Type': MIME['.json'], 'Cache-Control': 'no-cache', 'Content-Length': EMPTY_LOCAL_ART.length });
         res.end(req.method === 'HEAD' ? undefined : EMPTY_LOCAL_ART);
       } else if (e && (e.code === 'ENOENT' || e.code === 'ENOTDIR' || e.code === 'EISDIR' || e.code === 'ENAMETOOLONG')) {
+        // an art file this install does not carry: let the configured mirror answer, if there is one
+        const mirror = mount.name === 'public' ? assetFallback(decoded) : null;
+        if (mirror) {
+          res.writeHead(302, { Location: mirror, 'Cache-Control': 'no-cache', 'Content-Length': 0 });
+          res.end();
+          return;
+        }
         sendError(req, res, 404, '页面不存在 · Not found', decoded.length <= 200 ? decoded : '');
       } else if (e && (e.code === 'EACCES' || e.code === 'EPERM')) {
         sendError(req, res, 403, '禁止访问 · Forbidden');

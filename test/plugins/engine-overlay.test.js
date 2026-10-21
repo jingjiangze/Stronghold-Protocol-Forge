@@ -22,6 +22,7 @@ function install({ id = 'hexmod', manifest, engine = {}, config = {} } = {}) {
   put(path.join(root, 'server', 'keep.js'), '// untouched\n');
   put(path.join(root, 'shared', 'a.js'), '// engine shared\n');
   put(path.join(root, 'public', 'x.css'), '/* engine */\n');
+  put(path.join(root, 'public', 'css', 'theme.css'), '/* theme */\n');
   const pluginsDir = path.join(root, 'plugins');
   fs.mkdirSync(pluginsDir, { recursive: true });
   fs.writeFileSync(path.join(pluginsDir, 'config.json'), `${JSON.stringify(config)}\n`);
@@ -73,11 +74,20 @@ test('resolveEngineOverlay: refuses an untrusted plugin, a missing engine file a
 test('buildShadow: the replaced file wins, the rest of the engine is still there, and the stamp makes it idempotent', () => {
   const { root, pluginsDir } = install({
     config: { overlay: 'hexmod' },
-    engine: { 'server/index.js': '// patched entry\n', 'shared/new.js': 'export const x = 1;\n' },
+    manifest: {
+      manifest: 2, id: 'hexmod', version: '1.0.0', app: '*', api: 1, class: 'trusted',
+      permissions: ['trusted.server'], entry: { server: 'host/noop.js' },
+      code: { engine: ['server/index.js', 'shared/new.js', 'public/css/screens/deep.css'] },
+    },
+    engine: {
+      'server/index.js': '// patched entry\n',
+      'shared/new.js': 'export const x = 1;\n',
+      'public/css/screens/deep.css': '/* deep */\n',
+    },
   });
   const overlay = resolveEngineOverlay({ root, pluginsDir });
   assert.equal(overlay.why, undefined);
-  assert.deepEqual(overlay.files.sort(), ['server/index.js', 'shared/new.js']);
+  assert.deepEqual(overlay.files.sort(), ['public/css/screens/deep.css', 'server/index.js', 'shared/new.js']);
 
   const built = buildShadow({ root, overlay });
   assert.equal(built.built, true);
@@ -86,6 +96,10 @@ test('buildShadow: the replaced file wins, the rest of the engine is still there
   assert.equal(fs.readFileSync(path.join(shadow, 'shared', 'new.js'), 'utf8'), 'export const x = 1;\n');
   assert.equal(fs.readFileSync(path.join(shadow, 'server', 'keep.js'), 'utf8'), '// untouched\n');
   assert.equal(fs.readFileSync(path.join(shadow, 'shared', 'a.js'), 'utf8'), '// engine shared\n');
+  assert.equal(fs.readFileSync(path.join(shadow, 'public', 'css', 'screens', 'deep.css'), 'utf8'), '/* deep */\n',
+    'a file nested under a linked folder replaces just that file');
+  assert.equal(fs.readFileSync(path.join(shadow, 'public', 'css', 'theme.css'), 'utf8'), '/* theme */\n',
+    "its siblings are still the engine's");
   assert.ok(fs.existsSync(path.join(shadow, OVERLAY_STAMP)));
 
   assert.equal(shadowCurrent({ root, overlay }), true);

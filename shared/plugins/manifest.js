@@ -183,7 +183,7 @@ const SETTING_TYPES = ['boolean', 'integer', 'number', 'enum'];
 /** Top-level fields of manifest 2 (anything else is warned about and ignored). */
 const V2_FIELDS = new Set(['$schema', 'manifest', 'id', 'name', 'englishName', 'description', 'version', 'app', 'api', 'class', 'scope',
   'authors', 'credits', 'license', 'homepage', 'sourceLang', 'requires', 'optional', 'conflicts', 'loadAfter', 'loadBefore', 'priority',
-  'settings', 'permissions', 'overrides', 'rules', 'entry', 'slots', 'notices', 'files', 'lang', 'base', 'fallback', 'complete', 'machineTranslated', 'numberUnits', ...Object.keys(PARTS)]);
+  'settings', 'permissions', 'overrides', 'rules', 'entry', 'slots', 'notices', 'files', 'lang', 'base', 'fallback', 'complete', 'machineTranslated', 'numberUnits', 'csp', ...Object.keys(PARTS)]);
 /** Those fields, sorted, for the frozen API table (docs/PLUGIN-API.md). */
 export const MANIFEST_FIELDS = Object.freeze([...V2_FIELDS].sort());
 /** Fields only a lang plugin has. */
@@ -394,6 +394,7 @@ export function readPackManifest(raw, ctx) {
   const compatible = appVersionMatches(range, app);
   if (!compatible) list.warning('PLUGIN_APP_MISMATCH', `made for app ${range}; this is ${app}`, { at: ['app'], range, app });
   const cls = kind ? kind.class : 'lang';
+
   /** @type {PluginManifest} */
   const out = {
     manifest: 1, id, class: cls, type, name: str(m.name, 60), englishName: str(m.englishName, 60), version: str(m.version, 40), app: range, compatible,
@@ -415,6 +416,46 @@ export function readPackManifest(raw, ctx) {
  * @param {import('./errors.js').IssueList} list the findings
  * @returns {Record<string, string>}
  */
+/**
+ * The directives a plugin may add to the site CSP. Deliberately small: a plugin may widen where images, media and
+ * fetches come from, never what may run (`script-src` stays `'self'` + import-map hashes).
+ */
+export const PLUGIN_CSP_DIRECTIVES = Object.freeze(['img', 'media', 'connect', 'style', 'font', 'frame', 'worker']);
+/**
+ * An explicit origin: https, an optional `*.` subdomain wildcard, an optional port; or plain http on localhost.
+ * No bare `*`, no scheme-only entry, no `'unsafe-inline'` / `'unsafe-eval'`, no `data:` / `blob:`.
+ */
+const CSP_ORIGIN = /^(?:https:\/\/(?:\*\.)?[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?(?::\d{1,5})?|http:\/\/(?:localhost|127\.0\.0\.1)(?::\d{1,5})?)$/i;
+
+/**
+ * `"csp"`: `"off"` (trusted only; the server drops the header and logs it) or `{ "<directive>": ["https://…"] }`.
+ * @returns {{ off: true } | { directives: Record<string, string[]> } | null}
+ */
+function readCsp(raw, cls, list) {
+  if (raw === undefined) return null;
+  if (raw === 'off') {
+    if (cls !== 'trusted') { list.problem('PLUGIN_CSP', '"csp": "off" is only for a trusted plugin', { at: ['csp'] }); return null; }
+    return { off: true };
+  }
+  if (!isObj(raw)) { list.problem('PLUGIN_CSP', '"csp" is "off" or { "<directive>": ["https://…"] }', { at: ['csp'] }); return null; }
+  const directives = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (!PLUGIN_CSP_DIRECTIVES.includes(key)) {
+      list.problem('PLUGIN_CSP', `"csp.${key}": a directive is ${PLUGIN_CSP_DIRECTIVES.map((d) => `"${d}"`).join(', ')}`, { at: ['csp', key] });
+      continue;
+    }
+    if (!Array.isArray(value) || value.length > 16) { list.problem('PLUGIN_CSP', `"csp.${key}" is a list of up to 16 origins`, { at: ['csp', key] }); continue; }
+    const ok = [];
+    for (const origin of value) {
+      const s = typeof origin === 'string' ? origin.trim() : '';
+      if (!CSP_ORIGIN.test(s)) { list.problem('PLUGIN_CSP', `"csp.${key}": ${short(origin)} is not an explicit https origin (or http://localhost)`, { at: ['csp', key] }); continue; }
+      ok.push(s);
+    }
+    if (ok.length) directives[key] = [...new Set(ok)];
+  }
+  return Object.keys(directives).length ? { directives } : null;
+}
+
 function localized(v, sourceLang, max, field, list) {
   /** @type {Record<string, string>} */
   const out = {};
@@ -753,6 +794,9 @@ export function readPluginManifest(raw, ctx) {
   const overrides = m.overrides ?? [];
   if (m.overrides !== undefined && (!['script','trusted'].includes(cls) || !Array.isArray(overrides) || overrides.length > 200 || new Set(overrides).size !== overrides.length || overrides.some(x => typeof x !== 'string' || !/^[A-Za-z0-9_:-]{1,128}$/.test(x)))) list.problem('PLUGIN_SCRIPT_OVERRIDE', 'overrides must list official kit ids', {at:['overrides']});
 
+  // 跨域资源放行：插件声明站点 CSP 需要追加的源（只放宽「从哪取」，script-src 不变）。
+  const csp = readCsp(m.csp, cls, list);
+
   /** @type {PluginManifest} */
   const out = {
     manifest: 2, id, class: cls, type: kind.packType, name, englishName, names, description, version, app: range, compatible, api, scope,
@@ -762,6 +806,7 @@ export function readPluginManifest(raw, ctx) {
     ...(parts.theme?.themeVars ? { themeVars: parts.theme.themeVars } : {}),
     ...(notices ? { notices } : {}),
     ...(rules ? { rules } : {}),
+    ...(csp ? { csp } : {}),
   };
   if (isLang) {
     readLangFields(m, undefined, out, list);

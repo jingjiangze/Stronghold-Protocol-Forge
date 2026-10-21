@@ -173,7 +173,7 @@ export async function startServer(opts = {}) {
   buildTag();
 
   const traffic = createTrafficCounter();
-  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health, modHealth: () => modMount.healthz() }, log, trustProxy: network.opts.trustProxy, studio, mods, dynamicRoutes: modMount.routes(), trustedRuntime }));
+  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir, { plugins: (typeof packs.plugins === 'function' ? packs.plugins() : []).filter((p) => p && p.status === 'loaded'), log }), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health, modHealth: () => modMount.healthz() }, log, trustProxy: network.opts.trustProxy, studio, mods, dynamicRoutes: modMount.routes(), trustedRuntime }));
   server.on('clientError', answerClientError);
   const wss = attachWebSocket(server, { network, log, traffic, lanes: packLaneTable() });
 

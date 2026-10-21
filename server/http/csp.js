@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 // SES evaluates confined code. This relaxation belongs only to the simulation Worker, never its parent document.
 export const SIM_WORKER_CSP = "default-src 'none'; script-src 'self' 'unsafe-eval'; connect-src 'none'";
 
-export function siteCsp(publicDir) {
+export function siteCsp(publicDir, { sourcesPath = null, plugins = null, log = null } = {}) {
   const hashes = new Set();
   for (const rel of ['index.html', 'studio/index.html', 'studio/console.html', 'dev/game-mock.html', 'dev/render-demo.html', 'dev/battle-perf.html', 'dev/uikit.html']) {
     let html;
@@ -18,5 +18,35 @@ export function siteCsp(publicDir) {
       hashes.add(`'sha256-${createHash('sha256').update(m[1]).digest('base64')}'`);
     }
   }
-  return `default-src 'self'; script-src 'self'${hashes.size ? ' ' + [...hashes].join(' ') : ''}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'`;
+  // 素材门牌的来源要进 CSP，否则浏览器会把 CDN 上的图/字体全拦掉（图不显示、单位不渲染）。
+  const art = new Set();
+  if (sourcesPath) {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(sourcesPath, 'utf8'));
+      for (const src of cfg.sources || []) for (const u of [src.base, ...(src.redirects || [])]) {
+        try { art.add(new URL(u).origin); } catch { /* ignore */ }
+      }
+    } catch { /* ignore */ }
+  }
+  const artList = [...art].join(' ');
+  // 插件声明的跨域源（manifest 2 的 "csp" 字段，业主 2026-10-21）：只追加到「从哪取」类指令。
+  // script-src / object-src / base-uri 永不受插件影响；"csp": "off" 需要显式 trusted，并在这里打警告。
+  const extra = { img: [], media: [], connect: [], style: [], font: [], frame: [], worker: [] };
+  let off = null;
+  for (const p of Array.isArray(plugins) ? plugins : []) {
+    const c = p && p.manifest && p.manifest.csp;
+    if (!c) continue;
+    if (c.off) { off = (p && p.id) || 'a plugin'; continue; }
+    for (const [k, list] of Object.entries(c.directives || {})) {
+      const bucket = extra[k];
+      if (!bucket) continue;
+      for (const s of list) if (!bucket.includes(s)) bucket.push(s);
+    }
+  }
+  if (off) {
+    log?.warn?.(`[csp] plugin "${off}" set "csp": "off" — the site CSP header is disabled for this process`);
+    return null;
+  }
+  const add = (k) => (extra[k].length ? ' ' + extra[k].join(' ') : '');
+  return `default-src 'self'; script-src 'self'${hashes.size ? ' ' + [...hashes].join(' ') : ''}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com ${artList}${add('style')}; font-src 'self' https://fonts.gstatic.com ${artList}${add('font')}; img-src 'self' data: blob: ${artList}${add('img')}; connect-src 'self' ${artList}${add('connect')}; media-src 'self' blob: ${artList}${add('media')}; worker-src 'self' blob:${add('worker')}; frame-src 'self'${add('frame')}; object-src 'none'; base-uri 'none'`;
 }

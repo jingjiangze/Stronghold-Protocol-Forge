@@ -274,6 +274,8 @@ export class Room {
      * put every human seat before every AI seat (Match opts.aiPicksLast). Kept across the room's matches.
      */
     this.aiPicksLast = false;
+    /** Hidden from public room lists (the mota client's 私密房间; room.create/private, host toggles with room.setPrivate). */
+    this.private = false;
     /** @type {string | null} */
     this.hostId = null;
     /** @type {(Seat | null)[]} */
@@ -339,6 +341,8 @@ export class Room {
     return {
       t: 'room.state',
       code: this.code,
+      // 私密房：只在 true 时出现，普通 room.state 逐字节不变（mota 客户端的「私密房间」勾选框读这一格）。
+      ...(this.private ? { private: true } : {}),
       hostId: this.hostId,
       mode: this.mode,
       difficulty: this.difficulty,
@@ -640,6 +644,7 @@ export class Lobby {
       case 'room.leave': return this.leave(session);
       case 'room.ready': return this.ready(session, msg);
       case 'room.setDifficulty': return this.setDifficulty(session, msg);
+      case 'room.setPrivate': return this.setPrivate(session, msg);
       case 'room.setAiPicksLast': return this.setAiPicksLast(session, msg);
       case 'room.addBot': return this.addBot(session);
       case 'room.removeBot': return this.removeBot(session, msg);
@@ -726,7 +731,7 @@ export class Lobby {
   // room.* handlers
   // ---------------------------------------------------------------------------------------------------
 
-  create(session, { mode, difficulty, test } = {}) {
+  create(session, { mode, difficulty, private: isPrivate, test } = {}) {
     // A test room exists only when the process switch allowed it. The check runs before the room is built.
     if (test === true && this.testEnabled !== true) return fail(ERR.TEST_DISABLED);
     const cur = this.roomOf(session);
@@ -746,6 +751,7 @@ export class Lobby {
     if (cur) this.removeMember(cur, session.playerId);
     const room = new Room(code, mode, difficulty, this.now());
     room.test = test === true;
+    room.private = mode !== 'solo' && isPrivate === true;
     room.content = this.vanilla;
     // the server owner's default plugins (plugins/config.json `default`; header "Gameplay plugins"): none — the original game
     const defaults = this.plugins?.defaults?.() || [];
@@ -871,6 +877,22 @@ export class Lobby {
       for (const s of room.seats) if (s && !s.isBot && s.playerId !== room.hostId) s.ready = false;
       this.broadcastState(room);
     }
+    return OK;
+  }
+
+  /**
+   * 私密开关 (host, before the match): a private room stays out of room.list; it is still joinable by code.
+   * The mota client sends this after creating a room (room.create's `private` is the initial value).
+   */
+  setPrivate(session, { private: v }) {
+    const room = this.roomOf(session);
+    if (!room) return fail(ERR.NOT_IN_ROOM);
+    if (room.hostId !== session.playerId) return fail(ERR.NOT_HOST);
+    if (room.match) return fail(ERR.ROOM_STARTED);
+    const next = v === true;
+    if (room.private === next) return OK;
+    room.private = next;
+    this.broadcastState(room);
     return OK;
   }
 

@@ -1,0 +1,21 @@
+{
+  "lock": 1,
+  "id": "p2p-webrtc",
+  "version": "0.2.0",
+  "generator": "tools/plugin.mjs pack",
+  "files": {
+    "client/js/p2p.js": {
+      "sha256": "e369412b529e9ae00d4b0b1d2639bb3fd511ac2b5fef7a0030cd593f168f5680",
+      "bytes": 8420
+    },
+    "host/noop.js": {
+      "sha256": "30152e61d6d03eba0a768c611b776e2cf10eaddc71a67f64df51d4b263c5dce4",
+      "bytes": 125
+    },
+    "plugin.json": {
+      "sha256": "ce4a1722a05c19f760aa8b02b7650206ecf4ee7bad7563ef9627f3675ed726de",
+      "bytes": 859
+    }
+  },
+  "spine": {}
+}

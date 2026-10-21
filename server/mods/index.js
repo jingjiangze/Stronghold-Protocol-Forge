@@ -53,10 +53,31 @@ function readBody(req, limit) {
   });
 }
 
+/** The policy file (`plugins/config.json`, server/plugins/policy.js) as an object: a missing, broken or non-object one is {}. */
+function readPolicy(pluginsDir) {
+  try {
+    const json = JSON.parse(fs.readFileSync(path.join(pluginsDir, 'config.json'), 'utf8'));
+    return json && typeof json === 'object' && !Array.isArray(json) ? json : {};
+  } catch { return {}; }
+}
+
+/**
+ * The `default` list after switching one plugin on or off — the set a new room starts with (policy.js `default`, the
+ * one the manager's toggle writes). On adds once; off removes; anything that is not a plugin id is kept as it was.
+ * @param {unknown} current @param {string} id @param {boolean} on
+ * @returns {string[]}
+ */
+export function nextDefault(current, id, on) {
+  const list = Array.isArray(current) ? current.filter((x) => typeof x === 'string') : [];
+  return on ? [...new Set([...list, id])] : list.filter((x) => x !== id);
+}
+
 /** The status rows the page lists: what is installed and whether the registry loaded it. */
 function statusRows(registry, pluginsDir) {
   let list = [];
   try { list = registry ? registry.plugins() : []; } catch { list = []; }
+  const policy = readPolicy(pluginsDir);
+  const enabled = new Set(Array.isArray(policy.default) ? policy.default : []);
   const rows = list.filter((p) => p && p.id && !String(p.id).startsWith('_')).map((p) => ({
     id: p.id,
     name: (p.manifest && p.manifest.name) || p.name || p.id,
@@ -64,11 +85,12 @@ function statusRows(registry, pluginsDir) {
     class: p.class || (p.manifest && p.manifest.class) || '',
     status: p.status || '',
     supported: p.supported !== false,
+    enabled: enabled.has(p.id),
     ...(p.disabled ? { disabled: p.disabled } : {}),
   })).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   let inbox = null;
   try { inbox = fs.readdirSync(path.join(path.dirname(pluginsDir), 'mod-inbox')).filter((n) => n.endsWith('.zip')).length; } catch { inbox = null; }
-  return { plugins: rows, inbox };
+  return { plugins: rows, inbox, default: [...enabled] };
 }
 
 /**
@@ -158,6 +180,38 @@ export function createMods({ root, pluginsDir, dataDir, registry = null, vanilla
         const r = await importArchive(buf, { root, pluginsDir, dataDir, vanilla, force: parsed?.force === true });
         registry?.rescan?.();
         sendJson(req, res, r.ok ? 200 : 400, r);
+        return;
+      }
+
+      if (rawPath === '/mod/enable') {
+        if (method !== 'POST') { sendError(req, res, 405, '不支持的请求方法 · Method not allowed'); return; }
+        if (!changeAllowed(req)) { sendError(req, res, 403, '拒绝跨站写入 · cross-site write refused'); return; }
+        if (!keyOk(req, query)) { sendError(req, res, 403, '缺少或错误的 X-SP-Mod 钥匙 · missing or wrong key'); return; }
+        let body;
+        try { body = await readBody(req, MAX_JSON_BYTES); } catch (e) { sendError(req, res, 413, String(e.message || e)); return; }
+        let parsed;
+        try { parsed = JSON.parse(body.toString('utf8') || '{}'); } catch { sendError(req, res, 400, '请求体不是 JSON · body is not JSON'); return; }
+        const id = typeof parsed?.id === 'string' ? parsed.id.trim() : '';
+        const on = parsed?.on;
+        if (!id || typeof on !== 'boolean') { sendError(req, res, 400, '需要 { id, on } · needs { id, on }'); return; }
+        let known = [];
+        try { known = (registry ? registry.plugins() : []).map((p) => p && p.id).filter(Boolean); } catch { known = []; }
+        if (!known.includes(id)) { sendJson(req, res, 404, { ok: false, error: 'PLUGIN_UNKNOWN', detail: id }); return; }
+        // The switch is the policy's own `default` (server/plugins/policy.js): the plugins a NEW room starts with. Its
+        // other fields (rooms, allow, classes, limits …) are the owner's and are written back untouched.
+        const file = path.join(pluginsDir, 'config.json');
+        const policy = readPolicy(pluginsDir);
+        const next = nextDefault(policy.default, id, on);
+        const tmp = file + '.' + process.pid + '.tmp';
+        try {
+          fs.writeFileSync(tmp, JSON.stringify({ ...policy, default: next }, null, 2) + '\n');
+          fs.renameSync(tmp, file);
+        } catch (e) {
+          try { fs.rmSync(tmp, { force: true }); } catch { /* nothing to remove */ }
+          sendJson(req, res, 500, { ok: false, error: 'WRITE', detail: String(e?.message || e).slice(0, 300) });
+          return;
+        }
+        sendJson(req, res, 200, { ok: true, id, on, default: next, rooms: policy.rooms || 'host' });
         return;
       }
 

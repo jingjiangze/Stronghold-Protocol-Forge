@@ -23,6 +23,7 @@ function randomIntent(rng, m, ps) {
   }
   const uid = () => (pieces.length && rng() < 0.8 ? rng.pick(pieces) : 1 + rng.int(5000));
   const to = () => (rng() < 0.6 ? { area: 'board', row: rng() < 0.8 ? 9 + rng.int(4) : rng.int(19), col: rng() < 0.8 ? 2 + rng.int(9) : rng.int(21) } : { area: 'hand', idx: rng.int(10) });
+  const playerIds = () => (m && m.players && typeof m.players.keys === 'function' ? [...m.players.keys()] : ['p1']);
   switch (t) {
     case 'g.test': return { t, cmd: 'funds', args: { amount: rng.int(100000) } };
     case 'g.infoReady': return { t, setupRevision: m.setupRevision ?? 0 };
@@ -41,6 +42,15 @@ function randomIntent(rng, m, ps) {
     case 'g.autoplay': return { t, on: rng() < 0.05 };
     case 'g.watchLineup': return { t, on: rng() < 0.3 };
     case 'g.pause': return { t, on: rng() < 0.5 };
+    // the co-op economy channels (DESIGN §27): valid shapes; most are refused in a vanilla match
+    case 'g.econ.request': return { t, amount: 1 + rng.int(99), ...(rng() < 0.5 ? { to: rng.pick(playerIds()) } : {}) };
+    case 'g.econ.respond': return { t, id: `econ:${rng.int(1000)}`, approve: rng() < 0.5 };
+    case 'g.econ.project': return { t, project: rng.pick(['storehouse', 'logistics', 'procure']) };
+    case 'g.econ.vote': return { t, id: `econ:${rng.int(1000)}`, approve: rng() < 0.5 };
+    case 'g.econ.relief': case 'g.econ.bounty': return { t };
+    case 'g.econ.repay': return { t, ...(rng() < 0.5 ? { to: rng.pick(playerIds()) } : {}) };
+    case 'g.econ.nudge': return { t, to: rng.pick(playerIds()) };
+    case 'g.revive': return { t, playerId: rng.pick(playerIds()), round: 1 + rng.int(99) };
     // the plugin interaction windows (PLUGIN API v2, docs/PLUGINS.md §10b): random ids and slots — no window of a
     // vanilla match is ever open, so every one of them is a refusal, which is exactly what the fuzz run checks
     case 'g.offer': case 'g.offerRefresh': return { t, pluginId: 'demo', seq: rng.int(1000), offerId: rng.pick(['early-pick', 'x', 'a'.repeat(64)]), idx: rng.int(6) };

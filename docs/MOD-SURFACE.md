@@ -36,8 +36,15 @@
 | `server.modules.metrics` | `host.metrics()` | `server/modModules.js` + `server/hostMetrics.js` | 只读指标快照（uptime/rss/heap/elu/loop*） |
 | `server.modules.route` | `host.route(path, fn, {cache})` | `server/modModules.js` + `server/http/routeMount.js` | 只读动态端点，强制 `/mod/<包id>/…`，GET/HEAD，JSON ≤64 KiB |
 | `server.modules.lane` | `host.lane(onUpgrade)` | `server/modModules.js` + `server/modLanes.js` + `server/http/wsLanes.js` | 包自有 WebSocket 通道：精确路径、无处理器 503、不回落 `/ws` |
+| `matchKinds` | `host.matchKinds()` | `server/modModules.js` + `shared/modSurface.js` | 对局种类声明（**数据面，不是分派表**）：`plugin.json.matchKinds = [{ id, seats?: {min,max}, label? }]`，最多 4 种、按 id 排序；必须有一个 `uses:["matchClass"]` 模块执行；`host.matchKinds()` 只读返回冻结清单 |
 | `pack.msg` | `Match.handlePackMsg` / `Lobby.packMsg` | `server/lobby.js` | 包通道消息：先问对局（`true`=消费），否则同房转发 |
 | `pack.msg.channels` | `PACK_CHANNEL_RE` | `shared/modSurface.js` | 通道名：`^[a-z][a-z0-9_-]{0,63}$`；`data` ≤4096 B |
+
+## 不登记的面
+
+| 面 | 为什么不做 |
+|---|---|
+| `callBudget` | Forge 的「每局每插件调用次数上限」：计数点在 `kits/` 的逐单位回调与 battle hooks 上。本树不跑 kits、没有对应计费点；登记一个不生效的字段就是「说了不算」。要用它，先有运行时计费，再登记。 |
 
 ## 边界
 

@@ -8,9 +8,27 @@ import { importForge, readUntrustedZip } from '../plugins/forgeImport.js';
 import { installPluginBytes, InstallError } from '../plugins/install.js';
 import { pluginCompatibility } from '../../shared/plugins/compat.js';
 
+/**
+ * `<id>/plugin.json` — the layout `tools/plugin.mjs pack --zip` writes (server/plugins/pack.js, `zipPlugin`).
+ * `readUntrustedZip` already unwraps `pack.json` (forgeImport's `stripWrapper`), but that rule only knows
+ * pack.json, so a wrapped plugin zip stayed `unknown` here while `installPluginBytes` accepted it. One folder,
+ * one manifest, same rule; anything deeper is left alone.
+ * @param {Map<string, Buffer>} files
+ */
+function stripPluginWrapper(files) {
+  if (files.has('plugin.json')) return files;
+  const tops = new Set([...files.keys()].map((n) => n.split('/')[0]));
+  if (tops.size !== 1) return files;
+  const top = [...tops][0];
+  if (!files.has(`${top}/plugin.json`)) return files;
+  const out = new Map();
+  for (const [n, d] of files) if (n.length > top.length + 1) out.set(n.slice(top.length + 1), d);
+  return out;
+}
+
 /** What kind of archive is this? Reads the zip's central directory only (never extracts to disk). */
 export async function sniffArchive(buffer) {
-  const files = await readUntrustedZip(buffer);
+  const files = stripPluginWrapper(await readUntrustedZip(buffer));
   if (files.has('pack.json')) return { kind: 'pack', files };
   if (files.has('plugin.json')) return { kind: 'plugin', files };
   return { kind: 'unknown', files };

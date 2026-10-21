@@ -25,6 +25,7 @@ export const COMPAT_STATUS = Object.freeze({
 
 const text = (v) => (typeof v === 'string' ? v.trim() : '');
 const reason = (code, zh, en) => ({ code, zh, en });
+/** @param {{ current: number, min: number }} [api] */
 const levels = (api = PLUGIN_API) => ({ current: Number(api?.current), min: Number(api?.min) });
 
 /** The 0.3.x-only top-level fields a pack can carry, or '' when it carries none. */

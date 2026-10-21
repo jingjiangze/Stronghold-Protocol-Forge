@@ -6,6 +6,7 @@
 // server/http/common.js carries, docs/I18N.md.)
 import { importForge, readUntrustedZip } from '../plugins/forgeImport.js';
 import { installPluginBytes, InstallError } from '../plugins/install.js';
+import { pluginCompatibility } from '../../shared/plugins/compat.js';
 
 /** What kind of archive is this? Reads the zip's central directory only (never extracts to disk). */
 export async function sniffArchive(buffer) {
@@ -20,11 +21,11 @@ export async function sniffArchive(buffer) {
  * @param {Buffer} buffer
  * @param {{ root?: string, pluginsDir: string, dataDir: string, vanilla?: object|null, force?: boolean, dryRun?: boolean }} opts
  * @returns {Promise<{ ok: boolean, kind: string, wrote?: boolean, dryRun?: boolean, report?: any, markdown?: string,
- *   issues?: any[], id?: string, error?: string, detail?: string }>}
+ *   compat?: any, issues?: any[], id?: string, error?: string, detail?: string }>}
  */
 export async function importArchive(buffer, { root, pluginsDir, dataDir, vanilla = null, force = false, dryRun = false } = {}) {
-  let kind;
-  try { ({ kind } = await sniffArchive(buffer)); } catch (e) {
+  let kind, files;
+  try { ({ kind, files } = await sniffArchive(buffer)); } catch (e) {
     return { ok: false, kind: 'unknown', error: 'PLUGIN_INSTALL_ZIP', detail: String(e?.message || e).slice(0, 300) };
   }
   if (kind === 'pack') {
@@ -32,13 +33,16 @@ export async function importArchive(buffer, { root, pluginsDir, dataDir, vanilla
     return { kind, ...r };
   }
   if (kind === 'plugin') {
-    if (dryRun) return { kind, ok: true, wrote: false, dryRun: true, markdown: '插件包（plugin.json）：不写出。· a plugin zip; nothing written.' };
+    // The manifest is already checked by installPluginBytes; this reads only the version declaration for the report.
+    let compat = null;
+    try { compat = pluginCompatibility(JSON.parse(files.get('plugin.json').toString('utf8'))); } catch { compat = null; }
+    if (dryRun) return { kind, ok: true, wrote: false, dryRun: true, ...(compat ? { compat } : {}), markdown: '插件包（plugin.json）：不写出。· a plugin zip; nothing written.' };
     try {
       const r = installPluginBytes(buffer, { pluginsDir, force });
-      return { kind, ok: true, wrote: true, ...r };
+      return { kind, ok: true, wrote: true, ...(compat ? { compat } : {}), ...r };
     } catch (e) {
-      if (e instanceof InstallError) return { kind, ok: false, wrote: false, error: e.code, detail: String(e.message).slice(0, 300) };
-      return { kind, ok: false, wrote: false, error: 'PLUGIN_INSTALL_ZIP', detail: String(e?.message || e).slice(0, 300) };
+      if (e instanceof InstallError) return { kind, ok: false, wrote: false, ...(compat ? { compat } : {}), error: e.code, detail: String(e.message).slice(0, 300) };
+      return { kind, ok: false, wrote: false, ...(compat ? { compat } : {}), error: 'PLUGIN_INSTALL_ZIP', detail: String(e?.message || e).slice(0, 300) };
     }
   }
   return { kind, ok: false, wrote: false, error: 'PLUGIN_INSTALL_ZIP', detail: 'zip 里既没有 pack.json（Forge 包）也没有 plugin.json（插件） · neither pack.json nor plugin.json' };

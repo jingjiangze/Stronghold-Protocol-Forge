@@ -54,7 +54,7 @@ function readBody(req, limit) {
 }
 
 /** The status rows the page lists: what is installed and whether the registry loaded it. */
-function statusRows(registry, pluginsDir) {
+function statusRows(registry, inboxPath) {
   let list = [];
   try { list = registry ? registry.plugins() : []; } catch { list = []; }
   const rows = list.filter((p) => p && p.id && !String(p.id).startsWith('_')).map((p) => ({
@@ -66,9 +66,12 @@ function statusRows(registry, pluginsDir) {
     supported: p.supported !== false,
     ...(p.disabled ? { disabled: p.disabled } : {}),
   })).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  let inbox = null;
-  try { inbox = fs.readdirSync(path.join(path.dirname(pluginsDir), 'mod-inbox')).filter((n) => n.endsWith('.zip')).length; } catch { inbox = null; }
-  return { plugins: rows, inbox };
+  // The count is reported as `inboxCount`: `inbox` is the handler's path, and spreading this object after it
+  // used to knock the path out with a number (the caller could never learn where the drop folder is).
+  // It also counts the folder the manager actually watches, not `dirname(pluginsDir)/mod-inbox`.
+  let inboxCount = null;
+  try { inboxCount = fs.readdirSync(inboxPath).filter((n) => n.endsWith('.zip')).length; } catch { inboxCount = null; }
+  return { plugins: rows, inboxCount };
 }
 
 /**
@@ -112,7 +115,7 @@ export function createMods({ root, pluginsDir, dataDir, registry = null, vanilla
 
       if (rawPath === '/mod/status.json') {
         if (method !== 'GET') { sendError(req, res, 405, '不支持的请求方法 · Method not allowed'); return; }
-        sendJson(req, res, 200, { ok: true, inbox: inboxPath, platform: platform ? platform.status() : { enabled: false }, ...statusRows(registry, pluginsDir) });
+        sendJson(req, res, 200, { ok: true, inbox: inboxPath, platform: platform ? platform.status() : { enabled: false }, ...statusRows(registry, inboxPath) });
         return;
       }
 

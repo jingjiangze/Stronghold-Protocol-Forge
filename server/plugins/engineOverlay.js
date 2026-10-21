@@ -125,16 +125,31 @@ function linkOrCopy(src, dst) {
   try { fs.symlinkSync(src, dst, 'file'); return 'link'; } catch { fs.copyFileSync(src, dst); return 'copy'; }
 }
 
-/** Create `dir` and every parent, inside the shadow root only. */
-function ensureDir(base, relDir) {
+/**
+ * Create the folder an overlay file lives in, inside the shadow root only.
+ *
+ * A level that is still a link to the engine's folder (nothing above it was touched yet) becomes a REAL folder whose
+ * children are links to the same files — that is what lets one file (`public/css/screens/x.css`) be replaced while
+ * every sibling stays the engine's.
+ */
+function ensureDir(base, relDir, srcBase) {
   let cur = base;
+  let src = srcBase;
   for (const part of relDir.split('/').filter(Boolean)) {
     cur = path.join(cur, part);
-    if (fs.existsSync(cur)) {
-      if (!fs.lstatSync(cur).isDirectory()) throw new Error(`${cur} is not a directory`);
+    src = path.join(src, part);
+    const st = fs.lstatSync(cur, { throwIfNoEntry: false });
+    if (!st) { fs.mkdirSync(cur); continue; }
+    if (st.isDirectory()) continue;
+    if (st.isSymbolicLink()) {
+      fs.rmSync(cur, { force: true });
+      fs.mkdirSync(cur);
+      if (fs.existsSync(src) && fs.statSync(src).isDirectory()) {
+        for (const child of fs.readdirSync(src)) linkOrCopy(path.join(src, child), path.join(cur, child));
+      }
       continue;
     }
-    fs.mkdirSync(cur);
+    throw new Error(`${cur} is not a directory`);
   }
   return cur;
 }
@@ -171,7 +186,7 @@ export function buildShadow({ root, overlay, force = false }) {
   for (const rel of overlay.files) {
     const src = path.join(overlay.dir, ...rel.split('/'));
     const parts = rel.split('/');
-    const dir = ensureDir(path.join(shadow, parts[0]), parts.slice(1, -1).join('/'));
+    const dir = ensureDir(path.join(shadow, parts[0]), parts.slice(1, -1).join('/'), path.join(root, parts[0]));
     const dst = path.join(dir, parts[parts.length - 1]);
     fs.rmSync(dst, { recursive: true, force: true });
     counts(linkOrCopy(src, dst));

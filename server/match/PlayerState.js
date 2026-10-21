@@ -235,6 +235,8 @@ export class PlayerState {
     this.deployCapBonus = 0;
     this.deployCapMin = 0;
     this.deviceOverrides = {};
+    /** player-paid obstacle placements (board coords, applied at battleStart; monster-control) */
+    this.obstaclePlacements = [];
     this.tileOverrides = {};
     this.stats = {
       dmgDealt: 0, kills: 0, leaks: 0, gold: 0, refreshes: 0, merges: 0, itemMerges: 0, itemsEquipped: 0,

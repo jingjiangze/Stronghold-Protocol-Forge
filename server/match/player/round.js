@@ -8,6 +8,7 @@
 
 import { boardOrder, pieceDir } from '../board.js';
 import { computeBonds, bondSnapshot, activatedLayers, bondsWithGains } from '../bondsMeta.js';
+import { GEO } from '../../../shared/constants.js';
 
 export class PlayerRound {
   startRound(r) {
@@ -179,6 +180,15 @@ export class PlayerRound {
         id: e.id, key: e.key ?? null, source: e.iconKind ?? null, params: e.params ?? null, counter: e.counter ?? null, data: e.data ?? null,
       })),
       deviceOverrides: { ...this.deviceOverrides },
+      // Player-paid obstacles (monster-control): board coordinates, bounded to the deployable field. The battleStart
+      // handler in sim/content/devices.js maps them onto this player's field; a tile with a unit is skipped there.
+      obstacles: Array.isArray(this.obstaclePlacements)
+        ? this.obstaclePlacements
+          .filter((o) => o && Number.isInteger(o.row) && o.row >= GEO.FIELD.r0 && o.row <= GEO.FIELD.r1
+            && Number.isInteger(o.col) && o.col >= GEO.FIELD.c0 && o.col <= GEO.FIELD.c1)
+          .slice(0, 32)
+          .map((o) => ({ row: o.row, col: o.col, kind: o.kind === 'crate' ? 'crate' : 'block' }))
+        : [],
     };
   }
 }

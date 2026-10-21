@@ -571,6 +571,16 @@ export function install(battle) {
     // platforms switched by map cards (the engine applied the data state)
     for (const k of st.platformOn) battle.setObstacle((k / COLS) | 0, k % COLS, true);
     for (const k of st.platformOff) battle.setObstacle((k / COLS) | 0, k % COLS, false);
+    // player-paid obstacles (monster-control): board coordinates → this player's field; never on a unit
+    for (const ps of battle.players || []) {
+      const list = Array.isArray(ps.input?.obstacles) ? ps.input.obstacles : [];
+      for (const o of list) {
+        if (!o || !Number.isInteger(o.row) || !Number.isInteger(o.col)) continue;
+        const [r, c] = battle.mapTile(ps, o.row, o.col, false);
+        if (!battle.grid.inRect(r, c) || battle.unitAt(r, c)) continue;
+        battle.setObstacle(r, c, true, o.kind === 'crate' ? 'crate' : 'block');
+      }
+    }
     // hidden crates switched on by an override
     for (const d of devices) {
       if (d.role !== 'crate' || dataActive(d) || !isActive(battle, st, d) || !battle.grid.inRect(d.row, d.col) || battle.unitAt(d.row, d.col)) continue;

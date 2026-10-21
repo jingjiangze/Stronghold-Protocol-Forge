@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { COMPAT_STATUS, compatSummary, packCompatibility, pluginCompatibility } from '../../shared/plugins/compat.js';
+import { APP_VERSION } from '../../shared/constants.js';
 
 const status = (r) => r.status;
 const codes = (r) => (r.reasons || []).map((x) => x.code);
@@ -82,6 +83,6 @@ test('compatSummary names the status, target and declaration', () => {
   const r = packCompatibility({ gameVersion: '0.15.1 || 0.16.x' });
   const line = compatSummary(r);
   assert.match(line, /convertible/);
-  assert.match(line, /target 0\.3\.1/);
+  assert.ok(line.includes(`target ${APP_VERSION}`), line);
   assert.match(line, /gameVersion=0\.15\.1 \|\| 0\.16\.x/);
 });

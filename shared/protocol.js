@@ -490,6 +490,12 @@ const target = (v) => {
   return false;
 };
 
+// 包命名空间消息（§1.9.6）：一条不透明载荷，送到同一房间里装了同一个包、且声明过该通道的客户端。
+export const PACK_MSG_LIMITS = Object.freeze({ bytes: 4096, perSec: 5, burst: 20 });
+const packMsgBytes = (v) => {
+  try { const s = JSON.stringify(v); return typeof s === 'string' ? s.length : Infinity; } catch { return Infinity; }
+};
+
 /** @type {Record<string, Record<string, (v:any)=>boolean> & { $optional?: string[] }>} */
 export const C2S = {
   // session & lobby
@@ -500,6 +506,8 @@ export const C2S = {
   // string cannot sneak in as "not a test". The server still refuses it unless SP_TEST_MODE is on.
   'room.create': { mode: (v) => v === 'solo' || v === 'coop', difficulty: (v) => DIFFICULTIES.includes(v), test: (v) => v === true, $optional: ['test'] },
   'room.join': { $optional: ['testAck'], testAck: (v) => v === true, code: (v) => isStr(v, ROOM_CODE_LEN + 2) && /^[A-Za-z0-9]+$/.test(v) },
+  // 包通道（§1.9.6）：pack 是包 id，channel 由包声明；data 有界（引擎不解释载荷）。
+  'pack.msg': { pack: (v) => typeof v === 'string' && /^[a-z0-9][a-z0-9-]{1,31}$/.test(v), channel: (v) => typeof v === 'string' && /^[a-z][a-z0-9_-]{0,63}$/.test(v), data: (v) => v === undefined || packMsgBytes(v) <= PACK_MSG_LIMITS.bytes, $optional: ['data'] },
   'room.leave': {},
   'room.ready': { ready: isBool },
   'room.setDifficulty': { difficulty: (v) => DIFFICULTIES.includes(v) },
@@ -636,6 +644,8 @@ export const S2C = [
   'm.layer',
   // m.unitStats { seq, round, units: [unitStatsEntry] } — the answer to g.unitStats (the requester only)
   'm.unitStats',
+  // 包命名空间消息（§1.9.6）：同房、装了同一个包、声明过这个通道的客户端会收到。
+  'pack.msg',
   // client-side combat (DESIGN §14): b.start { battleId, fieldId, kind, spec, authoritative, startAt, serverNow, elapsed,
   // speed, watch? } · b.pool { hp, max, teamLp, acked: { [fieldId]: cumulative boss damage counted } } ·
   // b.end { battleId, fieldId, reason }

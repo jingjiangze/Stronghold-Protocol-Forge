@@ -657,6 +657,7 @@ export class Lobby {
       case 'room.setMode': return this.setMode(session, msg);
       case 'room.contentReady': return this.contentReady(session, msg, ctx);
       case 'room.consent': return this.consent(session,msg);
+      case 'pack.msg': return this.packMsg(session, msg);
       default:
         if (typeof msg.t === 'string' && msg.t.startsWith('g.')) return this.routeGameNow(session, msg);
         return fail(ERR.BAD_MSG, `unhandled type ${String(msg.t).slice(0, 32)}`);
@@ -1595,6 +1596,39 @@ export class Lobby {
    * Route a 'g.*' intent or a 'b.*' report (server/net.js) to the running match — on the room's queue when its match runs
    * in a match host (header "Gameplay plugins").
    */
+  /**
+   * 包通道（§1.9.6）：一条不透明载荷从发送者送到**同一房间**、装了同一个包、声明过这个通道的客户端。
+   * 先问对局（`Match.handlePackMsg`，由包的 matchClass 包装器提供）：返回 true = 对局接管，不再广播；
+   * 否则（undefined / 没有该方法 / 抛错）照旧转发。`from`/`seat` 由服务端从会话与座位解析。
+   */
+  packMsg(session, msg) {
+    const room = this.roomOf(session);
+    if (!room) return fail(ERR.NOT_IN_ROOM);
+    const declared = this.packChannels instanceof Map ? this.packChannels.get(msg.pack) : null;
+    if (!declared || !declared.has(msg.channel)) return fail(ERR.BAD_MSG, `undeclared pack channel ${String(msg.pack)}/${String(msg.channel)}`);
+    const seat = room.seatOf(session.playerId);
+    const base = { pack: msg.pack, channel: msg.channel, from: session.playerId, seat: seat && Number.isInteger(seat.seat) ? seat.seat : null };
+    const frame = { ...base, ...(msg.data === undefined ? {} : { data: msg.data }) };
+    const match = room.match;
+    if (match && typeof match.handlePackMsg === 'function') {
+      let consumed = false;
+      try { consumed = match.handlePackMsg(session.playerId, frame) === true; } catch (e) { this.log.warn?.(`[lobby] pack.msg ${msg.pack}/${msg.channel} handler threw: ${e && e.message ? e.message : e}`); }
+      if (consumed) return OK;
+    }
+    const out = { t: 'pack.msg', ...frame };
+    for (const s of room.seats) {
+      if (!s || s.isBot || !s.playerId) continue;
+      const target = this.registry.byId(s.playerId);
+      if (target && target.connected) sendSession(target, out);
+    }
+    for (const sp of room.spectators) {
+      if (!sp || !sp.connected) continue;
+      const target = this.registry.byId(sp.playerId);
+      if (target && target.connected) sendSession(target, out);
+    }
+    return OK;
+  }
+
   routeGame(session, msg) {
     const room = this.queuedRoom(session);
     return room ? this.serial(room, () => this.routeGameNow(session, msg)) : this.routeGameNow(session, msg);

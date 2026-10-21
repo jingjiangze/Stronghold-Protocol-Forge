@@ -10,6 +10,7 @@ import { WebSocketServer } from 'ws';
 import { Network, SessionRegistry, NET_DEFAULTS } from '../net.js';
 import { Lobby } from '../lobby.js';
 import { splitUrl } from './common.js';
+import { resolveLane } from './wsLanes.js';
 import { netOptionsFrom, lobbyOptionsFrom } from './config.js';
 
 /** Inbound WebSocket frame limit (DESIGN §8). */
@@ -92,7 +93,7 @@ function meterSocket(ws, req, traffic) {
  * @param {{ network: Network, log: object, traffic?: ReturnType<typeof import('./traffic.js').createTrafficCounter> }} deps
  * @returns {WebSocketServer}
  */
-export function attachWebSocket(server, { network, log, traffic = null }) {
+export function attachWebSocket(server, { network, log, traffic = null, lanes = null }) {
   const wss = new WebSocketServer({ noServer: true, maxPayload: WS_MAX_PAYLOAD, perMessageDeflate: { ...WS_DEFLATE }, clientTracking: false });
   wss.on('connection', (ws, req) => {
     if (traffic) meterSocket(ws, req, traffic);
@@ -106,7 +107,17 @@ export function attachWebSocket(server, { network, log, traffic = null }) {
     const reject = (status, text) => {
       try { socket.end(`HTTP/1.1 ${status} ${text}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`); } catch { socket.destroy(); }
     };
-    if (!parts || parts.rawPath !== '/ws') { reject(404, 'Not Found'); return; }
+    if (!parts) { reject(400, 'Bad Request'); return; }
+    // 包的 lane（server.modules[].uses 含 "lane"）：宿主替它开、按声明路径开、精确匹配（不覆盖 /ws）。
+    if (parts.rawPath !== '/ws') {
+      const lane = lanes ? resolveLane(parts.rawPath, lanes) : null;
+      if (!lane) { reject(404, 'Not Found'); return; }
+      try { lane.onUpgrade(req, socket, head, { reject, log }); } catch (e) {
+        log.error(`[ws] lane ${lane.id} upgrade threw`, e);
+        try { socket.destroy(); } catch { /* already gone */ }
+      }
+      return;
+    }
     const refused = network.admission(req);
     if (refused === 'per-address') { reject(429, 'Too Many Requests'); return; }
     if (refused) { reject(503, 'Service Unavailable'); return; }

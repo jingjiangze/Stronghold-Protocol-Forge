@@ -53,6 +53,10 @@ import { createTrustedRuntime } from './plugins/trustedRuntime.js';
 import { trustedHostAllowed } from './plugins/trusted.js';
 import { createStudio } from './studio/index.js';
 import { createMods } from './mods/index.js';
+import { packLaneTable } from './modLanes.js';
+import { loadServerModules, mountServerModules, stateRootFor, bootConfigSnapshot } from './modModules.js';
+import { pluginModulePacks } from './modHostAdapter.js';
+import { Match as DefaultMatch } from './match/Match.js';
 import { MIME, COMPRESSIBLE, acceptsGzip, pickEncoding, parseRange } from './http/files.js';
 import { BUILD_INPUTS, computeBuildTag, buildTag, resetBuildTag } from './http/buildTag.js';
 import { createRequestHandler } from './http/routes.js';
@@ -123,11 +127,36 @@ export async function startServer(opts = {}) {
   const policy = createPluginPolicy({ pluginsDir, log });
   const contents = createContentSets({ registry: packs, vanillaData: data, log, maxSets: () => policy.get().maxSets });
   const roomSets = createRoomSets({ registry: packs, visual, contents, policy });
+  // 包的服务端模块（DESIGN §28.14，引擎面）：从管理器插件清单读 `server.modules`（或 `engine.server.modules`），
+  // 启动期 import 并把 boot/shutdown/healthz/matchClass/route 收走。房间门控责任在包侧（`this.mods.packs`）。
+  const modulePacks = pluginModulePacks({ registry: packs, pluginsDir, log });
+  const serverModuleLoad = await loadServerModules({ packs: modulePacks }, { log, stateRoot: stateRootFor(ROOT) });
+  for (const err of serverModuleLoad.errors) log.warn?.(`[mods] ${err.pack}: ${err.code}: ${err.reason}`);
+  const modMount = mountServerModules(serverModuleLoad.modules, { log });
+  // 包通道表（pack.msg 的接收声明）：只认模块自己声明的 channels。
+  const packChannels = new Map();
+  for (const m of serverModuleLoad.modules) {
+    for (const ch of m.channels || []) {
+      if (!packChannels.has(m.pack)) packChannels.set(m.pack, new Set());
+      packChannels.get(m.pack).add(ch);
+    }
+  }
+  // MatchClass 的包包装器：按包 id 次序层层套上；任一层抛错或返回非函数只记日志并跳过。
+  const matchWrappers = modMount.matchClassWrappers();
+  let MatchClassForLobby = opts.MatchClass || DefaultMatch;
+  for (const w of matchWrappers) {
+    try {
+      const next = w.fn(MatchClassForLobby);
+      if (typeof next === 'function') MatchClassForLobby = next;
+      else log.warn?.(`[mods] ${w.pack}/${w.id}: matchClass wrapper returned ${typeof next} — skipped`);
+    } catch (e) { log.error?.(`[mods] ${w.pack}/${w.id}: matchClass wrapper threw`, e); }
+  }
   // a child process per content set; SP_MATCH_HOST=worker asks for a worker thread instead (match/host/index.js header:
   // an out-of-memory abort in a worker thread ends the whole server)
   const transport = String(process.env.SP_MATCH_HOST || '').trim().toLowerCase() === 'worker' ? 'worker' : 'process';
   const hosts = createMatchHosts({ contents, log, options: { transport, maxWorkers: Math.max(1, policy.get().maxSets), ...(opts.matchHost || {}) } });
-  const { registry, lobby, network } = createSessionStack(opts, { data, log, content, plugins: roomSets, hosts });
+  const { registry, lobby, network } = createSessionStack(matchWrappers.length ? { ...opts, MatchClass: MatchClassForLobby } : opts, { data, log, content, plugins: roomSets, hosts });
+  lobby.packChannels = packChannels;
   const serveStatic = createStaticHandler({ publicDir, dataDir, sharedDir, simDir, packsDir, pluginsDir, packs, content, log, assetIndex, views, visual, contents });
   const studio = opts.studio === false ? null : createStudio({ publicDir, pluginsDir, dataDir, registry: packs, lobby, sessions: registry, log, fetch: opts.fetch });
   // the mod manager (server/mods/): the /mod page and the drop-in inbox. Imports go through the plugin system's own
@@ -144,9 +173,9 @@ export async function startServer(opts = {}) {
   buildTag();
 
   const traffic = createTrafficCounter();
-  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health }, log, trustProxy: network.opts.trustProxy, studio, mods, trustedRuntime }));
+  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health, modHealth: () => modMount.healthz() }, log, trustProxy: network.opts.trustProxy, studio, mods, dynamicRoutes: modMount.routes(), trustedRuntime }));
   server.on('clientError', answerClientError);
-  const wss = attachWebSocket(server, { network, log, traffic });
+  const wss = attachWebSocket(server, { network, log, traffic, lanes: packLaneTable() });
 
   // The address actually bound. The default may fall back to IPv4; the returned host and url follow that.
   let boundHost;
@@ -201,6 +230,8 @@ export async function startServer(opts = {}) {
 
   const addr = server.address();
   const actualPort = typeof addr === 'object' && addr ? addr.port : port;
+  // 包的服务端模块 onBoot：绑上端口之后才跑（失败只记日志，不阻塞启动）。
+  try { modMount.boot(bootConfigSnapshot({ port: actualPort, host: boundHost, stateRoot: stateRootFor(ROOT), env: process.env })); } catch (e) { log.error('[mods] onBoot failed', e); }
   const url = `http://${displayHost(boundHost)}:${actualPort}`;
 
   let closing = null;
@@ -208,6 +239,7 @@ export async function startServer(opts = {}) {
     if (closing) return closing;
     closing = (async () => {
       try { lobby.shutdown('shutdown'); } catch (e) { log.error('[shutdown] lobby', e); }
+      try { modMount.shutdown(); } catch (e) { log.error('[shutdown] pack modules', e); }
       try { hosts.close(); } catch (e) { log.error('[shutdown] match hosts', e); }
       network.close();
       assetIndex?.close();

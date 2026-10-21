@@ -127,6 +127,8 @@ import { NOTICE_LIMITS, readNotices, isNoticeDate } from '../../shared/plugins/n
 import { KITS, OPERATOR_KITS, TIER_KITS } from '../sim/content/kits/index.js';
 import { bundleForgeKits } from './forgeKits.js';
 import { planForgeRecords, rewriteForgeIds, rewriteForgeKit } from './forgeRecords.js';
+import { APP_VERSION, PLUGIN_API } from '../../shared/constants.js';
+import { packCompatibility } from '../../shared/plugins/compat.js';
 import { localOfficialUnits } from './officialUnits.js';
 import { ensureOfficialTables } from '../../tools/assets/official-tables.mjs';
 import { BOUND_TABLES, rememberOfficialBounds, officialBbRange, officialBbMax } from '../../shared/plugins/officialBounds.js';
@@ -1089,6 +1091,8 @@ export function planForgeImport(files, { id: idOverride, contentId, dataDir, van
   if (!files.has('pack.json')) fail('PLUGIN_FORGE_INPUT', 'no pack.json');
   const pack = readJsonBuf(files.get('pack.json'), 'pack.json');
   if (!isObj(pack)) fail('PLUGIN_FORGE_INPUT', 'pack.json is not an object');
+  // Declared gameVersion / game / api used to be skipped as "known fields"; keep the verdict for the report.
+  const compat = packCompatibility(pack, { app: APP_VERSION, api: PLUGIN_API });
   const base = forgeIdToPluginId(idOverride || pack.id);
   if (!base) fail('PLUGIN_FORGE_ID', `pack id "${String(pack.id ?? '').slice(0, 40)}"`);
   const recordNs = contentId && isPluginId(contentId) ? contentId : base;
@@ -2761,7 +2765,7 @@ export function planForgeImport(files, { id: idOverride, contentId, dataDir, van
   for (const bucket of ['chars', 'enemies', 'tokens', 'bonds', 'bands', 'items', 'skills', 'modules']) if (isObj(assets[bucket])) kept.push(...Object.keys(assets[bucket]).map(k => `${bucket}:${k}`));
   const cosmeticBare = asked.length > 0 && asked.every(bareKey) && kept.every(bareKey);
 
-  const meta = { base, packName, version, description, credits, authors, license, requires, conflicts, assets, media, assetNeed, patches, operators, enemyRecords, gameplayRecords, contentI18n, panels, manualPanels, manualReasons, translations: translations.filter((t) => t.kind === 'ui'), importedAssets, rewrittenAssets, importedData, rewrittenData, skipped, assumed, script: scriptPlan, packId: typeof pack.id === 'string' ? pack.id : base, dropped, cosmeticBare, themeVars, notices, rules: importedRules, officialNeeded: [...officialNeeded], officialTables: [] };
+  const meta = { base, compat, packName, version, description, credits, authors, license, requires, conflicts, assets, media, assetNeed, patches, operators, enemyRecords, gameplayRecords, contentI18n, panels, manualPanels, manualReasons, translations: translations.filter((t) => t.kind === 'ui'), importedAssets, rewrittenAssets, importedData, rewrittenData, skipped, assumed, script: scriptPlan, packId: typeof pack.id === 'string' ? pack.id : base, dropped, cosmeticBare, themeVars, notices, rules: importedRules, officialNeeded: [...officialNeeded], officialTables: [] };
   return { meta, roles };
 }
 
@@ -3039,10 +3043,17 @@ ${bare}`;
 function reportMarkdown(report) {
   const line = (s) => s || '（无）';
   const bullets = (rows, fmt) => (rows.length ? rows.map(fmt).join('\n') : '- （无）');
+  const declared = (c) => {
+    const d = c?.declared || {};
+    return [d.gameVersion && `gameVersion=${d.gameVersion}`, d.game && `game=${d.game}`, d.app && `app=${d.app}`, d.api && `api=${d.api}`]
+      .filter(Boolean).join(' ') || '（无声明）';
+  };
   return `# 导入报告 IMPORT-REPORT
 
 来源：${report.pack.id} ${report.pack.name} ${report.pack.version}
 写入：${report.wrote ? '是' : '否'}${report.dryRun ? '（dry-run，没有写文件）' : ''}
+兼容：${report.compat ? `${report.compat.status}（目标 ${report.compat.target}；声明 ${declared(report.compat)}）` : '（未判定）'}
+${report.compat?.reasons?.length ? `\n## 兼容性 / Compatibility\n\n${bullets(report.compat.reasons, (r) => `- ${r.zh} (${r.en})`)}\n` : ''}
 ${report.partial ? '\n状态：部分导入 / Partial import\n' : ''}${report.needsManualAdaptation ? `\n需要人工适配 / Needs manual adaptation\n\n${bullets(report.manualReasons || [], (s) => `- \`${s.path}\`：${s.zh} (${s.en})`)}\n` : ''}
 
 导入器只读文件，不执行包里的任何脚本，也不拦截官方素材（和打包工具一样，作者自己对素材负责）。
@@ -3075,6 +3086,7 @@ function publicReport({ meta, products, primaryId, wrote, dryRun, check, issues 
   const report = {
     assumed: [...meta.assumed].sort((a, b) => (a.what < b.what ? -1 : a.what > b.what ? 1 : 0)),
     check, dryRun, issues, ok: issues.length === 0, pack: { id: meta.packId, name: meta.packName, version: meta.version },
+    ...(meta.compat ? { compat: meta.compat } : {}),
     primary: primaryId,
     needsManualAdaptation: !!meta.manualPanels?.length || !!meta.manualReasons?.length,
     manualPanels: meta.manualPanels || [],

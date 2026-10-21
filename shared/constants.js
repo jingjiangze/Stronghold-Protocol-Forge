@@ -29,6 +29,37 @@ export const MAX_SPECTATORS = 2;
 export const ROOM_CODE_LEN = 4;
 export const NAME_MAX_LEN = 12;
 
+/** Room modes: 'solo' (1 human, no AI), 'coop' (1–4 co-op, one shared team) and 'versus' (2V2: two teams of two). */
+export const ROOM_MODES = Object.freeze(['solo', 'coop', 'versus']);
+/** Players per team in a 'versus' room (2V2). */
+export const TEAM_SIZE = 2;
+/** How many teams a 'versus' room has. */
+export const TEAMS = 2;
+/** The roster hold before a confront placement's battles begin (ms); the server owns the clock. */
+export const CONFRONT_ROSTER_MS = 5000;
+/** The shared 2V2 confront rhythm; the rest of the port adds its pricing tables. */
+const HUNT_RHYTHM = Object.freeze({
+  ratioBase: 0.05,
+  ratioStep: 0.02,
+  ratioMax: 0.15,
+  huntRound: 13,
+  huntRatio: 0.5,
+  positions: Object.freeze(['front', 'mid', 'back']),
+  budgetMul: 2,
+  rosterMs: CONFRONT_ROSTER_MS,
+  maxPicks: 64,
+});
+/** 2V2 tunables: target window, shared rhythm, roster hold and the boss wire bound. */
+export const VERSUS_CONFRONT = Object.freeze({
+  targetSeconds: 10,
+  ...HUNT_RHYTHM,
+  maxBosses: 32,
+});
+/** R13 之后公开对方视角; solo/co-op have no opponent. */
+export const opponentRevealed = (round) => Math.floor(Number(round) || 0) > VERSUS_CONFRONT.huntRound;
+/** The team a seat plays for in a 'versus' room: seats 0,1 → team 0; seats 2,3 → team 1. */
+export const teamOfSeat = (seat) => Math.floor(seat / TEAM_SIZE) % TEAMS;
+
 export const DIFFICULTIES = ['FUNNY', 'NORMAL', 'HARD', 'ABYSS'];
 export const DIFFICULTY_NAMES = { FUNNY: N_('标准模拟'), NORMAL: N_('险境模拟'), HARD: N_('绝境模拟'), ABYSS: N_('终极模拟') };
 export const DIFFICULTY_COLORS = { FUNNY: '#f6a329', NORMAL: '#e85a1a', HARD: '#e73118', ABYSS: '#ff0024' };

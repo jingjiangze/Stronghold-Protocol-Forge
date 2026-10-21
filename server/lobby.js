@@ -164,6 +164,10 @@
 import { randomBytes, randomInt } from 'node:crypto';
 import { DIFFICULTIES, ERR, MAX_SEATS, MAX_SPECTATORS, ROOM_CODE_LEN, modeIdFor } from '../shared/constants.js';
 import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, checkDiyPicks, charPotentialChanges, checkSkinSelection, operatorCharIds } from '../shared/protocol.js';
+import { checkSnapshot } from '../shared/matchSnapshot.mjs';
+
+/** 断线重建总开关：默认开，SP_MATCH_RESTORE=off|0|false 关掉。 */
+const restoreEnabled = () => { const v = String(process.env.SP_MATCH_RESTORE ?? '').trim().toLowerCase(); return v !== 'off' && v !== '0' && v !== 'false'; };
 import { encode, isDroppable, isErrCode, sendRaw, sendSession } from './net.js';
 import { getData as defaultGetData, lookup } from './data.js';
 import { Match as DefaultMatch } from './match/Match.js';
@@ -564,6 +568,10 @@ export class Lobby {
     if (changed) this.broadcastState(room);
     else this.sendState(room, session);
     this.resync(session, !resumed);
+    // 服务端重启/重新部署后：房间还在，对局没了。页面手里有上一回合的快照，请它送回来。
+    // SP_MATCH_RESTORE=off 可整条关掉（回到「本局已中断」的旧行为）。
+    const mySeat = room.seatOf(session.playerId);
+    if (restoreEnabled() && !room.match && mySeat && !mySeat.isBot) sendSession(session, { t: 'b.snapshotRequest', code: room.code });
   }
 
   /**
@@ -576,6 +584,8 @@ export class Lobby {
    */
   onMessage(session, msg) {
     const room = this.queuedRoom(session);
+    // 进程重启后房间也没了：b.snapshot 是唯一能把房间连同对局一起重建回来的消息，先于房间查找处理。
+    if (!room && msg && msg.t === 'b.snapshot') return this.rebuildFromSnapshot(session, msg);
     if (!room) return this.handleMessage(session, msg);
     // a queued room.contentReady speaks for the page that sent it: the seat and its generation now — a disconnect in
     // between bumps it, and the page that comes back checks the set again (contentReady)
@@ -667,6 +677,66 @@ export class Lobby {
         if (typeof msg.t === 'string' && msg.t.startsWith('g.')) return this.routeGameNow(session, msg);
         return fail(ERR.BAD_MSG, `unhandled type ${String(msg.t).slice(0, 32)}`);
     }
+  }
+
+  /**
+   * 进程重启后（房间也没了）用页面手里的快照把房间和对局一起重建出来。
+   * 只接受带 room 骨架、且发送者是骨架里一名真人的快照；重建后房主 = 发送者。
+   */
+  rebuildFromSnapshot(session, msg) {
+    if (!restoreEnabled()) return fail(ERR.NOT_IN_ROOM);
+    const c = checkSnapshot(msg && msg.snapshot);
+    if (!c.ok) return fail(ERR.BAD_MSG, "snapshot rejected: " + c.code);
+    const snap = c.snapshot;
+    if (!snap.room) return fail(ERR.NOT_IN_ROOM);
+    if (this.rooms.size >= this.opts.maxRooms) return fail(ERR.INTERNAL, 'too many rooms');
+    const code = snap.room.code;
+    if (this.rooms.has(code)) return this.joinRestored(session, this.rooms.get(code), snap);
+    const room = new Room(code, snap.room.mode, snap.room.difficulty, this.now());
+    room.variant = snap.room.variant || null;
+    room.content = this.vanilla;
+    room.ownerKey = session.limitKey || null;
+    const original = (msg.snapshot.room && Array.isArray(msg.snapshot.room.seats) ? msg.snapshot.room.seats : []);
+    const me = original.find((x) => x && x.playerId === session.playerId);
+    if (!me) return fail(ERR.NOT_IN_ROOM, 'your seat is not in that snapshot');
+    const seatNo = Math.max(0, Math.min(MAX_SEATS - 1, Number(me.seat) || 0));
+    const topSeat = original.reduce((m, x) => Math.max(m, Number(x && x.seat) || 0), 0);
+    while (room.seats.length <= topSeat) room.seats.push(null);
+    room.seats[seatNo] = { ...this.humanSeat(seatNo, session), name: me.name || session.name };
+    room.hostId = session.playerId;
+    this.rooms.set(code, room);
+    session.roomCode = code;
+    this.log.info?.("[lobby] " + code + " recreated from a client snapshot (round " + snap.round + ")");
+    this.broadcastState(room);
+    return this.restoreMatch(room, snap);
+  }
+
+  joinRestored(session, room, snap) {
+    const seatNo = room.seats.findIndex((x) => !x);
+    if (seatNo < 0) return fail(ERR.ROOM_FULL);
+    room.seats[seatNo] = this.humanSeat(seatNo, session);
+    session.roomCode = room.code;
+    this.broadcastState(room);
+    return this.restoreMatch(room, snap);
+  }
+
+  /** 用客户端回传的快照重建这一局：走同一个 startMatch，只多一个 bootstrap。 */
+  restoreMatch(room, snap) {
+    if (!room || room.disposed || room.match) return fail(ERR.WRONG_PHASE, 'no room to restore');
+    const r = this.startMatch(room, null, { bootstrap: snap });
+    if (r && r.error) return r;
+    this.log.info?.(`[lobby] ${room.code} restored from a client snapshot (round ${snap.round})`);
+    return OK;
+  }
+
+  /** b.snapshot：页面送回来的快照。只接受本人座位、且房间当前没有对局。 */
+  onSnapshot(session, room, msg) {
+    if (room.match) return OK;
+    const seat = room.seatOf(session.playerId);
+    if (!seat || seat.isBot) return fail(ERR.NOT_IN_ROOM);
+    const c = checkSnapshot(msg && msg.snapshot);
+    if (!c.ok) return fail(ERR.BAD_MSG, `snapshot rejected: ${c.code}`);
+    return this.restoreMatch(room, c.snapshot);
   }
 
   /** The session's socket closed. @param {import('./net.js').Session} session */
@@ -1374,7 +1444,7 @@ export class Lobby {
   // ---------------------------------------------------------------------------------------------------
 
   /** @param {Room} room @param {string | null} [key] per-network limit key of the starter */
-  startMatch(room, key = null) {
+  startMatch(room, key = null, { bootstrap = null } = {}) {
     if (room.test && !this.testEnabled) return fail(ERR.TEST_DISABLED);
     const host = room.seatOf(room.hostId);
     if (host) host.ready = true;
@@ -1418,6 +1488,7 @@ export class Lobby {
         hostId: room.hostId,
         // only a room created as a test room; a normal match opts object does not grow a test key
         ...(room.test === true ? { test: true } : {}),
+        ...(bootstrap ? { bootstrap } : {}),
         seed,
         // the room's match number: with the seed it keeps battleIds unique across the room's matches (DESIGN §14)
         matchNo: room.matchCount + 1,
@@ -1664,6 +1735,7 @@ export class Lobby {
       if (!this.testEnabled) return fail(ERR.TEST_DISABLED);
       if (room.test !== true) return fail(ERR.TEST_FORBIDDEN);
     }
+    if (msg.t === 'b.snapshot') return this.onSnapshot(session, room, msg);
     if (!room.match) return fail(ERR.WRONG_PHASE, 'no running match');
     if (msg.t === 'g.leave') {
       this.removeMember(room, session.playerId);

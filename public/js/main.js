@@ -89,6 +89,8 @@ function clearRoomParam() {
 // ---- net → store wiring ---------------------------------------------------------------------------
 
 let seq = 0;
+// 这一局的快照（服务端每回合开始发来）：房间还在但对局丢了时，页面把它送回去。
+let matchSnapshot = null;
 let welcomeAt = 0;
 let roomStateAt = 0;
 let matchAt = 0;
@@ -282,6 +284,8 @@ function wireNet() {
   net.on('m.emote', (msg) => {
     store.set((s) => ({ emotes: [...s.emotes.slice(-(EMOTE_KEEP - 1)), { seq: ++seq, playerId: msg.playerId, id: msg.id, at: Date.now() }] }));
   });
+  net.on('b.snapshot', (msg) => { const p = payload(msg); if (p && p.snapshot && typeof p.snapshot === 'object') { matchSnapshot = p.snapshot; try { globalThis.__spSnapshot = matchSnapshot; } catch { /* debug hook */ } } });
+  net.on('b.snapshotRequest', () => { if (matchSnapshot) net.send('b.snapshot', { snapshot: matchSnapshot }); });
 
   // Entering (title → lobby) while already online also needs the deep-link join.
   store.subscribe((s, prev) => {

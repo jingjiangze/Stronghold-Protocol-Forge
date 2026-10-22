@@ -23,6 +23,7 @@ import { PROTOCOL_VERSION, APP_VERSION } from '../../shared/constants.js';
 import { buildTag } from './buildTag.js';
 import { setSecurityHeaders, sendError, sendJson, splitUrl } from './common.js';
 import { clientAddress, isLocalIp } from '../net.js';
+import { runDynamicRoute, DYNAMIC_ROUTE_CACHE_HEADERS } from './routeMount.js';
 
 const MAX_URL_LENGTH = 4096;
 
@@ -50,7 +51,7 @@ function contentSets(lobby) {
  *   content: the server's vanilla content (server/plugins/identity.js)
  * @param {boolean} [withTraffic]
  */
-export function healthReport({ startedAt, network, registry, lobby, content = null, traffic, assetIndex, views, trusted }, withTraffic = false) {
+export function healthReport({ startedAt, network, registry, lobby, content = null, traffic, assetIndex, views, trusted, modHealth = null, log = null }, withTraffic = false) {
   const report = {
     ok: true, version: PROTOCOL_VERSION, app: APP_VERSION, uptimeSec: Math.round((Date.now() - startedAt) / 1000),
     // the runtime the server is serving right now (public/js/ui/buildGuard.js): a page whose own build is
@@ -63,6 +64,12 @@ export function healthReport({ startedAt, network, registry, lobby, content = nu
     sockets: network.connectionCount, sessions: registry.size, ...lobby.stats(),
   };
   if (trusted && Object.keys(trusted).length) report.plugins = trusted;
+  // 包的服务端模块给 /healthz 加的字段：空对象不加这个键（干净安装的字节不变）。
+  if (typeof modHealth === 'function') {
+    let mh = null;
+    try { mh = modHealth(); } catch (e) { log?.warn?.(`[healthz] modHealth threw: ${e && e.message ? e.message : e}`); }
+    if (mh && typeof mh === 'object' && Object.keys(mh).length) report.modHealth = mh;
+  }
   if (withTraffic && traffic) report.traffic = traffic.snapshot();
   // content-hashed asset URLs (assetIndex.js / assetViews.js): off, building, or ready with how many files and URLs
   if (withTraffic) report.assetHashes = assetIndex ? { ...assetIndex.stats(), views: views ? views.stats() : null } : null;
@@ -83,7 +90,7 @@ const wantsTraffic = (query) => /(?:^|&)traffic(?:=(?:1|true|yes))?(?:&|$)/i.tes
  *   plugin studio (server/studio/index.js), or none
  * @returns {(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => void}
  */
-export function createRequestHandler({ serveStatic, health, log, trustProxy = 'auto', studio = null, mods = null, csp = null, trustedRuntime = null }) {
+export function createRequestHandler({ serveStatic, health, log, trustProxy = 'auto', studio = null, mods = null, csp = null, trustedRuntime = null, dynamicRoutes = null }) {
   async function handleRequest(req, res) {
     const url = req.url || '/';
     if (url.length > MAX_URL_LENGTH) { sendError(req, res, 414, '请求地址过长 · URI too long'); return; }
@@ -96,6 +103,20 @@ export function createRequestHandler({ serveStatic, health, log, trustProxy = 'a
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.setHeader('Allow', 'GET, HEAD');
       sendError(req, res, 405, '不支持的请求方法 · Method not allowed');
+      return;
+    }
+    // 包声明的只读动态端点（uses 含 "route"）：命中就答 JSON，不落到静态文件。
+    if (dynamicRoutes && dynamicRoutes.size && dynamicRoutes.has(parts.rawPath)) {
+      const entry = dynamicRoutes.get(parts.rawPath);
+      const out = runDynamicRoute(entry.handler);
+      if (!out.ok) { log.warn?.(`[route] ${parts.rawPath}: ${out.reason}`); sendError(req, res, 500, '包端点执行失败 · pack route failed'); return; }
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': DYNAMIC_ROUTE_CACHE_HEADERS[entry.cache] || 'no-store',
+        'Content-Length': out.body.length,
+      });
+      if (req.method === 'HEAD') { res.end(); return; }
+      res.end(out.body);
       return;
     }
     if (parts.rawPath === '/healthz') {

@@ -44,8 +44,9 @@ export function modPage({ inbox, keyHint }) {
 <body>
 <main>
   <h1>模组管理 · Mods</h1>
-  <p class="sub">只在运行服务器的这台机器或局域网可用。导入只**安装**，不会自动在任何房间启用 —— 房间仍需自己选中。
-  · Local / LAN only. An import installs; a room still has to switch it on.</p>
+  <p class="sub">只在运行服务器的这台机器或局域网可用。导入只**安装**；用「已安装」里的开关把它加进新房间的默认插件集
+  （<code>plugins/config.json</code> 的 <code>default</code>）。已开的房间仍按自己的选择。
+  · Local / LAN only. An import installs; the switch in "Installed" puts it in the default set a new room starts with.</p>
 
   <section>
     <h2>钥匙 · Key</h2>
@@ -86,7 +87,7 @@ export function modPage({ inbox, keyHint }) {
       <span class="dim">收件目录 · inbox: <code>${esc(inbox)}</code>（把 zip 丢进去即安装 · drop a zip in to install）</span>
     </div>
     <div class="row" style="margin-bottom:10px"><span id="platform" class="dim"></span></div>
-    <table><thead><tr><th>id</th><th>名称</th><th>版本</th><th>类别</th><th>状态</th></tr></thead><tbody id="rows"></tbody></table>
+    <table><thead><tr><th>id</th><th>名称</th><th>版本</th><th>类别</th><th>状态</th><th>启用 · on</th></tr></thead><tbody id="rows"></tbody></table>
   </section>
 
   <section>
@@ -97,6 +98,7 @@ export function modPage({ inbox, keyHint }) {
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const out = $('out');
   const show = (v) => { out.textContent = typeof v === 'string' ? v : JSON.stringify(v, null, 2); out.className = ''; };
   const key = () => $('key').value.trim();
@@ -115,9 +117,28 @@ export function modPage({ inbox, keyHint }) {
       const state = p.status === 'loaded' ? '<span class="ok">loaded</span>'
         : p.status === 'disabled' ? '<span class="bad">disabled</span>'
         : '<span class="dim">' + (p.status || 'skipped') + '</span>';
-      return '<tr><td><code>' + p.id + '</code></td><td>' + p.name + '</td><td>' + p.version + '</td><td>' + (p.class || '') + '</td><td>' + state + '</td></tr>';
+      const on = p.enabled === true;
+      const toggle = '<td><span class="' + (on ? 'ok' : 'dim') + '">' + (on ? '启用' : '未启用') + '</span> '
+        + '<button class="alt" data-toggle="' + esc(p.id) + '" data-on="' + (on ? '0' : '1') + '">'
+        + (on ? '停用 · off' : '启用 · on') + '</button></td>';
+      return '<tr><td><code>' + esc(p.id) + '</code></td><td>' + esc(p.name) + '</td><td>' + esc(p.version) + '</td><td>'
+        + esc(p.class || '') + '</td><td>' + state + '</td>' + toggle + '</tr>';
     });
-    $('rows').innerHTML = rows.join('') || '<tr><td colspan="5" class="dim">（没有插件 · none）</td></tr>';
+    $('rows').innerHTML = rows.join('') || '<tr><td colspan="6" class="dim">（没有插件 · none）</td></tr>';
+    for (const b of $('rows').querySelectorAll('button[data-toggle]')) {
+      b.onclick = async () => {
+        if (!key()) return show('先填钥匙 · enter the key first');
+        b.disabled = true;
+        try {
+          const r = await fetch('/mod/enable', {
+            method: 'POST', headers: { 'X-SP-Mod': key(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: b.dataset.toggle, on: b.dataset.on === '1' }),
+          });
+          show(await r.json());
+          await status();
+        } catch (e) { show(String(e)); } finally { b.disabled = false; }
+      };
+    }
     return j;
   }
 

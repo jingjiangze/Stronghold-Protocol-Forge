@@ -2188,5 +2188,11 @@
   "删除这台浏览器里、当前服务器版本已经用不到的导入素材；仍在使用的会保留。": "Delete the imported assets in this browser that this server's current version no longer uses; the ones still in use stay.",
   "已清理 {n} 个旧版本文件。": "Cleared {n} old-version files.",
   "没有需要清理的旧版本文件。": "No old-version files to clear.",
-  "读不到服务器的素材清单，没有删除任何文件。": "Could not read the server's asset lists; nothing was deleted."
+  "读不到服务器的素材清单，没有删除任何文件。": "Could not read the server's asset lists; nothing was deleted.",
+  "正在查看 {name} 的布阵（只读，本回合定稿）": "Viewing {name}'s formation (read-only, final for this round)",
+  "查看 {name} 的布阵（只读，服务器不计算）": "View {name}'s formation (read-only; the server does not compute)",
+  "布阵": "Formation",
+  "战斗中观看其他人的布阵（自愿开启，服务器只转发、不计算）": "Watch others' formations in combat (opt-in; the server only relays, never computes)",
+  "观看布阵·开": "Watch formation: on",
+  "观看布阵·关": "Watch formation: off"
 }

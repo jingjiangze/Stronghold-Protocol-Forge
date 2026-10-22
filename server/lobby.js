@@ -274,6 +274,8 @@ export class Room {
      * put every human seat before every AI seat (Match opts.aiPicksLast). Kept across the room's matches.
      */
     this.aiPicksLast = false;
+    /** Hidden from public room lists (the mota client's 私密房间; room.create/private, host toggles with room.setPrivate). */
+    this.private = false;
     /** @type {string | null} */
     this.hostId = null;
     /** @type {(Seat | null)[]} */
@@ -339,6 +341,8 @@ export class Room {
     return {
       t: 'room.state',
       code: this.code,
+      // 私密房：只在 true 时出现，普通 room.state 逐字节不变（mota 客户端的「私密房间」勾选框读这一格）。
+      ...(this.private ? { private: true } : {}),
       hostId: this.hostId,
       mode: this.mode,
       difficulty: this.difficulty,
@@ -640,6 +644,7 @@ export class Lobby {
       case 'room.leave': return this.leave(session);
       case 'room.ready': return this.ready(session, msg);
       case 'room.setDifficulty': return this.setDifficulty(session, msg);
+      case 'room.setPrivate': return this.setPrivate(session, msg);
       case 'room.setAiPicksLast': return this.setAiPicksLast(session, msg);
       case 'room.addBot': return this.addBot(session);
       case 'room.removeBot': return this.removeBot(session, msg);
@@ -657,6 +662,7 @@ export class Lobby {
       case 'room.setMode': return this.setMode(session, msg);
       case 'room.contentReady': return this.contentReady(session, msg, ctx);
       case 'room.consent': return this.consent(session,msg);
+      case 'pack.msg': return this.packMsg(session, msg);
       default:
         if (typeof msg.t === 'string' && msg.t.startsWith('g.')) return this.routeGameNow(session, msg);
         return fail(ERR.BAD_MSG, `unhandled type ${String(msg.t).slice(0, 32)}`);
@@ -725,7 +731,7 @@ export class Lobby {
   // room.* handlers
   // ---------------------------------------------------------------------------------------------------
 
-  create(session, { mode, difficulty, test } = {}) {
+  create(session, { mode, difficulty, private: isPrivate, test } = {}) {
     // A test room exists only when the process switch allowed it. The check runs before the room is built.
     if (test === true && this.testEnabled !== true) return fail(ERR.TEST_DISABLED);
     const cur = this.roomOf(session);
@@ -745,6 +751,7 @@ export class Lobby {
     if (cur) this.removeMember(cur, session.playerId);
     const room = new Room(code, mode, difficulty, this.now());
     room.test = test === true;
+    room.private = mode !== 'solo' && isPrivate === true;
     room.content = this.vanilla;
     // the server owner's default plugins (plugins/config.json `default`; header "Gameplay plugins"): none — the original game
     const defaults = this.plugins?.defaults?.() || [];
@@ -870,6 +877,22 @@ export class Lobby {
       for (const s of room.seats) if (s && !s.isBot && s.playerId !== room.hostId) s.ready = false;
       this.broadcastState(room);
     }
+    return OK;
+  }
+
+  /**
+   * 私密开关 (host, before the match): a private room stays out of room.list; it is still joinable by code.
+   * The mota client sends this after creating a room (room.create's `private` is the initial value).
+   */
+  setPrivate(session, { private: v }) {
+    const room = this.roomOf(session);
+    if (!room) return fail(ERR.NOT_IN_ROOM);
+    if (room.hostId !== session.playerId) return fail(ERR.NOT_HOST);
+    if (room.match) return fail(ERR.ROOM_STARTED);
+    const next = v === true;
+    if (room.private === next) return OK;
+    room.private = next;
+    this.broadcastState(room);
     return OK;
   }
 
@@ -1595,6 +1618,39 @@ export class Lobby {
    * Route a 'g.*' intent or a 'b.*' report (server/net.js) to the running match — on the room's queue when its match runs
    * in a match host (header "Gameplay plugins").
    */
+  /**
+   * 包通道（§1.9.6）：一条不透明载荷从发送者送到**同一房间**、装了同一个包、声明过这个通道的客户端。
+   * 先问对局（`Match.handlePackMsg`，由包的 matchClass 包装器提供）：返回 true = 对局接管，不再广播；
+   * 否则（undefined / 没有该方法 / 抛错）照旧转发。`from`/`seat` 由服务端从会话与座位解析。
+   */
+  packMsg(session, msg) {
+    const room = this.roomOf(session);
+    if (!room) return fail(ERR.NOT_IN_ROOM);
+    const declared = this.packChannels instanceof Map ? this.packChannels.get(msg.pack) : null;
+    if (!declared || !declared.has(msg.channel)) return fail(ERR.BAD_MSG, `undeclared pack channel ${String(msg.pack)}/${String(msg.channel)}`);
+    const seat = room.seatOf(session.playerId);
+    const base = { pack: msg.pack, channel: msg.channel, from: session.playerId, seat: seat && Number.isInteger(seat.seat) ? seat.seat : null };
+    const frame = { ...base, ...(msg.data === undefined ? {} : { data: msg.data }) };
+    const match = room.match;
+    if (match && typeof match.handlePackMsg === 'function') {
+      let consumed = false;
+      try { consumed = match.handlePackMsg(session.playerId, frame) === true; } catch (e) { this.log.warn?.(`[lobby] pack.msg ${msg.pack}/${msg.channel} handler threw: ${e && e.message ? e.message : e}`); }
+      if (consumed) return OK;
+    }
+    const out = { t: 'pack.msg', ...frame };
+    for (const s of room.seats) {
+      if (!s || s.isBot || !s.playerId) continue;
+      const target = this.registry.byId(s.playerId);
+      if (target && target.connected) sendSession(target, out);
+    }
+    for (const sp of room.spectators) {
+      if (!sp || !sp.connected) continue;
+      const target = this.registry.byId(sp.playerId);
+      if (target && target.connected) sendSession(target, out);
+    }
+    return OK;
+  }
+
   routeGame(session, msg) {
     const room = this.queuedRoom(session);
     return room ? this.serial(room, () => this.routeGameNow(session, msg)) : this.routeGameNow(session, msg);

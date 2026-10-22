@@ -150,6 +150,9 @@ export class PlayerState {
     this.connected = this.isBot ? true : !!seat.connected;
     this.left = false;
     this.autoplay = false;
+    /** 战斗中观看他人布阵 (g.watchLineup, owner decision 2026-10-20): the VIEWER's own switch (never the room's) — while
+     *  it is on, MatchWatch.watch accepts a teammate's `n:<playerId>` prep board during a battle too. */
+    this.watchLineup = false;
     this.alive = true;
     this.lp = 0;
     this.bandId = null;
@@ -232,6 +235,8 @@ export class PlayerState {
     this.deployCapBonus = 0;
     this.deployCapMin = 0;
     this.deviceOverrides = {};
+    /** player-paid obstacle placements (board coords, applied at battleStart; monster-control) */
+    this.obstaclePlacements = [];
     this.tileOverrides = {};
     this.stats = {
       dmgDealt: 0, kills: 0, leaks: 0, gold: 0, refreshes: 0, merges: 0, itemMerges: 0, itemsEquipped: 0,

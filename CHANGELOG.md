@@ -1,3 +1,18 @@
+## 0.3.2 — 2026-10-21
+
+引擎面（engine surface）：把「包能对服务端做什么」变成显式契约，而不是靠约定。
+
+- 包的 `server.modules` 声明式契约（`shared/modSurface.js`）：可用的模块面白名单，越界即拒。
+- `pack.msg`：包可以向客户端发消息，走的是与内置消息同一条编解码路径。
+- lane：`server/modLanes.js` + `server/http/wsLanes.js` —— 包的 WebSocket 通道按 lane 隔离，互不抢流。
+- `server/modHostAdapter.js`：mod 宿主适配层，把包的生命周期接到宿主。
+- `server/http/routeMount.js`：路由挂载点收敛，包的 HTTP 面不再散落在主路由里。
+- `server/hostMetrics.js`：宿主侧指标（供包按需读取）。
+- 文档：`docs/ENGINE-SURFACE.md`、`docs/MOD-SURFACE.md`。
+- 守卫表：`test/modSurface.test.js`。
+
+整理：仓库分支收敛为 `main`（上游镜像）+ `master`（本产品线）。
+历史工作线归档为 `archive/branch/*` 标签，内容可随时取回。
 ## 0.3.1 — 2026-10-18
 
 ### 规则

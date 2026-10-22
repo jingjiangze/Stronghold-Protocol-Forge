@@ -9,7 +9,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
-  OVERLAY_ACTIVE, OVERLAY_DIR, OVERLAY_STAMP, buildShadow, overlayHash, resolveEngineOverlay, safeRel, shadowCurrent, shadowEntry,
+  OVERLAY_ACTIVE, OVERLAY_DIR, OVERLAY_STAMP, buildShadow, overlayHash, resolveEngineOverlay, safeRel, shadowArgv,
+  shadowCurrent, shadowEntry, shadowNodeOptions,
 } from '../../server/plugins/engineOverlay.js';
 
 const tmp = (name = 'sp-overlay-') => fs.mkdtempSync(path.join(os.tmpdir(), name));
@@ -129,4 +130,13 @@ test('shadowEntry: off, already inside, and the normal case', () => {
   assert.equal(path.relative(root, hit.entry).replace(/\\/g, '/'), `${OVERLAY_DIR}/server/index.js`);
 
   fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('the shadow child runs with --preserve-symlinks, so ROOT stays inside .shadow', () => {
+  // The shadow root IS symlinks. Without these flags Node realpath-uses the engine folder, and the
+  // runtime (Match, views, lobby) silently runs the untouched engine — only static files come from the
+  // overlay. The flags are also passed down via NODE_OPTIONS for the forked grandchildren (match hosts).
+  assert.deepEqual(shadowArgv(), ['--preserve-symlinks', '--preserve-symlinks-main']);
+  assert.equal(shadowNodeOptions({}), '--preserve-symlinks --preserve-symlinks-main');
+  assert.equal(shadowNodeOptions({ NODE_OPTIONS: '--max-warnings=0' }), '--max-warnings=0 --preserve-symlinks --preserve-symlinks-main');
 });

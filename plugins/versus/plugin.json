@@ -64,5 +64,18 @@
   "entry": {
     "meta": "server/meta.js",
     "server": "host/noop.js"
+  },
+  "combat": true,
+  "server": {
+    "modules": [
+      {
+        "id": "versuscore",
+        "entry": "server/mod.js",
+        "uses": [
+          "matchClass",
+          "healthz"
+        ]
+      }
+    ]
   }
 }

@@ -25,9 +25,10 @@ const noopLog = { info() {}, warn() {}, error() {}, debug() {} };
 /** 模块 id：小写字母/数字/`-`/`_`，2–32；与工坊包的判据同形。 */
 const MODULE_ID_RE = /^[a-z0-9][a-z0-9_-]{0,31}$/;
 
-/** 一条 `server/` 下的包内相对 `.mjs` 路径（无空段、无 `.`/`..`、无反斜杠）。 */
+/** 一条 `server/` 下的包内相对 `.mjs` / `.js` 路径（无空段、无 `.`/`..`、无反斜杠）。 */
 function validEntry(rel) {
-  if (typeof rel !== 'string' || !rel.startsWith('server/') || !rel.endsWith('.mjs')) return false;
+  if (typeof rel !== 'string' || !rel.startsWith('server/')) return false;
+  if (!rel.endsWith('.mjs') && !rel.endsWith('.js')) return false;
   if (rel.includes('\\')) return false;
   return rel.split('/').every((s) => s && s !== '.' && s !== '..');
 }

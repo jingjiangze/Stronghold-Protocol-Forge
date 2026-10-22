@@ -211,15 +211,33 @@ export function shadowEntry({ root, pluginsDir, env = process.env } = {}) {
   return fs.existsSync(entry) ? { entry, plugin: overlay.id, built } : null;
 }
 
+/** The execArgv the shadow child needs so its symlinks are not realpath-ed back to the engine. */
+export const PRESERVE_SYMLINK_FLAGS = Object.freeze(['--preserve-symlinks', '--preserve-symlinks-main']);
+
+/** execArgv to prepend to the shadow entry (pure, so a test pins the exact form). */
+export function shadowArgv() { return [...PRESERVE_SYMLINK_FLAGS]; }
+
+/** The child's NODE_OPTIONS: inherit the parent's, then append the preserve-symlinks flags for grandchildren. */
+export function shadowNodeOptions(env = process.env) {
+  return [String(env.NODE_OPTIONS || '').trim(), ...PRESERVE_SYMLINK_FLAGS].filter(Boolean).join(' ');
+}
+
 /**
  * Start the shadow root as a child process and mirror its exit, so `node server/index.js` stays the one command.
  * The child gets `SP_OVERLAY_ACTIVE=1` and therefore never spawns a second one.
+ *
+ * `--preserve-symlinks[-main]` is load-bearing: the shadow root IS symlinks, and Node's default
+ * realpath would resolve them back into the engine folder — `http/config.js` (a link) would report the
+ * ENGINE's ROOT, and the whole runtime (Match, views, lobby) would silently run the untouched engine
+ * while only the static files came from the overlay. The flags keep every module at its `.shadow/` path.
+ * `NODE_OPTIONS` carries them into the grandchildren the child forks (the match host workers).
  * @param {{ entry: string, argv?: string[], env?: Record<string,string|undefined> }} opts
  */
 export function spawnShadow({ entry, argv = process.argv.slice(2), env = process.env }) {
-  const child = spawn(process.execPath, [entry, ...argv], {
+  const nodeOptions = shadowNodeOptions(env);
+  const child = spawn(process.execPath, [...shadowArgv(), entry, ...argv], {
     stdio: 'inherit',
-    env: { ...env, [OVERLAY_ACTIVE]: '1' },
+    env: { ...env, [OVERLAY_ACTIVE]: '1', NODE_OPTIONS: nodeOptions },
   });
   for (const signal of ['SIGINT', 'SIGTERM']) {
     process.on(signal, () => { try { child.kill(signal); } catch { /* already gone */ } });

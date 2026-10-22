@@ -276,12 +276,14 @@ export function createStaticHandler({ publicDir, dataDir, sharedDir, simDir = pa
         return;
       }
     }
-    // 无损插件：clientOverlay 里的文件顶替同路径页面资源（client/** 与 shared/** 两族键，server/index.js 建表）。
+    // 客户端覆盖（server/index.js 建表）：code.client 插件的 client/** 与 shared/**，
+    // 以及 engine overlay 影子根里的实体文件 —— 同路径后者优先。
     if (clientOverlay) {
       const hit = clientOverlay.get(decoded.slice(1));
       if (hit) {
         res.writeHead(200, { 'Content-Type': hit.type, 'Cache-Control': 'no-cache', 'Content-Length': hit.body.length });
-        res.end(req.method === 'HEAD' ? undefined : hit.body); return;
+        res.end(req.method === 'HEAD' ? undefined : hit.body);
+        return;
       }
     }
     // Bare mount paths (e.g. "/data") → treat as the mount directory.

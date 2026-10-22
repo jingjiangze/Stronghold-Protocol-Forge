@@ -236,8 +236,6 @@ export class PlayerState {
     /** per-round counters (reset at round start) */
     this.round = { refreshes: 0, buys: 0, sells: 0, spent: 0, gainedChess: 0, arts: 0 };
     this.deployCapBonus = 0;
-    /** 2V2 ('versus'): the team this seat fights for (0..TEAMS-1); 0 in solo/coop. */
-    this.team = 0;
     this.deployCapMin = 0;
     this.deviceOverrides = {};
     /** player-paid obstacle placements (board coords, applied at battleStart; monster-control) */

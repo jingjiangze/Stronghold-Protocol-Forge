@@ -69,7 +69,7 @@ export class MatchViews {
     return f ? f.fieldId : null;
   }
 
-  publicView() {
+  publicView(viewerTeam = null) {
     const v = {
       t: 'm.public',
       phase: this.phase,
@@ -183,6 +183,27 @@ export class MatchViews {
         ok: e.ok === true,
         ...(e.code ? { code: e.code } : {}),
         ...(e.detail ? { detail: e.detail } : {}),
+      }));
+    }
+    // 2V2: the opponent's rows are a stub until the reveal round (R14); the viewer's own team is untouched.
+    if (this.isVersus && !this.opponentRevealed && viewerTeam != null && this.matchTeamIds().includes(viewerTeam)) {
+      for (const row of v.players) {
+        const ps = this.players.get(row.playerId);
+        if (!ps || this.teamIdOf(ps) === viewerTeam) continue;
+        row.hidden = true;
+        row.lp = Math.max(0, this.teamHpPool(this.teamIdOf(ps)) ?? 0);
+        delete row.bonds;
+        delete row.fieldId;
+        delete row.shopLevel;
+        delete row.boardCount;
+        delete row.status;
+        delete row.watchLineup;
+        delete row.skins;
+        delete row.pendingLp;
+      }
+      v.fields = v.fields.filter((f) => f.players.some((id) => {
+        const ps = this.players.get(id);
+        return !ps || this.teamIdOf(ps) === viewerTeam;
       }));
     }
     return v;

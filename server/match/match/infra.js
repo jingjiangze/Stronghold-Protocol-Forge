@@ -5,6 +5,7 @@
 // Installed on Match.prototype by server/match/Match.js (a method container: never instantiated; `this` is the match).
 
 import { buildDeployMap } from '../board.js';
+import { PHASE, opponentRevealed } from '../../../shared/constants.js';
 
 export class MatchInfra {
   /** Run a callback with error isolation, then flush the views. */
@@ -94,6 +95,12 @@ export class MatchInfra {
 
   /** The team ids present in this match, sorted (versus: [0,1]; solo/coop: [0]). */
   matchTeamIds() { return [...new Set(this.order.map((p) => this.teamIdOf(p)))].sort((a, b) => a - b); }
+
+  /**
+   * 2V2: whether the opponent's side is open right now — R14 onward (shared/constants.js opponentRevealed), and always
+   * at RESULT. Solo/coop have no opponent, so it is always true there.
+   */
+  get opponentRevealed() { return !this.isVersus || this.phase === PHASE.RESULT || opponentRevealed(this.round); }
 
   /**
    * 2V2: each team shares ONE HP pool = the sum of its members' chosen band HP. The pool REPLACES the individual LP:

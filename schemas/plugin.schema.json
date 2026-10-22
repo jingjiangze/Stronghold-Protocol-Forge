@@ -948,6 +948,11 @@
       "type": "boolean"
     },
     "numberUnits": {},
+    "code": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Lossless code plugin (server code root / client overlay / full data). Trusted plugins use it to ship client/** replacements declared as code.client."
+    },
     "overrides": {
       "type": "array",
       "maxItems": 200,

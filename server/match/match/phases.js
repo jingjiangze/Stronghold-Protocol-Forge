@@ -247,6 +247,7 @@ export class MatchPhases {
       this.markPrivate(ps);
     }
     void timeout;
+    this.initTeamHp();
     this.enterBattleCheck();
   }
 

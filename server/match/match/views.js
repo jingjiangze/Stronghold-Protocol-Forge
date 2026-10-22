@@ -95,6 +95,8 @@ export class MatchViews {
       hiddenBossId: this.hiddenBossId,
       bossRound: this.gd.bossRound,
       hiddenRound: this.gd.hiddenRound,
+      // 2V2: each team's shared HP pool; omitted in solo/coop so their public view stays byte-identical
+      ...(this.isVersus && this.teamLps ? { teamLps: Object.fromEntries(this.teamLps) } : {}),
       bossPairs: this.bossWaves ? this.bossWaves.map(w => w.players.slice()) : this.bossPairs ? this.bossPairs.map(ids => ids.slice()) : null,
       spRound: this.gd.spRounds().includes(this.round),
       // DESIGN §14: 'client' = battles are simulated by the browsers (b.start specs), 'server' = legacy streaming

@@ -122,6 +122,7 @@
 //   common.js     HAND_SIZE, TEMP_SIZE, MAX_OFFER_SLOTS, OK, fail
 
 import { FIELD } from './board.js';
+import { TEAM_SIZE, TEAMS } from '../../shared/constants.js';
 import { computeBonds } from './bondsMeta.js';
 import { HAND_SIZE, TEMP_SIZE } from './player/common.js';
 import { PlayerBasics } from './player/basics.js';
@@ -145,6 +146,8 @@ export class PlayerState {
     this.gd = m.gd;
     this.playerId = seat.playerId;
     this.seat = seat.seat;
+    // 2V2 ('versus'): the team follows the seat index (shared/constants.js teamOfSeat); 0 in solo/coop.
+    this.team = m.isVersus ? (Math.floor(this.seat / TEAM_SIZE) % TEAMS) : 0;
     this.name = seat.name;
     this.isBot = !!seat.isBot;
     this.connected = this.isBot ? true : !!seat.connected;
@@ -233,6 +236,8 @@ export class PlayerState {
     /** per-round counters (reset at round start) */
     this.round = { refreshes: 0, buys: 0, sells: 0, spent: 0, gainedChess: 0, arts: 0 };
     this.deployCapBonus = 0;
+    /** 2V2 ('versus'): the team this seat fights for (0..TEAMS-1); 0 in solo/coop. */
+    this.team = 0;
     this.deployCapMin = 0;
     this.deviceOverrides = {};
     /** player-paid obstacle placements (board coords, applied at battleStart; monster-control) */

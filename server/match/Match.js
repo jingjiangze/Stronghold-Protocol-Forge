@@ -272,7 +272,12 @@ export class Match {
     }
     this.opts = opts;
     this.roomCode = opts.roomCode ?? '----';
-    this.mode = opts.mode === 'solo' ? 'solo' : 'coop';
+    this.mode = opts.mode === 'solo' ? 'solo' : opts.mode === 'versus' ? 'versus' : 'coop';
+    /** 2V2 ('versus'): two teams of two, each sharing one HP pool and its own boss pool. */
+    this.isVersus = this.mode === 'versus';
+    /** @type {Map<number, number> | null} team id → shared HP pool (versus only; solo/coop keep per-player LP) */
+    this.teamLps = null;
+    this.teamLp = 0;
     this.difficulty = opts.difficulty;
     this.modeId = opts.modeId || modeIdFor(this.mode, opts.difficulty);
     this.seed = (Number(opts.seed) >>> 0) || 1;

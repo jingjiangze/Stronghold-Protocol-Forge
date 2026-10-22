@@ -1,0 +1,25 @@
+{
+  "records": 1,
+  "entries": [
+    {
+      "file": "modes",
+      "id": "mode_x_versus_2v2",
+      "base": "mode_multi_normal",
+      "set": {
+        "name": "2V2 对抗",
+        "code": "AC-VS",
+        "difficulty": "NORMAL",
+        "desc": "2V2 对抗：红蓝两队各两人，共享目标生命，对抗期用预算向对方波次投放怪物。14 回合 + 最终攻势。",
+        "effectDescList": [
+          "·2V2 红蓝两队",
+          "·对抗期预算放怪替换对方波次",
+          "·共享目标生命 / 独立 Boss 池",
+          "·R13 之后公开对方视角"
+        ],
+        "lastRound": 14,
+        "bossRound": 14,
+        "hiddenRound": null
+      }
+    }
+  ]
+}

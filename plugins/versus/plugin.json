@@ -1,0 +1,68 @@
+{
+  "manifest": 2,
+  "id": "versus",
+  "name": {
+    "zh": "2V2 对抗",
+    "en": "2V2 Versus"
+  },
+  "description": {
+    "zh": "2V2 对抗模式：红蓝两队各两人，共享血量、独立 Boss 池、对抗期预算放怪与替换对方波次。引擎侧需要 ROOM_MODES / g.confront / room.swapSeats 支持（gpt/versus-constants 分支）。",
+    "en": "2V2 versus mode: two teams of two with shared HP, per-team boss pools, a confront phase for budgeted monster placement and wave replacement. Requires engine support for ROOM_MODES / g.confront / room.swapSeats (gpt/versus-constants branch)."
+  },
+  "version": "0.1.0",
+  "app": ">=0.3.0 <0.4.0",
+  "api": 1,
+  "class": "trusted",
+  "scope": [
+    "room"
+  ],
+  "sourceLang": "zh",
+  "license": "AGPL-3.0-or-later",
+  "permissions": [
+    "data.add",
+    "meta.code",
+    "trusted.server"
+  ],
+  "modes": [
+    "data/modes.json"
+  ],
+  "settings": {
+    "teamSize": {
+      "type": "integer",
+      "default": 2,
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "label": {
+        "zh": "每队人数",
+        "en": "Players per team"
+      }
+    },
+    "confrontTargetSeconds": {
+      "type": "integer",
+      "default": 10,
+      "min": 5,
+      "max": 30,
+      "step": 1,
+      "label": {
+        "zh": "目标选择窗口（秒）",
+        "en": "Target selection window (s)"
+      }
+    },
+    "rosterMs": {
+      "type": "integer",
+      "default": 5000,
+      "min": 2000,
+      "max": 10000,
+      "step": 500,
+      "label": {
+        "zh": "名单公示（毫秒）",
+        "en": "Roster hold (ms)"
+      }
+    }
+  },
+  "entry": {
+    "meta": "server/meta.js",
+    "server": "host/noop.js"
+  }
+}

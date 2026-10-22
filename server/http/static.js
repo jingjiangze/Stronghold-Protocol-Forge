@@ -142,7 +142,7 @@ const CS_FILE = /^\/cs\/([0-9a-f]{16})\/([A-Za-z0-9._\/-]{1,200})$/;
  */
 export function createStaticHandler({ publicDir, dataDir, sharedDir, simDir = path.join(ROOT, 'server', 'sim'), packsDir = path.join(ROOT, 'packs'),
   pluginsDir = path.join(path.dirname(path.resolve(packsDir)), 'plugins'), packs = null, content = null, log = noopLog,
-  assetIndex = null, views = null, visual = null, contents = null }) {
+  assetIndex = null, views = null, visual = null, contents = null, clientOverlay = null }) {
   const registry = packs || createPluginRegistry({ publicDir, dataDir, packsDir, pluginsDir }, { log: /** @type {any} */ (log) });
   const sets = visual || (typeof registry.pluginFile === 'function' ? createVisualSets({ registry, log }) : null);
   let vanilla = content;
@@ -273,6 +273,15 @@ export function createStaticHandler({ publicDir, dataDir, sharedDir, simDir = pa
       const view = await views.get(decoded.slice('/data/'.length));
       if (view) {
         await serveBuffer(req, res, { body: view.body, hash: view.hash, type: MIME['.json'], cacheControl: 'no-cache', key: `view:${decoded}`, cache: gzipCache });
+        return;
+      }
+    }
+    // 影子根的客户端覆盖：engine overlay 顶替的文件按原路径服务（server/index.js 的 clientOverlay）
+    if (clientOverlay) {
+      const hit = clientOverlay.get(decoded.slice(1));
+      if (hit) {
+        res.writeHead(200, { 'Content-Type': hit.type, 'Cache-Control': 'no-cache', 'Content-Length': hit.body.length });
+        res.end(req.method === 'HEAD' ? undefined : hit.body);
         return;
       }
     }

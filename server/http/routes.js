@@ -91,6 +91,7 @@ const wantsTraffic = (query) => /(?:^|&)traffic(?:=(?:1|true|yes))?(?:&|$)/i.tes
  * @returns {(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => void}
  */
 export function createRequestHandler({ serveStatic, health, log, trustProxy = 'auto', studio = null, mods = null, csp = null, trustedRuntime = null, dynamicRoutes = null }) {
+  const scoreBucket = { at: 0, last: 0 };   // 评分上报的每 IP（本进程全局）限速
   async function handleRequest(req, res) {
     const url = req.url || '/';
     if (url.length > MAX_URL_LENGTH) { sendError(req, res, 414, '请求地址过长 · URI too long'); return; }
@@ -100,9 +101,23 @@ export function createRequestHandler({ serveStatic, health, log, trustProxy = 'a
     if (studio && studio.handles(parts.rawPath)) { await studio.handle(req, res, parts.rawPath, parts.query); return; }
     // the mod manager (server/mods/): /mod, /mod/status.json and its two writes — before the GET-only rule below
     if (mods && mods.handles(parts.rawPath)) { await mods.handle(req, res, parts.rawPath, parts.query); return; }
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
+    // 评分上报是唯一的 POST 端点，放行到下面的分支（客户端布阵评分库的收口，见 /api/lineup-score）。
+    if (req.method !== 'GET' && req.method !== 'HEAD' && parts.rawPath !== '/api/lineup-score') {
       res.setHeader('Allow', 'GET, HEAD');
       sendError(req, res, 405, '不支持的请求方法 · Method not allowed');
+      return;
+    }
+    // 评分上报（信任模型）：每 IP 限速，其余四条由聚合侧裁决；**永远 200**（fail-open，上报失败不影响对局）。
+    if (parts.rawPath === '/api/lineup-score') {
+      const cors = { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' };
+      if (req.method === 'OPTIONS') { res.writeHead(204, { ...cors, 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'content-type' }); res.end(); return; }
+      const now = Date.now();
+      scoreBucket.last = scoreBucket.last && now - scoreBucket.at < 1000 ? scoreBucket.last + 1 : 0;
+      scoreBucket.at = now;
+      if (scoreBucket.last > 5) { res.writeHead(200, cors); res.end('{"ok":true,"dropped":"rate"}'); return; }
+      let body = '';
+      req.on('data', (d) => { body += d; if (body.length > 64 * 1024) req.destroy(); });
+      req.on('end', () => { try { JSON.parse(body); } catch { /* 坏包只丢弃 */ } res.writeHead(200, cors); res.end('{"ok":true}'); });
       return;
     }
     // 包声明的只读动态端点（uses 含 "route"）：命中就答 JSON，不落到静态文件。

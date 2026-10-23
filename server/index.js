@@ -35,6 +35,7 @@
 // Programmatic use (tests): `const srv = await startServer({ port: 0, quiet: true }); … await srv.close();`
 // The server only auto-listens when this file is the process entry point.
 
+import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { getData, loadData } from './data.js';
@@ -157,7 +158,46 @@ export async function startServer(opts = {}) {
   const hosts = createMatchHosts({ contents, log, options: { transport, maxWorkers: Math.max(1, policy.get().maxSets), ...(opts.matchHost || {}) } });
   const { registry, lobby, network } = createSessionStack(matchWrappers.length ? { ...opts, MatchClass: MatchClassForLobby } : opts, { data, log, content, plugins: roomSets, hosts });
   lobby.packChannels = packChannels;
-  const serveStatic = createStaticHandler({ publicDir, dataDir, sharedDir, simDir, packsDir, pluginsDir, packs, content, log, assetIndex, views, visual, contents });
+  // 无损插件的客户端覆盖：声明了 code.client 的已加载插件，其 client/** 顶替同路径页面资源。
+  // 只允许 **loaded** 的插件覆盖：被 owner gate 拒掉的 trusted/script 插件也不能改页面（与 server 侧装载一致）。
+  const clientOverlay = new Map();
+  try {
+    const loadedPlugins = new Set((typeof packs.plugins === 'function' ? packs.plugins() : [])
+      .filter((p) => p && p.status === 'loaded')
+      .map((p) => p.id));
+    const order = [];
+    for (const id of (fs.existsSync(pluginsDir) ? fs.readdirSync(pluginsDir) : [])) {
+      if (!loadedPlugins.has(id)) continue;
+      const man = path.join(pluginsDir, id, 'plugin.json');
+      if (!fs.existsSync(man)) continue;
+      let m; try { m = JSON.parse(fs.readFileSync(man, 'utf8')); } catch { continue; }
+      if (m && m.code) order.push({ id, m });
+    }
+    order.sort((x, y) => (Number(x.m.loadOrder) || 0) - (Number(y.m.loadOrder) || 0) || x.id.localeCompare(y.id));
+    for (const { id, m } of order) {
+      const c = m.code;
+      if (!c || !Array.isArray(c.client)) continue;
+      for (const rel of c.client) {
+        const abs = path.join(pluginsDir, id, 'client', ...rel.split('/'));
+        if (!fs.existsSync(abs)) continue;
+        clientOverlay.set(rel, { body: fs.readFileSync(abs), type: MIME[path.extname(rel)] || 'application/octet-stream' });
+      }
+      // 插件自带的 shared/**（如评分策略模块）也按同路径顶替。
+      const sharedDirP = path.join(pluginsDir, id, 'shared');
+      if (fs.existsSync(sharedDirP)) {
+        const walkShared = (d, rel) => {
+          for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+            const child = rel ? rel + '/' + e.name : e.name;
+            if (e.isDirectory()) walkShared(path.join(d, e.name), child);
+            else clientOverlay.set('shared/' + child, { body: fs.readFileSync(path.join(d, e.name)), type: MIME[path.extname(child)] || 'application/octet-stream' });
+          }
+        };
+        walkShared(sharedDirP, '');
+      }
+    }
+  } catch (e) { log.warn?.(`[plugins] client overlay: ${e.message}`); }
+  if (clientOverlay.size) log.info?.(`[plugins] client overlay: ${clientOverlay.size} files`);
+  const serveStatic = createStaticHandler({ publicDir, dataDir, sharedDir, simDir, packsDir, pluginsDir, packs, content, log, assetIndex, views, visual, contents, clientOverlay });
   const studio = opts.studio === false ? null : createStudio({ publicDir, pluginsDir, dataDir, registry: packs, lobby, sessions: registry, log, fetch: opts.fetch });
   // the mod manager (server/mods/): the /mod page and the drop-in inbox. Imports go through the plugin system's own
   // forgeImport / installPluginBytes — one loading chain, no second one. Off with opts.mods === false or SP_MODS=off.

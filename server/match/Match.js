@@ -204,7 +204,7 @@
 //   common.js        what the modules share (FLOW_TICKER_PRIORITY, DELAYS, BAND_TURN_SECONDS — re-exported here, OK,
 //                    fail, BOSS_CLOCK_MS)
 
-import { PHASE, modeIdFor, COOP_HUNT, eventRoundsFor } from '../../shared/constants.js';
+import { PHASE, modeIdFor, COOP_HUNT, eventRoundsFor, TEAM_SIZE } from '../../shared/constants.js';
 import { isContentHash } from '../../shared/plugins/identity.js';
 import { Battle } from '../sim/Battle.js';
 import { DataSource } from '../sim/simdata.js';
@@ -275,8 +275,10 @@ export class Match {
     this.opts = opts;
     this.roomCode = opts.roomCode ?? '----';
     this.mode = opts.mode === 'solo' ? 'solo' : opts.mode === 'versus' ? 'versus' : 'coop';
-    /** 2V2 ('versus'): two teams of two, each sharing one HP pool and its own boss pool. */
+    /** versus: two teams of `teamSize` (2 = 2V2, 4 = 4V4), each sharing one HP pool and its own boss pool. */
     this.isVersus = this.mode === 'versus';
+    /** Players per team of this match (opts.teamSize from the room; 2 when a versus match is built directly). */
+    this.teamSize = this.isVersus && Number.isInteger(opts.teamSize) && opts.teamSize > 0 ? opts.teamSize : (this.isVersus ? TEAM_SIZE : 1);
     /** 同盟狩猎: a co-op room may run the SYSTEM-filled 狩猎期 (COOP_HUNT); off leaves co-op exactly as it was. */
     this.coopHuntOn = this.mode === 'coop' && opts.coopHunt !== false
       && (COOP_HUNT.enabled !== false || opts.coopHunt === true);

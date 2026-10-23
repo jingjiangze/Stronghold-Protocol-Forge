@@ -147,7 +147,7 @@ export class PlayerState {
     this.playerId = seat.playerId;
     this.seat = seat.seat;
     // 2V2 ('versus'): the team follows the seat index (shared/constants.js teamOfSeat); 0 in solo/coop.
-    this.team = m.isVersus ? (Math.floor(this.seat / TEAM_SIZE) % TEAMS) : 0;
+    this.team = m.isVersus ? (Math.floor(this.seat / (m.teamSize || TEAM_SIZE)) % TEAMS) : 0;
     this.name = seat.name;
     this.isBot = !!seat.isBot;
     this.connected = this.isBot ? true : !!seat.connected;

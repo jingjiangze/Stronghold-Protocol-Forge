@@ -2375,5 +2375,15 @@
   "有利": "Favorable",
   "中性": "Neutral",
   "不利": "Unfavorable",
-  "词条": "Entry"
+  "词条": "Entry",
+  "对面 C": "Opponent C",
+  "对面 D": "Opponent D",
+  "对抗模拟": "VERSUS SIMULATION",
+  "2V2": "2V2",
+  "4V4": "4V4",
+  "每队人数": "Players per team",
+  "每队 {n} 人": "{n} per team",
+  "两支队伍共享目标生命，在狩猎期用预算把怪物投进对方的波次。": "Two teams share one HP pool; in the Hunt Phase each side spends a budget to send monsters into the other team's wave.",
+  "2V2 或 4V4 · 每队共享生命池": "2V2 or 4V4 · one shared HP pool per team",
+  "狩猎期投放 · 击杀投放怪得赏金": "Hunt Phase placements · kill placed monsters for bounty"
 }

@@ -16,15 +16,19 @@ import {
 
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
 
-// The four target keys of `g.event.pick` (EVENT_TARGETS), their msgids and their data-testids. The panel lists the
-// opponents first, then the teammate and 自己 (the order the player scans them in).
-const TARGETS = [
-  { key: 'oppA', label: N_('对面 A'), testid: 'event-target-oppA' },
-  { key: 'oppB', label: N_('对面 B'), testid: 'event-target-oppB' },
-  { key: 'mate', label: N_('队友'), testid: 'event-target-mate' },
-  { key: 'self', label: N_('自己'), testid: 'event-target-self' },
-];
-const TARGET_LABEL = Object.fromEntries(TARGETS.map((x) => [x.key, x.label]));
+// The target keys of `g.event.pick` (2V2: EVENT_TARGETS; 4V4 adds oppC / oppD), their msgids and their data-testids.
+// The panel lists the opponents first, then the teammate and 自己 (the order the player scans them in). Which of them
+// a room actually offers comes from the server (`ally.targets[myId]`), never from this table.
+const TARGET_ORDER = ['oppA', 'oppB', 'oppC', 'oppD', 'mate', 'self'];
+const TARGETS_ALL = {
+  oppA: { key: 'oppA', label: N_('对面 A'), testid: 'event-target-oppA' },
+  oppB: { key: 'oppB', label: N_('对面 B'), testid: 'event-target-oppB' },
+  oppC: { key: 'oppC', label: N_('对面 C'), testid: 'event-target-oppC' },
+  oppD: { key: 'oppD', label: N_('对面 D'), testid: 'event-target-oppD' },
+  mate: { key: 'mate', label: N_('队友'), testid: 'event-target-mate' },
+  self: { key: 'self', label: N_('自己'), testid: 'event-target-self' },
+};
+const TARGET_LABEL = Object.fromEntries(TARGET_ORDER.map((k) => [k, TARGETS_ALL[k].label]));
 
 // Entry names: the server sends `key` (and the numeric id), the msgid is the Chinese name of the entry. Shared with
 // ui/roundBuffs.js (the team panel's one-line "this round's entries" strip), so the two views can never show
@@ -224,10 +228,11 @@ export function EventOverlay({ pub, busy = false, onPick }) {
   const players = Array.isArray(pub.players) ? pub.players : [];
   const byId = new Map(players.map((p) => [p.playerId, p]));
   const targets = (ally.targets && ally.targets[myId]) || {};
-  // 同盟狩猎 has no opposing team: the server sends only `self` / `mate` (COOP_HUNT.targets), so the panel must not
-  // render the two dead 对面 seats either (the mode, not a missing seat, is why they do not exist).
-  const versus = ['oppA', 'oppB'].some((k) => Object.prototype.hasOwnProperty.call(targets, k));
-  const targetList = versus ? TARGETS : TARGETS.filter(({ key }) => key === 'self' || key === 'mate');
+  // The server decides which keys exist: 2V2 sends the four EVENT_TARGETS, 4V4 adds oppC / oppD, and 同盟狩猎 sends
+  // only `self` / `mate` (no opposing team). Rendering whatever it sent keeps all three in one code path.
+  const targetList = TARGET_ORDER.filter((k) => Object.prototype.hasOwnProperty.call(targets, k)).map((k) => TARGETS_ALL[k]);
+  const versus = targetList.some(({ key }) => key.startsWith('opp'));
+  if (!targetList.length) targetList.push(TARGETS_ALL.self, TARGETS_ALL.mate);
   const list = Array.isArray(ally.available && ally.available[myId]) ? ally.available[myId] : null;
   const available = list ? new Set(list) : null;
   const myPick = (ally.picks && ally.picks[myId]) || null;

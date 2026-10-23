@@ -914,7 +914,7 @@ button.bpop__harmony:hover { border-style: solid; color: #fff; }
   -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: rgba(234, 255, 248, .28) transparent; padding-right: .04rem; }
 .evov__body::-webkit-scrollbar { width: .08rem; }
 .evov__body::-webkit-scrollbar-thumb { background: rgba(234, 255, 248, .26); border-radius: .04rem; }
-.evov__targets { display: grid; grid-template-columns: repeat(4, 1fr); gap: .1rem; flex: 0 0 auto; }
+.evov__targets { display: grid; grid-template-columns: repeat(auto-fit, minmax(1.5rem, 1fr)); gap: .1rem; flex: 0 0 auto; }
 /* 同盟狩猎 has only 队友 / 自己: two targets, two columns (no dead 对面 seats) */
 .evov__targets--duo { grid-template-columns: repeat(2, 1fr); }
 .evotarget { display: flex; flex-direction: column; align-items: flex-start; gap: .03rem; padding: .09rem .12rem;

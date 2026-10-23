@@ -105,6 +105,9 @@ export class MatchInfra {
   /** Does this match run a 狩猎期 at all? 2V2 对抗期 and 同盟狩猎 both do; solo never does. */
   get huntMode() { return this.isVersus || this.coopHuntOn; }
 
+  /** The living, seated members of a player's team (同盟狩猎's `mate` target picks from here). */
+  aliveAlliesOf(ps) { return this.alliesOf(ps).filter((p) => p.alive); }
+
   /**
    * 2V2: each team shares ONE HP pool = the sum of its members' chosen band HP. The pool REPLACES the individual LP:
    * a team lives and dies as one. Built once every seat has a band (MatchPhases.finishBandDraft); solo/coop never

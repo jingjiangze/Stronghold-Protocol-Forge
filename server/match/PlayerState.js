@@ -258,6 +258,23 @@ export class PlayerState {
       dmgDealt: 0, kills: 0, leaks: 0, gold: 0, refreshes: 0, merges: 0, itemMerges: 0, itemsEquipped: 0,
       bossDamage: 0, lpLost: 0, buys: 0, sells: 0, perfectRounds: 0, fundsGained: 0, healing: 0,
     };
+    /**
+     * 2V2 事件期 (server/match/match/event.js): the entries this player RECEIVED — `{ card, mag, from, round, target }` —
+     * and the accumulated modifiers they produce (eventModsFor). An entry is in force only for EVENT_DURATION_ROUNDS
+     * rounds from its `round`; startRound re-derives eventMods with the current round, and battleInput filters the refs
+     * the same way. `eventTargets` = the target keys this player has already given an entry to (no repeats in one match).
+     */
+    this.eventEntries = [];
+    /** the absolute round the entry windows are evaluated against (set by startRound; eventModsFor / battleInput). */
+    this.eventRound = 0;
+    this.eventTargets = [];
+    /** the ally entries this player has drawn so far (ids; a card is never drawn twice for one player) */
+    this.eventCards = [];
+    this.eventMods = {
+      atkPct: 0, aspd: 0, hpPct: 0, defPct: 0, defIgnorePct: 0, regenPct: 0, dmgTakenMul: 1, moveMul: 1, deploy: 0,
+      spRecoveryMul: 1, spRecoveryFlat: 0, spCostFlat: 0,
+      goldPerRound: 0, bountyGold: 0, enemySpeedMul: 1, refreshDiscount: 0, refreshUses: 0, sellDiscount: 0,
+    };
     this.eliminatedRound = null;
     this.creditedKills = 0;
     this.lpAtFinal = null;

@@ -1740,7 +1740,7 @@ function MatchScreen() {
         onReward=${(i) => actions.reward(i)} onRewardLater=${() => setRewardMin(true)} onArm=${setArmedCard}
         merchant=${phase === PHASE.PREP ? priv?.merchant || null : null}
         onWithdraw=${(gold) => actions.merchantWithdraw(gold)}
-        versus=${!!pub?.contestStartRound} merchantRemind=${false} />` : null}
+        versus=${players.some((p) => p.team != null)} merchantRemind=${false} />` : null}
 
       ${phase === PHASE.PREP && priv?.shop?.rewardOffer ? html`<${RewardOverlay} priv=${priv} minimized=${rewardMin || barCollapsed}
         onMinimize=${(m) => { setRewardMin(m); if (!m) setCollapsed(false); }} />` : null}

@@ -157,11 +157,16 @@ export class MatchViews {
       players: this.order.map((ps) => ({
         playerId: ps.playerId,
         seat: ps.seat,
+        // 2V2 ('versus'): the team this player fights for — present only in a versus match (the client groups the team
+        // panel by it); 'solo' / 'coop' rows keep their exact shape
+        ...(this.isVersus ? { team: ps.team } : {}),
         name: ps.name,
         isBot: ps.isBot,
         connected: ps.isBot || (ps.connected && !ps.left),
         alive: ps.alive,
-        lp: Math.max(0, ps.lp),
+        // 2V2: the row carries the TEAM's shared HP pool (both teammates show the same number; the internal ps.lp is
+        // only a split of it); solo/coop keep their own LP.
+        lp: this.teamLps ? Math.max(0, this.teamHpPool(ps.team) ?? 0) : Math.max(0, ps.lp),
         bandId: ps.bandId,
         shopLevel: ps.shop.level,
         boardCount: ps.deployCount,
@@ -238,6 +243,11 @@ export class MatchViews {
     }
     // 2V2: the drawn round where the 对抗期 starts (R4/R5/R6; m.public.contestStartRound)
     if (this.isVersus && this.contestStartRound != null) v.contestStartRound = this.contestStartRound;
+    // 2V2 事件期: who gave whom and which entry number — public by design (the cost entries affect the economy)
+    {
+      const ev = this.eventView();
+      if (ev) v.event = ev;
+    }
     // 2V2: the opponent's rows are a stub until the reveal round (R14); the viewer's own team is untouched.
     if (this.isVersus && !this.opponentRevealed && viewerTeam != null && this.matchTeamIds().includes(viewerTeam)) {
       for (const row of v.players) {
@@ -357,8 +367,9 @@ export class MatchViews {
     }
     if (!this.wave) return [];
     const bounty = bountySpawns(this.gd, this.round, this.wave, ps.bounties, ps.playerId, { solo: this.isSolo });
+    // 2V2 事件期: the round's monster card + 强力属性 subset (the preview's counts/flags must match the battle)
     // 同盟狩猎: the system's prey is appended last, exactly as _normalOpts inserts it
-    let list = [...this.wave.spawns, ...bounty];
+    let list = this.foeWaveSpawns([...this.wave.spawns, ...bounty]);
     if (this.coopHuntActive()) list = this.applyCoopHunt(list, ps);
     return previewOf(list);
   }

@@ -79,7 +79,10 @@ export const VERSUS_CONFRONT = Object.freeze({
  * `ratio` with NO multiplier. Every alive player gets their OWN plan, inserted into their OWN wave.
  */
 export const COOP_HUNT = Object.freeze({
-  enabled: true,
+  // OFF in this build: 同盟狩猎 changes every co-op match (an event period + a system-run 狩猎期 per hunt round). The
+  // versus mode does not need it, and co-op keeps its exact 0.3.2 flow (the golden corpus pins it). A server/room that
+  // wants it passes `opts.coopHunt` (Match constructor) or flips this line — the whole implementation stays in place.
+  enabled: false,
   /** The 狩猎期 start round is drawn from these (the 2V2 contest draw). */
   startRounds: Object.freeze([4, 5, 6]),
   ...HUNT_RHYTHM,
@@ -127,6 +130,159 @@ export const DIFFICULTY_COLORS = { FUNNY: '#f6a329', NORMAL: '#e85a1a', HARD: '#
 // modeId in data/config.json = `mode_${type}_${difficulty.toLowerCase()}` with type single|multi
 export const modeIdFor = (roomMode, difficulty) =>
   `mode_${roomMode === 'solo' ? 'single' : 'multi'}_${difficulty.toLowerCase()}`;
+
+/** The four target keys of `g.event.pick { target }`. */
+export const EVENT_TARGETS = Object.freeze(['self', 'mate', 'oppA', 'oppB']);
+/** A self-targeted entry's magnitude multiplier (all numeric values in the entry, refresh uses included). */
+export const EVENT_SELF_MUL = 2;
+/**
+ * How many rounds an ally entry stays in force (user 2026-10-17: 集市换货's 出售价 −1 lasted the whole match, so a sold
+ * operator returned nothing — far too strong). An entry picked at round R is active in R, R+1, …, R+duration−1 and
+ * expires at R+duration, for every effect (battle stats, deploy cap, income, prices, bounty). History keeps every pick:
+ * only "currently in force" is filtered. Monster entries are NOT affected — they already act on their own single round
+ * (foeEvent.round === this.round). One line to tune.
+ */
+export const EVENT_DURATION_ROUNDS = 4;
+/** The event phase's selection window in seconds (a timed-out seat is auto-picked by EV: botEventTarget). */
+export const EVENT_PICK_SECONDS = 20;
+/**
+ * The three sequence rows — the single source of the per-order odds and elite share ranges. The ally odds apply to the
+ * ally channel as a whole (the target decides WHO receives it; "增" is good for the target), moving from friendly E1 to
+ * debuff-heavy E3. The monster odds are from OUR side (favor = weakens the enemies). `eliteShares` are the two values
+ * the 强力属性 share is drawn from in that period.
+ */
+export const EVENT_SEQUENCE = Object.freeze([
+  Object.freeze({
+    index: 1,
+    allyOdds: Object.freeze({ down: 15, mid: 45, up: 40 }),
+    foeOdds: Object.freeze({ favor: 35, mid: 40, unfavor: 25 }),
+    eliteShares: Object.freeze([0.10, 0.15]),
+  }),
+  Object.freeze({
+    index: 2,
+    allyOdds: Object.freeze({ down: 30, mid: 40, up: 30 }),
+    foeOdds: Object.freeze({ favor: 25, mid: 40, unfavor: 35 }),
+    eliteShares: Object.freeze([0.15, 0.20]),
+  }),
+  Object.freeze({
+    index: 3,
+    allyOdds: Object.freeze({ down: 45, mid: 30, up: 25 }),
+    foeOdds: Object.freeze({ favor: 20, mid: 35, unfavor: 45 }),
+    eliteShares: Object.freeze([0.20, 0.25]),
+  }),
+]);
+/** E2's neutral ally row (the match always reads EVENT_SEQUENCE; kept as the documented baseline for tools/tests). */
+export const EVENT_ODDS = EVENT_SEQUENCE[1].allyOdds;
+/** E2's neutral monster row (same note). */
+export const EVENT_FOE_ODDS = EVENT_SEQUENCE[1].foeOdds;
+/** E2's elite share range (same note). */
+export const EVENT_FOE_ELITE_SHARES = EVENT_SEQUENCE[1].eliteShares;
+/**
+ * The 24 ally entries, in four classes (output / survival / sp / economy). The SP class replaced the removed range
+ * class (射程 removal, user 2026-10-17): no entry carries `range` / `rangeExtend` / attack-distance data any more — the
+ * battle side only uses existing engine mods.
+ *
+ * Class / entry (name is the comment; the UI slice maps the `key` to its i18n msgid). Magnitudes were scaled ×1.5
+ * (user 2026-10-17, "方案 A 只 ×1.5"): percentages keep two decimals (half-percents round to the integer percent the
+ * owner listed), flat points scale, fixed coins +2 → +3; the discrete values (SP cost ±1, deploy +1, the market's
+ * refresh/sell integers) stay as they are. "给自己" still multiplies the FINAL magnitudes by 2.
+ *   output    磨刃 atkPct +20% · 追风 aspd +18 · 破甲 defIgnorePct 22% · 钝口 atkPct −9% · 重弩 atkPct +20% / aspd −18 ·
+ *             连击 aspd +27 / atkPct −15%
+ *   survival  猎人披挂 hpPct +38% · 营地篝火 regenPct 9%/s · 铁衣 defPct +22% · 血痕 dmgTaken +12% · 轻装远行 hpPct +38% /
+ *             atkPct −11% · 负甲 defPct +30% / moveMul 0.85 · 陷足 enemySpeed +22%
+ *   sp        蓄势 spRecoveryMul 1.15 · 静息 spRecoveryFlat 0.15 · 轻省 spCostFlat −1 · 滞涩 spRecoveryMul 0.85 ·
+ *             换息 spRecoveryMul 1.22 / spCostFlat +1 · 回环 spRecoveryFlat 0.15 / spCostFlat +1
+ *   economy   猎人佣金 +3 金/回合 · 赏金嗅觉 投放怪赏金 +3/次 · 轻捷 上场人数 +1 · 空手而归 −3 金/回合 ·
+ *             集市换货 刷新费 −1（每回合 2 次）/ 出售价 −1
+ * Ratios are stored as plain percentages in this DATA table (a compact summary, not the battle rule). The battle
+ * applies the event entries through the **环境buff乘区 / environment buff bucket**:
+ *   ① every source multiplies once: `stat = base × Π(1 + p_i)` — two +20 % entries are 1.20 × 1.20 = 1.44;
+ *   ② flat values (ASPD / SP recovery / SP cost) are highest priority: they are added to the panel first and are
+ *      never scaled by the bucket;
+ *   ③ the bucket is event-only: it never mixes with the additive pool of bonds / equipment / skills / 机变.
+ * Flat points for aspd / spRecoveryFlat / spCostFlat, economy in fixed coins. `ev` = the AI heuristic (up > 0,
+ * down < 0, mid ≈ 0), scaled with the continuous magnitudes (the unchanged discrete entries keep their ev).
+ */
+export const EVENT_CARDS = Object.freeze([
+  // ---- output ---------------------------------------------------------------------------------------------------
+  Object.freeze({ id: 1, key: 'whetstone', class: 'output', kind: 'up', atkPct: 0.20, ev: 15 }),        // 磨刃
+  Object.freeze({ id: 2, key: 'tailwind', class: 'output', kind: 'up', aspd: 18, ev: 12 }),              // 追风
+  Object.freeze({ id: 3, key: 'armor_break', class: 'output', kind: 'up', defIgnorePct: 0.22, ev: 12 }),  // 破甲
+  Object.freeze({ id: 4, key: 'blunted', class: 'output', kind: 'down', atkPct: -0.09, ev: -12 }),       // 钝口
+  Object.freeze({ id: 5, key: 'heavy_crossbow', class: 'output', kind: 'mid', atkPct: 0.20, aspd: -18, ev: 0 }), // 重弩
+  Object.freeze({ id: 6, key: 'rapid_volley', class: 'output', kind: 'mid', aspd: 27, atkPct: -0.15, ev: 1.5 }),   // 连击
+  // ---- survival -------------------------------------------------------------------------------------------------
+  Object.freeze({ id: 7, key: 'hunter_cloak', class: 'survival', kind: 'up', hpPct: 0.38, ev: 18 }),    // 猎人披挂
+  Object.freeze({ id: 8, key: 'campfire', class: 'survival', kind: 'up', regenPct: 0.09, ev: 21 }),      // 营地篝火
+  Object.freeze({ id: 9, key: 'iron_hide', class: 'survival', kind: 'up', defPct: 0.22, ev: 12 }),       // 铁衣
+  Object.freeze({ id: 10, key: 'bloodstain', class: 'survival', kind: 'down', dmgTaken: 0.12, ev: -15 }), // 血痕
+  Object.freeze({ id: 11, key: 'light_travel', class: 'survival', kind: 'mid', hpPct: 0.38, atkPct: -0.11, ev: 3 }), // 轻装远行
+  Object.freeze({ id: 12, key: 'burden_armor', class: 'survival', kind: 'mid', defPct: 0.30, moveMul: 0.85, ev: 1.5 }), // 负甲
+  Object.freeze({ id: 13, key: 'mired', class: 'survival', kind: 'down', enemySpeed: 0.22, ev: -10.5 }),   // 陷足
+  // ---- sp (技力; all engine-native mods) -------------------------------------------------------------------------
+  Object.freeze({ id: 14, key: 'build_up', class: 'sp', kind: 'up', spRecoveryMul: 1.15, ev: 12 }),        // 蓄势
+  Object.freeze({ id: 15, key: 'stillness', class: 'sp', kind: 'up', spRecoveryFlat: 0.15, ev: 10.5 }),      // 静息
+  Object.freeze({ id: 16, key: 'frugal', class: 'sp', kind: 'up', spCostFlat: -1, ev: 9 }),              // 轻省
+  Object.freeze({ id: 17, key: 'stagnant', class: 'sp', kind: 'down', spRecoveryMul: 0.85, ev: -12 }),     // 滞涩
+  Object.freeze({ id: 18, key: 'breath_swap', class: 'sp', kind: 'mid', spRecoveryMul: 1.22, spCostFlat: 1, ev: 1.5 }), // 换息
+  Object.freeze({ id: 19, key: 'cycle', class: 'sp', kind: 'mid', spRecoveryFlat: 0.15, spCostFlat: 1, ev: 0 }),      // 回环
+  // ---- economy / mechanism --------------------------------------------------------------------------------------
+  Object.freeze({ id: 20, key: 'hunter_commission', class: 'economy', kind: 'up', goldPerRound: 3, ev: 15 }), // 猎人佣金
+  Object.freeze({ id: 21, key: 'bounty_scent', class: 'economy', kind: 'up', bountyGold: 3, ev: 9 }),    // 赏金嗅觉
+  Object.freeze({ id: 22, key: 'nimble', class: 'economy', kind: 'up', deploy: 1, ev: 9 }),              // 轻捷
+  Object.freeze({ id: 23, key: 'empty_handed', class: 'economy', kind: 'down', goldPerRound: -3, ev: -13.5 }), // 空手而归
+  Object.freeze({ id: 24, key: 'market_swap', class: 'economy', kind: 'mid', refreshDiscount: 1, refreshUses: 2, sellDiscount: 1, ev: 1 }), // 集市换货
+]);
+
+/**
+ * The 12 monster entries, four classes × three (one favourable to us = weakens the enemies, one neutral exchange, one
+ * unfavourable = strengthens them). One is drawn per event on its own seeded stream, independent of the target choices,
+ * and merged into THAT round's normal wave (`Match.foeWaveSpawns`): hpMul / atkMul / defMul / speedMul are the engine's
+ * spawn mods, `countAdd` adds to every spawn run's count (clamped to ≥ 1). A monster entry never enters a player's mods
+ * and never changes a bounty (the 赏金 stays the placement's own coins). Magnitudes are ×1.5 (user 2026-10-17):
+ *   攻击  锈刃 atkMul 0.85 · 换骨 atkMul 1.15 / hpMul 0.85 · 獠牙 atkMul 1.15
+ *   生存  创口 hpMul 0.82 · 坚壳 defMul 1.22 / speedMul 0.78 · 厚皮 hpMul 1.18
+ *   速度  迟缓 speedMul 0.78 · 盘踞 speedMul 0.7 / hpMul 1.18 · 疾行 speedMul 1.22
+ *   数量  稀疏 countAdd −1 · 替换 countAdd −1 / hpMul 1.3 · 增援 countAdd +1
+ * `ev` is from OUR side (+ favourable, − unfavourable). The per-sequence odds live in EVENT_SEQUENCE (E2 = 25 / 40 / 35,
+ * expectation −0.10; E1 +0.10; E3 −0.25): the monster channel is a gentle sequence-driven difficulty ramp.
+ */
+export const EVENT_FOE_CARDS = Object.freeze([
+  // ---- attack ---------------------------------------------------------------------------------------------------
+  Object.freeze({ id: 1, key: 'rusted_blade', class: 'attack', kind: 'favor', atkMul: 0.85, ev: 1 }),      // 锈刃
+  Object.freeze({ id: 2, key: 'bone_swap', class: 'attack', kind: 'mid', atkMul: 1.15, hpMul: 0.85, ev: 0 }), // 换骨
+  Object.freeze({ id: 3, key: 'fangs', class: 'attack', kind: 'unfavor', atkMul: 1.15, ev: -1 }),          // 獠牙
+  // ---- survival -------------------------------------------------------------------------------------------------
+  Object.freeze({ id: 4, key: 'wound', class: 'survival', kind: 'favor', hpMul: 0.82, ev: 1 }),           // 创口
+  Object.freeze({ id: 5, key: 'hard_shell', class: 'survival', kind: 'mid', defMul: 1.22, speedMul: 0.78, ev: 0 }), // 坚壳
+  Object.freeze({ id: 6, key: 'thick_hide', class: 'survival', kind: 'unfavor', hpMul: 1.18, ev: -1 }),   // 厚皮
+  // ---- speed ----------------------------------------------------------------------------------------------------
+  Object.freeze({ id: 7, key: 'sluggish', class: 'speed', kind: 'favor', speedMul: 0.78, ev: 1 }),        // 迟缓
+  Object.freeze({ id: 8, key: 'coiled', class: 'speed', kind: 'mid', speedMul: 0.7, hpMul: 1.18, ev: 0 }), // 盘踞
+  Object.freeze({ id: 9, key: 'swift', class: 'speed', kind: 'unfavor', speedMul: 1.22, ev: -1 }),        // 疾行
+  // ---- count / wave ---------------------------------------------------------------------------------------------
+  Object.freeze({ id: 10, key: 'sparse', class: 'count', kind: 'favor', countAdd: -1, ev: 1 }),           // 稀疏
+  Object.freeze({ id: 11, key: 'replace', class: 'count', kind: 'mid', countAdd: -1, hpMul: 1.3, ev: 0 }), // 替换
+  Object.freeze({ id: 12, key: 'reinforce', class: 'count', kind: 'unfavor', countAdd: 1, ev: -1 }),       // 增援
+]);
+
+/**
+ * 强力属性子集 (user 2026-10-17, tier 2): every event ALSO marks a share of that round's enemies as 强力 — the normal
+ * wave AND the 赏金怪 (tag 'bounty'); the share range moves with the sequence (EVENT_SEQUENCE.eliteShares:
+ * E1 10–15 %, E2 15–20 %, E3 20–25 %). One attribute is drawn per event (1 of these 4), and the marked units get its
+ * multiplier ON TOP of the monster card's own mods. The bounty amount (`bounty.coins`) is never recalculated.
+ *   獠牙 fangs      attack +25 %  (atkMul 1.25)
+ *   厚皮 thick_hide health +30 %  (hpMul 1.30)
+ *   坚壳 hard_shell armor  +25 %  (defMul 1.25)
+ *   疾行 swift      move   +20 %  (speedMul 1.20)
+ * The count is max(1, round(share × the wave's monster count, 赏金怪 included)).
+ */
+export const EVENT_FOE_ELITES = Object.freeze([
+  Object.freeze({ key: 'fangs', atkMul: 1.25 }),
+  Object.freeze({ key: 'thick_hide', hpMul: 1.30 }),
+  Object.freeze({ key: 'hard_shell', defMul: 1.25 }),
+  Object.freeze({ key: 'swift', speedMul: 1.20 }),
+]);
 
 export const PHASE = Object.freeze({
   LOBBY: 'LOBBY',

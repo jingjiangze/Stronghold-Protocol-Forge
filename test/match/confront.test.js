@@ -31,10 +31,13 @@ function affordable(m, n = 2) {
 }
 
 test('confront: only a versus match from the drawn contest round runs the 对抗期', () => {
-  const h = makeMatch({ mode: 'coop', difficulty: 'NORMAL', humans: 2, bots: 0, seed: 7, fake: true });
+  const off = makeMatch({ mode: 'coop', difficulty: 'NORMAL', humans: 2, bots: 0, seed: 7, fake: true }).m;
+  assert.equal(off.coopHuntOn, false, '同盟狩猎 is OFF by default in this build');
+  assert.deepEqual(off.eventRounds, [], 'so co-op has no event period either');
+  const h = makeMatch({ mode: 'coop', difficulty: 'NORMAL', humans: 2, bots: 0, seed: 7, fake: true, coopHunt: true });
   const m = h.m;
   assert.equal(m.isVersus, false);
-  assert.equal(m.coopHuntOn, true, 'co-op runs 同盟狩猎 by default');
+  assert.equal(m.coopHuntOn, true, 'a room opts into 同盟狩猎');
   assert.equal(m.confrontActive(), false, 'the 2V2 对抗期 never runs in co-op');
 
   const { m: v } = confrontReady();
@@ -159,7 +162,7 @@ test('confront: 坎诺特 withdraws bank → gold at the round rate, ceil first 
 });
 
 test('confront: a coop hunt plans one system placement per alive player and inserts it', () => {
-  const h = makeMatch({ mode: 'coop', difficulty: 'NORMAL', humans: 2, bots: 0, seed: 7, fake: true });
+  const h = makeMatch({ mode: 'coop', difficulty: 'NORMAL', humans: 2, bots: 0, seed: 7, fake: true, coopHunt: true });
   const m = h.m;
   m.round = m.contestStartRound;
   m.phase = 'PREP';

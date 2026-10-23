@@ -1,7 +1,7 @@
 // Normative message catalogue (DESIGN §8). Used by server (validation) and client (building requests).
 // Every client→server message is `{ t, rid?, ...fields }`. Unknown `t` or invalid fields ⇒ ERR.BAD_MSG.
 
-import { DIFFICULTIES, NAME_MAX_LEN, ROOM_CODE_LEN, MAX_SEATS, EMOTES, GEO, ROOM_MODES } from './constants.js';
+import { DIFFICULTIES, NAME_MAX_LEN, ROOM_CODE_LEN, MAX_SEATS, EMOTES, GEO, ROOM_MODES, EVENT_TARGETS } from './constants.js';
 import { isDroppableChess } from './standIn.js';
 import { diySlotIds, validateDiyPicks } from './diy.js';
 import { cultivatedStats, isPotential, isCultivate, POTENTIAL_DEFAULT, CULTIVATE_DEFAULT, hasPotentialData } from './potential.js';
@@ -609,6 +609,9 @@ export const C2S = {
   'g.confrontTarget': { targetPlayerId: isId },
   // 商人「坎诺特」: withdraw gold from the 赏金 bank
   'g.confront.withdraw': { gold: (v) => isInt(v, 1, 100000) },
+  // 2V2 事件期: this player gives one random entry to one target — self / mate / oppA / oppB. The server owns the target
+  // mapping, the no-repeat rule, the type odds and the seeded card draw (server/match/match/event.js).
+  'g.event.pick': { target: (v) => EVENT_TARGETS.includes(v) },
   // solo pause (official PauseUp / ResumeUp, DESIGN §14): freezes the running battle (field clock, deadlines, the
   // browser's local runner) — solo matches only (co-op ⇒ WRONG_PHASE), only while a battle runs; m.public.paused
   'g.pause': { on: isBool },

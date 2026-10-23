@@ -338,6 +338,8 @@ export class MatchPhases {
   }
 
   afterRoundStart() {
+    // 2V2 事件期 (eventRoundsFor): one entry per player before the round's 机变 / 休整期 (server/match/match/event.js)
+    if (this.eventDue()) { this.enterEvent(); return; }
     if (this.gd.spRounds().includes(this.round)) this.enterSpDraft();
     else this.beforePrepOffers();
   }

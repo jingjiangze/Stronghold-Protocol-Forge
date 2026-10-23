@@ -51,6 +51,9 @@ export class MatchCombat {
     const input = ps.battleInput({ side: 'L', colOffset: 0 });
     // the client's list: bounty units inserted among their host action's own units, which are re-timed around them
     let spawns = withBounties(this.gd, this.round, wave, ps.bounties, ps.playerId).map((s) => ({ ...s, ownerPlayerId: ps.playerId }));
+    // 2V2 事件期: the monster card + the 强力属性 subset apply to the round's NORMAL wave only (not the 狩猎期
+    // placements, whose bounty stays untouched). Applied after withBounties so the host-action re-timing is untouched.
+    spawns = this.foeWaveSpawns(spawns);
     // 2V2 对抗期: every intervention aimed at this player replaces a share of this wave (confront.js; one per attacker).
     // A preview (the bot rehearsal) must not move the match's rngConfront — applyConfront shuffles with it, and the real
     // battle draws it after the rehearsal — so the preview draws from a clone.

@@ -238,6 +238,7 @@ import { installTestTrace } from './testTrace.js';
 import { MatchTestCommands } from './match/testCommands.js';
 import { MatchOffers } from './match/offers.js';
 import { MatchConfront } from './match/confront.js';
+import { MatchEvent } from './match/event.js';
 
 export { FLOW_TICKER_PRIORITY, DELAYS, BAND_TURN_SECONDS } from './match/common.js';
 
@@ -277,7 +278,8 @@ export class Match {
     /** 2V2 ('versus'): two teams of two, each sharing one HP pool and its own boss pool. */
     this.isVersus = this.mode === 'versus';
     /** 同盟狩猎: a co-op room may run the SYSTEM-filled 狩猎期 (COOP_HUNT); off leaves co-op exactly as it was. */
-    this.coopHuntOn = this.mode === 'coop' && COOP_HUNT.enabled !== false && opts.coopHunt !== false;
+    this.coopHuntOn = this.mode === 'coop' && opts.coopHunt !== false
+      && (COOP_HUNT.enabled !== false || opts.coopHunt === true);
     /** @type {Map<number, number> | null} team id → shared HP pool (versus only; solo/coop keep per-player LP) */
     this.teamLps = null;
     this.teamLp = 0;
@@ -416,6 +418,12 @@ export class Match {
     this.rngConfrontTypes = rng('confront-types');
     // 同盟狩猎: the system's prey picks (one stream of its own; a co-op match is the only consumer)
     this.rngCoopHunt = rng('coop-hunt');
+    // 2V2 事件期: the type / entry draws (its own stream too — golden scenarios never enter the event phase)
+    this.rngEvent = rng('event');
+    // the monster entry's own stream: independent of the players' target choices (EVENT_FOE_CARDS)
+    this.rngFoeEvent = rng('event-foe');
+    // the 强力属性 subset's stream: share / attribute / which units (EVENT_FOE_ELITES)
+    this.rngFoeElite = rng('event-elite');
 
     /**
      * 狩猎期 start round: 2V2 draws R4/R5/R6 for its 对抗期; a co-op hunt draws the same way for its system-run 狩猎期
@@ -538,6 +546,14 @@ export class Match {
     this.eventIndex = 0;
     /** 'roster' while the 5 s 词条公示 holds the period; null otherwise. */
     this.eventStage = null;
+    /** the match's used ally / monster entries (no card repeats while its kind has an unused one) */
+    this.eventUsedAlly = new Set();
+    this.eventUsedFoe = new Set();
+    /** this event period's monster entry { round, index, card } and the match's monster archive */
+    this.foeEvent = null;
+    this.eventFoeHistory = [];
+    /** the round whose event period already resolved (eventDue) */
+    this._eventDoneRound = 0;
     this.bossPool = null;
     this.hiddenLayerSum = 0;
     this.hiddenReached = false;
@@ -551,7 +567,7 @@ export class Match {
 }
 
 // the method modules, in this order (a name defined twice is an error, never a silent override)
-for (const part of [MatchPlatform, MatchInfra, MatchMessaging, MatchViews, MatchWatch, MatchIntents, MatchPause, MatchPhases, MatchSetupVote, MatchSpDraft, MatchPrep, MatchCombat, MatchClientCombat, MatchRehearsal, MatchReports, MatchUnite, MatchBoss, MatchSettle, MatchTestCommands, MatchOffers, MatchConfront]) {
+for (const part of [MatchPlatform, MatchInfra, MatchMessaging, MatchViews, MatchWatch, MatchIntents, MatchPause, MatchPhases, MatchSetupVote, MatchSpDraft, MatchPrep, MatchCombat, MatchClientCombat, MatchRehearsal, MatchReports, MatchUnite, MatchBoss, MatchSettle, MatchTestCommands, MatchOffers, MatchConfront, MatchEvent]) {
   for (const key of Reflect.ownKeys(part.prototype)) {
     if (key === 'constructor') continue;
     if (Object.prototype.hasOwnProperty.call(Match.prototype, key)) throw new Error(`Match.${String(key)} is defined twice`);

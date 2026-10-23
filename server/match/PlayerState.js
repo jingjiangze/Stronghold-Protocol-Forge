@@ -161,6 +161,19 @@ export class PlayerState {
     this.bandId = null;
     this.funds = 0;
     this.pendingFunds = 0;
+    /**
+     * 猎人赏金 (2V2 商人「坎诺特」 / 同盟狩猎): the 赏金 banked from killing monsters the OPPONENT placed (2V2) or the
+     * SYSTEM deployed (co-op hunt). It is NOT gold — the only way out is a withdrawal in prep (Match.withdrawBounty:
+     * rate by round, cost = gold / rate, first withdrawal of a round ceil, later ones floor, ≤ merchantRoundCap a
+     * round). Survives rounds and reconnects; a new match starts empty.
+     */
+    this.bountyBank = 0;
+    /** Gold withdrawn at 坎诺特 this round (the ceil/floor switch and the per-round cap); reset in startRound. */
+    this.withdrawnThisRound = 0;
+    /** Gold withdrawn at 坎诺特 over the whole match (a summary counter; 赏金 leaves the bank, this only grows). */
+    this.withdrawnGold = 0;
+    /** 赏金 earned over the whole match = every `bank` settle added to `bountyBank` (the settlement screen). */
+    this.bountyEarned = 0;
     this.ready = false;
     this.infoReady = this.isBot;
     this.lastEmoteAt = -Infinity;

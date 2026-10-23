@@ -49,9 +49,13 @@ export class MatchSettle {
       if (r.perfect !== false && counted === 0) ps.stats.perfectRounds++;
       // bounty coins (own battle + unite kills) are credited to the next prep
       let coins = Math.max(0, Math.trunc(Number(r.coins) || 0));
+      // 2V2 赏金: the bounties of the monsters the opponent PLACED never become gold — they go to 坎诺特's account and are
+      // only turned into funds by a withdrawal in prep (withdrawBounty). Carried across rounds with PlayerState.
+      let bank = Math.max(0, Math.trunc(Number(r.bank) || 0));
       const up = uniteResult && uniteResult.perPlayer && uniteResult.perPlayer[ps.playerId];
       if (up) {
         coins += Math.max(0, Math.trunc(Number(up.coins) || 0));
+        bank += Math.max(0, Math.trunc(Number(up.bank) || 0));
         ps.stats.dmgDealt += Number(up.damageDealt) || 0;
         ps.stats.kills += Number(up.killed) || 0;
       }
@@ -59,6 +63,7 @@ export class MatchSettle {
       // perfect-payout bounties (战术特训): own phase perfect
       for (const b of ps.bounties) if (b.card.payout === 'perfect' && counted === 0 && r.perfect !== false) coins += b.card.coin;
       if (coins > 0) { ps.pendingFunds += coins; ps.stats.fundsGained += coins; }
+      if (bank > 0) { ps.bountyBank += bank; ps.bountyEarned += bank; }
       for (const b of ps.bounties) b.roundsLeft--;
       ps.bounties = ps.bounties.filter((b) => b.roundsLeft > 0);
       // IN_BATTLE layer gains (normal battles only), at most the room left under BOND_LAYER_CAP (999, as the battle's

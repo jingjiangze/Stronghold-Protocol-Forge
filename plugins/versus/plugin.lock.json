@@ -8,21 +8,17 @@
       "sha256": "4f64e4d12269002908484eaa5dfb102453ae6dfcd87376543b058fbe4b23d020",
       "bytes": 704
     },
-    "host/noop.js": {
-      "sha256": "c05a47e3e4e74fc465d74689b2e8ac6482ff1aff50235f53258278d704cacca3",
-      "bytes": 82
-    },
     "plugin.json": {
-      "sha256": "84629d70214c82ea5ad183026c842548d0f8532a97d6218ca2183f73f7f6673f",
-      "bytes": 1971
+      "sha256": "7fca038c5beb48ab8d24ea8818f79c20a1025bafa90f710e2a4a5a2a502be10a",
+      "bytes": 1840
     },
     "server/meta.js": {
       "sha256": "f9811256a962f3183861b3ad157ee687a736ae6db47378bdce43593763703bde",
       "bytes": 4495
     },
     "server/mod.js": {
-      "sha256": "0a8ff9382a456a4ac594b00a65eaa167f55f43397e41b0959ea5425fdf16d6d4",
-      "bytes": 3236
+      "sha256": "5a8a59a7977db6179bcc47616ba16268bc37be6bfb695e5c9c1b9601110ed15f",
+      "bytes": 1875
     }
   },
   "spine": {}

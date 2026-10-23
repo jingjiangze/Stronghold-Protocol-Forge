@@ -37,7 +37,13 @@ export const TEAM_SIZE = 2;
 export const TEAMS = 2;
 /** The roster hold before a confront placement's battles begin (ms); the server owns the clock. */
 export const CONFRONT_ROSTER_MS = 5000;
-/** The shared 2V2 confront rhythm; the rest of the port adds its pricing tables. */
+/** The roster hold before an 事件期 placement is announced (ms); the server owns the clock. */
+export const EVENT_ROSTER_MS = 5000;
+/**
+ * The 狩猎期 rhythm shared by BOTH hunt modes — 2V2 ('versus') and 同盟狩猎 (co-op, COOP_HUNT below): the ratio ramp
+ * (5 % +2 %/round, cap 15 %), the R13 最终狩猎 (50 %), the insertion positions / budget multiplier / pick cap, the
+ * kill bounty table and 坎诺特's withdrawal table. One table, so the two modes can never drift apart.
+ */
 const HUNT_RHYTHM = Object.freeze({
   ratioBase: 0.05,
   ratioStep: 0.02,
@@ -45,9 +51,21 @@ const HUNT_RHYTHM = Object.freeze({
   huntRound: 13,
   huntRatio: 0.5,
   positions: Object.freeze(['front', 'mid', 'back']),
+  /** 2V2 ONLY: its placement REPLACES originals, so the spendable value is ratio × 2. 同盟狩猎 inserts and uses ratio. */
   budgetMul: 2,
   rosterMs: CONFRONT_ROSTER_MS,
+  /** 特性 pricing: `traitStepScores[grade − 1]` steps per monster; those steps take `traitShare` of the value table. */
+  traitShare: 0.3,
+  traitStepScores: Object.freeze([0, 1, 2]),
+  /** Hunt kill bounty: huntIdx 1–4 pay `bountyCaps[idx−1] × killed/total`; 5+ pay the live income formula. */
+  bountyCaps: Object.freeze([1, 1, 2, 2]),
+  finalHuntBounty: 25,
+  killIncomeShare: 1,
   maxPicks: 64,
+  /** 商人「坎诺特」: the share of a withdrawal that becomes gold, by ABSOLUTE round (R15 隐秘核心 = 1:1). */
+  merchantRates: Object.freeze([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 1]),
+  merchantRoundCap: 4,
+  merchantUncappedRound: 15,
 });
 /** 2V2 tunables: target window, shared rhythm, roster hold and the boss wire bound. */
 export const VERSUS_CONFRONT = Object.freeze({
@@ -55,10 +73,52 @@ export const VERSUS_CONFRONT = Object.freeze({
   ...HUNT_RHYTHM,
   maxBosses: 32,
 });
+/**
+ * 同盟狩猎 (co-op hunt): a `mode_multi_*` room keeps the exact same co-op gameplay, but every 狩猎期 is filled by the
+ * SYSTEM instead of the players. The rhythm is the 2V2 one; the prey is INSERTED (not replacing), so its budget uses
+ * `ratio` with NO multiplier. Every alive player gets their OWN plan, inserted into their OWN wave.
+ */
+export const COOP_HUNT = Object.freeze({
+  enabled: true,
+  /** The 狩猎期 start round is drawn from these (the 2V2 contest draw). */
+  startRounds: Object.freeze([4, 5, 6]),
+  ...HUNT_RHYTHM,
+  /** The 事件期 targets of a co-op hunt (no `oppA` / `oppB` — there is no opposing team). */
+  targets: Object.freeze(['self', 'mate']),
+});
+/**
+ * 商人「坎诺特」: the share of a withdrawal that becomes gold in an absolute round (R8 and before 20 %, R9 30 %, then
+ * +5 %/round, R15 隐秘核心 100 %). `round` below 1 clamps to the first step, past the end to the last one.
+ */
+export const merchantRateFor = (round, table = VERSUS_CONFRONT) => {
+  const rates = table.merchantRates;
+  const r = Math.max(1, Math.min(rates.length, Math.floor(Number(round) || 0)));
+  return rates[r - 1];
+};
+/** The gold a player may withdraw in an absolute round: `merchantRoundCap`, unlimited in `merchantUncappedRound`. */
+export const merchantCapFor = (round, table = VERSUS_CONFRONT) =>
+  (Math.floor(Number(round) || 0) === table.merchantUncappedRound ? Infinity : table.merchantRoundCap);
 /** R13 之后公开对方视角; solo/co-op have no opponent. */
 export const opponentRevealed = (round) => Math.floor(Number(round) || 0) > VERSUS_CONFRONT.huntRound;
 /** The team a seat plays for in a 'versus' room: seats 0,1 → team 0; seats 2,3 → team 1. */
 export const teamOfSeat = (seat) => Math.floor(seat / TEAM_SIZE) % TEAMS;
+
+/** The last 事件期 period: R13, the 最终狩猎 (a normal hunt round, never a boss round). */
+export const EVENT_FINAL_ROUND = 13;
+/** E1 → E2 distance in rounds. */
+export const EVENT_SECOND_OFFSET = 4;
+/**
+ * The three 事件期 rounds of a match, from the drawn contest round: [contestStartRound, +4, 13]. A versus match always
+ * has a contestStartRound (R4/R5/R6); a match without a hunt passes null → [].
+ * @param {number|null} contestStartRound
+ * @returns {number[]}
+ */
+export const eventRoundsFor = (contestStartRound) => {
+  const first = Math.max(1, Math.min(EVENT_FINAL_ROUND, Math.trunc(Number(contestStartRound) || 0)));
+  if (!contestStartRound || !first) return [];
+  const second = Math.max(first + 1, Math.min(EVENT_FINAL_ROUND - 1, first + EVENT_SECOND_OFFSET));
+  return [...new Set([first, second, EVENT_FINAL_ROUND])].sort((a, b) => a - b);
+};
 
 export const DIFFICULTIES = ['FUNNY', 'NORMAL', 'HARD', 'ABYSS'];
 export const DIFFICULTY_NAMES = { FUNNY: N_('标准模拟'), NORMAL: N_('险境模拟'), HARD: N_('绝境模拟'), ABYSS: N_('终极模拟') };
@@ -74,8 +134,13 @@ export const PHASE = Object.freeze({
   BAND_DRAFT: 'BAND_DRAFT',
   BATTLE_CHECK: 'BATTLE_CHECK',
   ROUND_START: 'ROUND_START',
+  // 2V2 事件期 (see eventRoundsFor): resolves after ROUND_START, before SP_DRAFT / PREP
+  EVENT: 'EVENT',
   SP_DRAFT: 'SP_DRAFT',
   PREP: 'PREP',
+  // 2V2 ('versus'): the 对抗期 — from the drawn contest round, after each side's prep, each team submits one
+  // intervention against the opponent's next battle (see server/match/match/confront.js)
+  CONFRONT: 'CONFRONT',
   COMBAT: 'COMBAT',
   UNITE: 'UNITE',
   SETTLE: 'SETTLE',
@@ -86,7 +151,8 @@ export const PHASE = Object.freeze({
 
 export const PHASE_NAMES = {
   LOBBY: N_('等待中'), INFO_CHECK: N_('确认本局信息'), BAND_DRAFT: N_('选择策略'), BATTLE_CHECK: N_('协议启动'),
-  ROUND_START: N_('回合开始'), SP_DRAFT: N_('机变阶段'), PREP: N_('休整期'), COMBAT: N_('作战中'), UNITE: N_('联防阶段'),
+  ROUND_START: N_('回合开始'), EVENT: 'EVENT', SP_DRAFT: N_('机变阶段'), PREP: N_('休整期'), CONFRONT: N_('狩猎期'),
+  COMBAT: N_('作战中'), UNITE: N_('联防阶段'),
   SETTLE: N_('结算'), FINAL_ASSAULT: N_('最终攻势'), HIDDEN_CORE: N_('隐秘核心'), RESULT: N_('模拟结束'),
 };
 
@@ -187,6 +253,10 @@ export const ERR = Object.freeze({
   TEMP_NOT_EMPTY: 'TEMP_NOT_EMPTY',
   ELIMINATED: 'ELIMINATED',
   SPECTATOR: 'SPECTATOR',         // a spectator seat only watches (MAX_SPECTATORS)
+  CONFRONT_BUDGET: 'CONFRONT_BUDGET', // 狩猎期: the placement's total VALUE is over this round's budget
+  CONFRONT_COUNT: 'CONFRONT_COUNT',   // 狩猎期: the placement holds more monsters than VERSUS_CONFRONT.maxPicks
+  MERCHANT_CAP: 'MERCHANT_CAP',       // 商人: this round's withdrawal cap is reached
+  MERCHANT_BANK: 'MERCHANT_BANK',     // 商人: not enough 赏金 in the bank for that withdrawal
   // room.setPlugins (DESIGN §32): a plugin this server has not installed; one a room cannot switch on in this version
   // (not a cosmetic or content plugin it loads, not of the room's scope, or not allowed by the server owner's
   // plugins/config.json); a requirement missing or out of range, or a load-order cycle; two plugins in conflict; a set
@@ -226,6 +296,8 @@ export const ERR_TEXT = {
   BAD_TILE: N_('无法部署在该位置'), BAD_TARGET: N_('无效的目标'), SOLD_OUT: N_('已售出'), MAX_LEVEL: N_('调度中心已达最高等级'),
   NOT_YOUR_TURN: N_('尚未轮到你'), ALREADY: N_('已完成该操作'), TEMP_NOT_EMPTY: N_('临时整备区不为空'), ELIMINATED: N_('你已被淘汰'),
   SPECTATOR: N_('观战中无法进行该操作'), INTERNAL: N_('服务器内部错误'),
+  CONFRONT_BUDGET: N_('投放的怪物总价值超出本回合预算'), CONFRONT_COUNT: N_('投放数量超出本回合上限'),
+  MERCHANT_CAP: N_('本回合的取款已达上限'), MERCHANT_BANK: N_('赏金不足'),
   PLUGIN_UNKNOWN: N_('本服务器没有安装该插件'), PLUGIN_BLOCKED: N_('该插件不能在房间中启用'), PLUGIN_DEPENDENCY: N_('缺少该插件需要的其他插件'),
   PLUGIN_CONFLICT: N_('所选插件互相冲突'), PLUGIN_LIMIT: N_('所选插件的素材总量超出本服务器的上限'),
   PLUGIN_RULE_CONFLICT: N_('两个插件把同一个规则开关设成了不同的选项'),

@@ -20,8 +20,7 @@
   "license": "AGPL-3.0-or-later",
   "permissions": [
     "data.add",
-    "meta.code",
-    "trusted.server"
+    "meta.code"
   ],
   "modes": [
     "data/modes.json"
@@ -62,8 +61,7 @@
     }
   },
   "entry": {
-    "meta": "server/meta.js",
-    "server": "host/noop.js"
+    "meta": "server/meta.js"
   },
   "combat": true,
   "server": {

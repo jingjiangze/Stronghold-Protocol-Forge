@@ -2194,5 +2194,10 @@
   "布阵": "Formation",
   "战斗中观看其他人的布阵（自愿开启，服务器只转发、不计算）": "Watch others' formations in combat (opt-in; the server only relays, never computes)",
   "观看布阵·开": "Watch formation: on",
-  "观看布阵·关": "Watch formation: off"
+  "观看布阵·关": "Watch formation: off",
+  "狩猎期": "Hunt Phase",
+  "投放的怪物总价值超出本回合预算": "The placement's total value exceeds this round's budget",
+  "投放数量超出本回合上限": "The placement holds more monsters than this round allows",
+  "本回合的取款已达上限": "This round's withdrawal cap is reached",
+  "赏金不足": "Not enough bounty"
 }

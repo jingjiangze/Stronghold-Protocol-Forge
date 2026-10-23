@@ -92,6 +92,8 @@ export const actions = {
   reward: (idx) => act('g.reward', { idx }),
   offer: (offer, idx, refresh = false, cardId) => act(refresh ? 'g.offerRefresh' : 'g.offer', { offerId: offer.id, pluginId: offer.pluginId, seq: offer.seq, idx, cardId }),
   choice: (idx, choiceId) => act('g.choice', choiceId === undefined ? { idx } : { idx, choiceId }),
+  // 2V2 事件期: give one entry to one target (self / mate / oppA / oppB); the server owns the draw and the odds
+  eventPick: (target) => act('g.event.pick', { target }, { sfx: 'confirm' }),
   // 2V2 对抗期 (confront.js): step 1 the opponent this seat attacks; step 2 its monsters — one group, one insertion
   // position (front / mid / back) and the placed monsters, each on a gate ('upper' 上路 / 'lower' 下路).
   confrontTarget: (targetPlayerId) => act('g.confrontTarget', { targetPlayerId }, { sfx: 'confirm' }),

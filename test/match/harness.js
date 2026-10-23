@@ -98,6 +98,8 @@ export function makeMatch(o = {}) {
     // still has no kitted key.
     ...(o.kitted !== undefined ? { kitted: o.kitted } : {}),
     ...(o.rules !== undefined ? { rules: o.rules } : {}),
+    // 同盟狩猎 is off by default in this build (shared/constants.js COOP_HUNT.enabled); a test opts in explicitly
+    ...(o.coopHunt !== undefined ? { coopHunt: o.coopHunt } : {}),
   });
   const m = h.m;
   if (m.clientCombat && o.clients !== false) {

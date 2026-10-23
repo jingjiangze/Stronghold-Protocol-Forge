@@ -35,6 +35,7 @@ import { chessPortraitUrl, itemIconUrl, profIconUrl, uiUrl, skillIconUrl, skillR
 import { data } from '../data.js';
 import { hotkeyLabelOf } from './settings.js';
 import { t } from '../../../shared/i18n.js';
+import { Merchant } from './merchant.js';
 
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
 
@@ -300,7 +301,7 @@ export function RewardCards({ offer, priv, editable, onPick, onDetail, onLater, 
  *   the bonds this mode never activates (gameLogic modeOffBonds), struck through on the operator cards
  */
 export function ShopBar({ priv, editable, collapsed, refreshBusy = false, onCollapse, onBuy, onLevel, onRefresh, onFreeze, onDetail, onDetailClose, onRefuse, barRef,
-  reward = null, onReward, onRewardLater, onArm = null, offBonds = null }) {
+  reward = null, onReward, onRewardLater, onArm = null, offBonds = null, merchant = null, onWithdraw = null, versus = false, merchantRemind = false }) {
   const shop = priv?.shop || {};
   const slots = Array.isArray(shop.slots) ? shop.slots : [];
   const chessSlots = slots.map((s, i) => ({ s, i })).filter(({ s }) => !s || s.kind !== 'item');
@@ -392,6 +393,7 @@ export function ShopBar({ priv, editable, collapsed, refreshBusy = false, onColl
           })
           : html`<${SoldCard} item=${true} />`}
       </div>`}
+      ${merchant ? html`<${Merchant} merchant=${merchant} editable=${editable} onWithdraw=${onWithdraw} vertical=${true} versus=${versus} remind=${merchantRemind} />` : null}
       <div class="funds">
         <div class="funds__hex">
           <${CoinGlyph} class="funds__coin" />

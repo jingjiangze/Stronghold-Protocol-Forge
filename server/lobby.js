@@ -162,7 +162,7 @@
 //     a player seat (the seat is kept and given back on resume).
 
 import { randomBytes, randomInt } from 'node:crypto';
-import { DIFFICULTIES, ERR, MAX_SEATS, MAX_SPECTATORS, ROOM_CODE_LEN, modeIdFor } from '../shared/constants.js';
+import { DIFFICULTIES, ERR, MAX_SEATS, MAX_SPECTATORS, ROOM_CODE_LEN, modeIdFor, teamOfSeat, TEAMS } from '../shared/constants.js';
 import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, checkDiyPicks, charPotentialChanges, checkSkinSelection, operatorCharIds } from '../shared/protocol.js';
 import { encode, isDroppable, isErrCode, sendRaw, sendSession } from './net.js';
 import { getData as defaultGetData, lookup } from './data.js';
@@ -264,7 +264,7 @@ function freezeSkins(skins, hasOperator) {
 
 /** One room: 4 seat slots, host, difficulty, optional running match. */
 export class Room {
-  /** @param {string} code @param {'solo'|'coop'} mode @param {string} difficulty @param {number} now */
+  /** @param {string} code @param {'solo'|'coop'|'versus'} mode @param {string} difficulty @param {number} now */
   constructor(code, mode, difficulty, now) {
     this.code = code;
     this.mode = mode;
@@ -350,6 +350,8 @@ export class Room {
       inMatch: !!this.match,
       seats: this.seats.map((s) => (s
         ? { seat: s.seat, playerId: s.playerId, name: s.name, isBot: s.isBot, ready: s.ready, connected: s.connected && !s.left,
+          // 2V2: the team this seat fights for — present only in a versus room (solo / coop keep their shape)
+          ...(this.mode === 'versus' ? { team: teamOfSeat(s.seat) } : {}),
           // a room with gameplay plugins (header "Gameplay plugins"): has this player's page loaded and checked its content?
           ...(this.modded && !s.isBot ? { content: s.content || 'loading' } : {}) }
         : null)),
@@ -357,6 +359,8 @@ export class Room {
       ...(this.content ? { content: this.content.trusted ? {...this.content, trusted:{...this.content.trusted, consent:Object.fromEntries(this.seats.filter(x => x && !x.isBot).map(x => [x.seat,x.consentCs === this.content.cs]))}} : this.content } : {}),
       // omitted when false so a normal room.state stays identical
       ...(this.test ? { test: true } : {}),
+      // 2V2: how many teams the room splits its seats into — present only in a versus room
+      ...(this.mode === 'versus' ? { teams: TEAMS } : {}),
     };
   }
 }
@@ -649,6 +653,8 @@ export class Lobby {
       case 'room.addBot': return this.addBot(session);
       case 'room.removeBot': return this.removeBot(session, msg);
       case 'room.kick': return this.kick(session, msg);
+      // 2V2: the host drags a seat between the two teams (server/lobby.js swapSeats)
+      case 'room.swapSeats': return this.swapSeats(session, msg);
       case 'room.start': return this.start(session);
       case 'room.rerollSetup': return this.rerollSetup(session, msg);
       case 'room.cancelReroll': return this.rerollSetup(session, msg, true);
@@ -1132,6 +1138,31 @@ export class Lobby {
       else { kicked.notice = 'kicked'; kicked.pendingResult = replay; }
     }
     this.log.info(`[lobby] ${room.code} ${target.name} removed by the host`);
+    return OK;
+  }
+
+  /**
+   * 2V2 (`room.swapSeats { a, b }`): swap the occupants of two seats — a player dragged between the two teams changes
+   * team (the team follows the seat index, `teamOfSeat`). Either seat may be empty (that is a move).
+   * Host-only, before the match, and only in a versus room. Both seats' `ready` clears: a swap may change the teams.
+   */
+  swapSeats(session, { a, b }) {
+    const room = this.roomOf(session);
+    if (!room) return fail(ERR.NOT_IN_ROOM);
+    if (room.mode !== 'versus') return fail(ERR.BAD_TARGET, 'not a 2V2 room');
+    if (room.hostId !== session.playerId) return fail(ERR.NOT_HOST);
+    if (room.match) return fail(ERR.ROOM_STARTED);
+    if (!Number.isInteger(a) || !Number.isInteger(b) || a === b) return fail(ERR.BAD_TARGET, 'two different seats');
+    if (a < 0 || a >= room.seats.length || b < 0 || b >= room.seats.length) return fail(ERR.BAD_TARGET, 'no such seat');
+
+    const [sa, sb] = [room.seats[a], room.seats[b]];
+    room.seats[a] = sb;
+    room.seats[b] = sa;
+    if (room.seats[a]) room.seats[a].seat = a;
+    if (room.seats[b]) room.seats[b].seat = b;
+    // a swap can move a human to the other team: nobody stands ready after it
+    for (const s of [room.seats[a], room.seats[b]]) if (s && !s.isBot) s.ready = false;
+    this.broadcastRoom(room, room.toState());
     return OK;
   }
 

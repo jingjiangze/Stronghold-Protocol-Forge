@@ -5,6 +5,7 @@
 // Installed on Match.prototype by server/match/Match.js (a method container: never instantiated; `this` is the match).
 
 import { buildDeployMap } from '../board.js';
+import { PHASE, opponentRevealed } from '../../../shared/constants.js';
 
 export class MatchInfra {
   /** Run a callback with error isolation, then flush the views. */
@@ -85,6 +86,70 @@ export class MatchInfra {
   nextUid() { return ++this.uidSeq; }
 
   alivePlayers() { return this.order.filter((p) => p.alive); }
+
+  /** 2V2 ('versus'): the team a player fights for (PlayerState.team; 0 for solo/coop). */
+  teamIdOf(ps) { return ps && Number.isInteger(ps.team) ? ps.team : 0; }
+
+  /** Every player of ps's team, in seat order (solo/coop: the whole roster). */
+  alliesOf(ps) { const t = this.teamIdOf(ps); return this.order.filter((p) => this.teamIdOf(p) === t); }
+
+  /** The team ids present in this match, sorted (versus: [0,1]; solo/coop: [0]). */
+  matchTeamIds() { return [...new Set(this.order.map((p) => this.teamIdOf(p)))].sort((a, b) => a - b); }
+
+  /**
+   * 2V2: whether the opponent's side is open right now — R14 onward (shared/constants.js opponentRevealed), and always
+   * at RESULT. Solo/coop have no opponent, so it is always true there.
+   */
+  get opponentRevealed() { return !this.isVersus || this.phase === PHASE.RESULT || opponentRevealed(this.round); }
+
+  /** Does this match run a 狩猎期 at all? 2V2 对抗期 and 同盟狩猎 both do; solo never does. */
+  get huntMode() { return this.isVersus || this.coopHuntOn; }
+
+  /** The living, seated members of a player's team (同盟狩猎's `mate` target picks from here). */
+  aliveAlliesOf(ps) { return this.alliesOf(ps).filter((p) => p.alive); }
+
+  /**
+   * 2V2: each team shares ONE HP pool = the sum of its members' chosen band HP. The pool REPLACES the individual LP:
+   * a team lives and dies as one. Built once every seat has a band (MatchPhases.finishBandDraft); solo/coop never
+   * build it and keep their per-player LP untouched. Members' own `ps.lp` are kept as a split of the pool.
+   */
+  initTeamHp() {
+    if (!this.isVersus) return;
+    this.teamLps = new Map();
+    for (const t of this.matchTeamIds()) {
+      let hp = 0;
+      for (const ps of this.order) if (this.teamIdOf(ps) === t) hp += Math.max(0, this.gd.startLp(ps.bandId));
+      this.teamLps.set(t, hp);
+    }
+    this.teamLp = [...this.teamLps.values()].reduce((s, v) => s + v, 0);
+    this._syncVersusTeamLp();
+  }
+
+  /** A team's shared HP pool (versus), or null in solo/coop. */
+  teamHpPool(team) { return this.teamLps ? (this.teamLps.get(team) ?? 0) : null; }
+
+  /** Keep each member's own `ps.lp` as a split of its team pool (the pool sums to the same number). */
+  _syncVersusTeamLp() {
+    if (!this.isVersus || !this.teamLps) return;
+    for (const t of this.matchTeamIds()) {
+      const pool = this.teamLps.get(t) ?? 0;
+      const members = this.order.filter((p) => this.teamIdOf(p) === t);
+      const n = members.length || 1;
+      const base = Math.floor(pool / n);
+      members.forEach((p, i) => { p.lp = base + (i < pool - base * n ? 1 : 0); });
+    }
+  }
+
+  /** 2V2: deduct from a team's shared pool (never below 0). Returns the pool after the loss. */
+  _versusTeamLpLoss(team, loss) {
+    if (!this.isVersus || !this.teamLps) return null;
+    const before = this.teamLps.get(team) ?? 0;
+    const after = Math.max(0, before - Math.max(0, Number(loss) || 0));
+    this.teamLps.set(team, after);
+    this.teamLp = [...this.teamLps.values()].reduce((s, v) => s + v, 0);
+    this._syncVersusTeamLp();
+    return after;
+  }
 
   /** Whether any chess of a bond is in this match's pool (a 驰援 card of a fully banned bond is never offered). */
   bondInPool(bondId) {

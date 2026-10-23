@@ -9,14 +9,24 @@
 import { boardOrder, pieceDir } from '../board.js';
 import { computeBonds, bondSnapshot, activatedLayers, bondsWithGains } from '../bondsMeta.js';
 import { GEO } from '../../../shared/constants.js';
+import { eventBattleRefs, eventModsFor } from '../match/event.js';
 
 export class PlayerRound {
   startRound(r) {
-    this.round = { refreshes: 0, buys: 0, sells: 0, spent: 0, gainedChess: 0, arts: 0 };
+    this.round = { refreshes: 0, buys: 0, sells: 0, spent: 0, gainedChess: 0, arts: 0, eventRefreshes: 0 };
+    // 商人「坎诺特」: the first withdrawal of a round rounds its cost UP, later ones DOWN — the counter resets here
+    // (withdrawnGold, the match-long counter, is kept).
+    this.withdrawnThisRound = 0;
     this.pendingLayerGains = null; // settled (or lapsed) at the last SETTLE
     if (r > 1) this.shop.upgradePrice = Math.max(0, this.shop.upgradePrice - 1);
+    // 2V2 事件期: re-derive the modifiers for THIS round first — an entry is in force only in the EVENT_DURATION_ROUNDS
+    // rounds after it was picked, so an expired one must stop touching income / prices / deploy / bounty right here.
+    this.eventRound = r;
+    this.eventMods = eventModsFor(this.eventEntries, r);
     // onIncome handlers may rewrite ev.income / ev.pending (e.g. 老鲤 withholds R1–R2 income until R3)
-    const ev = { round: r, income: this.gd.income(r), pending: this.pendingFunds };
+    // 2V2 事件期: 猎人佣金 / 空手而归 move the round's income (±3 per round, self ×2) before the handlers see it.
+    const eventGold = Math.trunc(Number(this.eventMods?.goldPerRound) || 0);
+    const ev = { round: r, income: Math.max(0, this.gd.income(r) + eventGold), pending: this.pendingFunds };
     this.pendingFunds = 0;
     this.m.dispatch(this, 'onIncome', ev);
     const nonNeg = (v) => (Number.isFinite(v) && v > 0 ? Math.trunc(v) : 0);
@@ -176,9 +186,13 @@ export class PlayerRound {
       units,
       bonds: bondSnapshot(reached ? this.bondsView() : this.bonds),
       bandId: this.bandId,
-      playerEffects: this.effects.filter((e) => e.battle !== false).map((e) => ({
-        id: e.id, key: e.key ?? null, source: e.iconKind ?? null, params: e.params ?? null, counter: e.counter ?? null, data: e.data ?? null,
-      })),
+      playerEffects: [
+        ...this.effects.filter((e) => e.battle !== false).map((e) => ({
+          id: e.id, key: e.key ?? null, source: e.iconKind ?? null, params: e.params ?? null, counter: e.counter ?? null, data: e.data ?? null,
+        })),
+        // 2V2 事件期: the received entries still in force this round as battle refs (server/sim/content/event.js)
+        ...eventBattleRefs(this.eventEntries, this.eventRound || this.m.round),
+      ],
       deviceOverrides: { ...this.deviceOverrides },
       // Player-paid obstacles (monster-control): board coordinates, bounded to the deployable field. The battleStart
       // handler in sim/content/devices.js maps them onto this player's field; a tile with a unit is skipped there.

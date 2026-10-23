@@ -176,6 +176,11 @@ export class MatchPrep {
       this.startFinalAssault(false);
     } else if (r === this.gd.hiddenRound) {
       this.startFinalAssault(true);
+    } else if (this.confrontActive()) {
+      // 2V2 对抗期: each team intervenes against the opponent's next battle before it starts
+      this.enterConfront();
+    } else if (this.coopHuntActive() && this.enterCoopHuntRoster()) {
+      // 同盟狩猎: 5 s 投放公示 (CONFRONT_ROSTER_MS) before the battles start; finishCoopHuntRoster calls startCombat
     } else {
       this.startCombat();
     }

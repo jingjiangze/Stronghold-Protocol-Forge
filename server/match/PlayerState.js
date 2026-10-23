@@ -122,6 +122,7 @@
 //   common.js     HAND_SIZE, TEMP_SIZE, MAX_OFFER_SLOTS, OK, fail
 
 import { FIELD } from './board.js';
+import { TEAM_SIZE, TEAMS } from '../../shared/constants.js';
 import { computeBonds } from './bondsMeta.js';
 import { HAND_SIZE, TEMP_SIZE } from './player/common.js';
 import { PlayerBasics } from './player/basics.js';
@@ -145,6 +146,8 @@ export class PlayerState {
     this.gd = m.gd;
     this.playerId = seat.playerId;
     this.seat = seat.seat;
+    // 2V2 ('versus'): the team follows the seat index (shared/constants.js teamOfSeat); 0 in solo/coop.
+    this.team = m.isVersus ? (Math.floor(this.seat / TEAM_SIZE) % TEAMS) : 0;
     this.name = seat.name;
     this.isBot = !!seat.isBot;
     this.connected = this.isBot ? true : !!seat.connected;
@@ -158,6 +161,19 @@ export class PlayerState {
     this.bandId = null;
     this.funds = 0;
     this.pendingFunds = 0;
+    /**
+     * 猎人赏金 (2V2 商人「坎诺特」 / 同盟狩猎): the 赏金 banked from killing monsters the OPPONENT placed (2V2) or the
+     * SYSTEM deployed (co-op hunt). It is NOT gold — the only way out is a withdrawal in prep (Match.withdrawBounty:
+     * rate by round, cost = gold / rate, first withdrawal of a round ceil, later ones floor, ≤ merchantRoundCap a
+     * round). Survives rounds and reconnects; a new match starts empty.
+     */
+    this.bountyBank = 0;
+    /** Gold withdrawn at 坎诺特 this round (the ceil/floor switch and the per-round cap); reset in startRound. */
+    this.withdrawnThisRound = 0;
+    /** Gold withdrawn at 坎诺特 over the whole match (a summary counter; 赏金 leaves the bank, this only grows). */
+    this.withdrawnGold = 0;
+    /** 赏金 earned over the whole match = every `bank` settle added to `bountyBank` (the settlement screen). */
+    this.bountyEarned = 0;
     this.ready = false;
     this.infoReady = this.isBot;
     this.lastEmoteAt = -Infinity;
@@ -241,6 +257,23 @@ export class PlayerState {
     this.stats = {
       dmgDealt: 0, kills: 0, leaks: 0, gold: 0, refreshes: 0, merges: 0, itemMerges: 0, itemsEquipped: 0,
       bossDamage: 0, lpLost: 0, buys: 0, sells: 0, perfectRounds: 0, fundsGained: 0, healing: 0,
+    };
+    /**
+     * 2V2 事件期 (server/match/match/event.js): the entries this player RECEIVED — `{ card, mag, from, round, target }` —
+     * and the accumulated modifiers they produce (eventModsFor). An entry is in force only for EVENT_DURATION_ROUNDS
+     * rounds from its `round`; startRound re-derives eventMods with the current round, and battleInput filters the refs
+     * the same way. `eventTargets` = the target keys this player has already given an entry to (no repeats in one match).
+     */
+    this.eventEntries = [];
+    /** the absolute round the entry windows are evaluated against (set by startRound; eventModsFor / battleInput). */
+    this.eventRound = 0;
+    this.eventTargets = [];
+    /** the ally entries this player has drawn so far (ids; a card is never drawn twice for one player) */
+    this.eventCards = [];
+    this.eventMods = {
+      atkPct: 0, aspd: 0, hpPct: 0, defPct: 0, defIgnorePct: 0, regenPct: 0, dmgTakenMul: 1, moveMul: 1, deploy: 0,
+      spRecoveryMul: 1, spRecoveryFlat: 0, spCostFlat: 0,
+      goldPerRound: 0, bountyGold: 0, enemySpeedMul: 1, refreshDiscount: 0, refreshUses: 0, sellDiscount: 0,
     };
     this.eliminatedRound = null;
     this.creditedKills = 0;

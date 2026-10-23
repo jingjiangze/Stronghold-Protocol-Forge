@@ -238,3 +238,50 @@
 .shopbar.has-armed .scard:not(.is-armed):not(.scard--sold) { filter: brightness(.72); }
 .lvcard.is-armed { background: linear-gradient(180deg, #ffd65a, #e0a800); color: #1d1400; box-shadow: 0 0 0 2px #fff4c2, 0 0 .3rem rgba(255, 198, 0, .5); animation: pulse-gold 1.1s var(--ease-in-out) infinite; }
 .lvcard.is-armed .lvcard__label { letter-spacing: .12em; padding-left: .12em; }
+
+/* ---- 商人「坎诺特」 (2V2, ui/merchant.js): the 赏金 desk above the 金币 card ---- */
+.merchant { display: flex; flex-direction: column; align-items: center; gap: .03rem; }
+.merchant__btn {
+  position: relative; width: .54rem; height: .54rem; padding: 0; overflow: visible;
+  border: 1px solid var(--gold-2); background: rgba(20, 16, 6, .85); cursor: pointer;
+  transition: box-shadow var(--t-fast), transform var(--t-fast);
+}
+.merchant__btn:hover:not(:disabled) { box-shadow: 0 0 .16rem rgba(242, 189, 62, .5); transform: translateY(-1px); }
+.merchant__btn:disabled { opacity: .45; cursor: default; }
+/* last round with a non-zero bank: the icon pulses so the merchant is not forgotten before the match ends */
+.merchant--remind .merchant__btn { border-color: var(--gold-2); animation: merchant-remind 1.4s ease-in-out infinite; }
+.merchant--remind .merchant__label { color: #ffe08a; font-weight: 800; }
+@keyframes merchant-remind {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(242, 189, 62, .65), 0 0 .08rem rgba(242, 189, 62, .35); }
+  50% { box-shadow: 0 0 0 .09rem rgba(242, 189, 62, 0), 0 0 .24rem rgba(242, 189, 62, .8); }
+}
+.merchant__art { display: block; width: 100%; height: 100%; overflow: hidden; }
+.merchant__art img, .merchant__art svg { width: 100%; height: 100%; object-fit: cover; }
+.merchant__art svg { fill: var(--gold); }
+.merchant__bank {
+  position: absolute; right: -.08rem; bottom: -.08rem; min-width: .26rem; padding: 0 .04rem;
+  font-size: .13rem; font-weight: 800; line-height: 1.35; color: #2b1c00; background: var(--gold-2); border-radius: .05rem;
+}
+.merchant__label { font-size: .105rem; letter-spacing: .06em; color: var(--gold-2); }
+/* the dialog */
+.merchant-dlg .merchant__head { display: flex; align-items: center; gap: .18rem; }
+.merchant-dlg .merchant__art--lg { flex: 0 0 auto; width: 1rem; height: 1rem; border: 2px solid var(--gold-2); }
+.merchant-dlg .merchant__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .08rem .16rem; flex: 1 1 auto; }
+.merchant-dlg .merchant__stat { display: flex; flex-direction: column; gap: .02rem; font-size: .12rem; color: var(--text-lo); }
+.merchant-dlg .merchant__stat b { font-size: .26rem; line-height: 1.1; color: var(--gold-2); }
+.merchant-dlg .merchant__opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .1rem; margin: .16rem 0 .08rem; }
+.merchant-dlg .merchant__opt {
+  display: flex; flex-direction: column; align-items: center; gap: .04rem; padding: .11rem .08rem;
+  border: 2px solid var(--line-3); background: rgba(255, 255, 255, .04); color: inherit; cursor: pointer;
+  transition: border-color var(--t-fast), background var(--t-fast), box-shadow var(--t-fast);
+}
+.merchant-dlg .merchant__opt.is-all { border-color: var(--gold-2); }
+.merchant-dlg .merchant__opt.is-armed { border-color: var(--mint-400); box-shadow: 0 0 .18rem rgba(23, 249, 183, .35); }
+.merchant-dlg .merchant__opt.is-off, .merchant-dlg .merchant__opt:disabled { opacity: .4; cursor: default; }
+.merchant-dlg .merchant__optgold { font-size: .17rem; font-weight: 700; }
+.merchant-dlg .merchant__optcost { font-size: .12rem; color: var(--text-lo); }
+.merchant-dlg .merchant__opt.is-armed .merchant__optcost { color: var(--text-md); }
+.merchant-dlg .merchant__arm { font-size: .12rem; color: var(--mint-400); }
+.merchant-dlg .merchant__lack { display: flex; align-items: center; justify-content: center; gap: .06rem; margin: 0 0 .04rem; font-size: .14rem; color: #ff9a86; }
+.merchant-dlg .merchant__lack .icon { width: .18rem; height: .18rem; }
+.merchant-dlg .merchant__tip { display: flex; align-items: center; gap: .08rem; margin: 0; font-size: .115rem; color: var(--text-lo); }

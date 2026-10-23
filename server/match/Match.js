@@ -204,7 +204,7 @@
 //   common.js        what the modules share (FLOW_TICKER_PRIORITY, DELAYS, BAND_TURN_SECONDS — re-exported here, OK,
 //                    fail, BOSS_CLOCK_MS)
 
-import { PHASE, modeIdFor } from '../../shared/constants.js';
+import { PHASE, modeIdFor, COOP_HUNT, eventRoundsFor } from '../../shared/constants.js';
 import { isContentHash } from '../../shared/plugins/identity.js';
 import { Battle } from '../sim/Battle.js';
 import { DataSource } from '../sim/simdata.js';
@@ -237,6 +237,8 @@ import { MatchSettle } from './match/settle.js';
 import { installTestTrace } from './testTrace.js';
 import { MatchTestCommands } from './match/testCommands.js';
 import { MatchOffers } from './match/offers.js';
+import { MatchConfront } from './match/confront.js';
+import { MatchEvent } from './match/event.js';
 
 export { FLOW_TICKER_PRIORITY, DELAYS, BAND_TURN_SECONDS } from './match/common.js';
 
@@ -272,7 +274,15 @@ export class Match {
     }
     this.opts = opts;
     this.roomCode = opts.roomCode ?? '----';
-    this.mode = opts.mode === 'solo' ? 'solo' : 'coop';
+    this.mode = opts.mode === 'solo' ? 'solo' : opts.mode === 'versus' ? 'versus' : 'coop';
+    /** 2V2 ('versus'): two teams of two, each sharing one HP pool and its own boss pool. */
+    this.isVersus = this.mode === 'versus';
+    /** 同盟狩猎: a co-op room may run the SYSTEM-filled 狩猎期 (COOP_HUNT); off leaves co-op exactly as it was. */
+    this.coopHuntOn = this.mode === 'coop' && opts.coopHunt !== false
+      && (COOP_HUNT.enabled !== false || opts.coopHunt === true);
+    /** @type {Map<number, number> | null} team id → shared HP pool (versus only; solo/coop keep per-player LP) */
+    this.teamLps = null;
+    this.teamLp = 0;
     this.difficulty = opts.difficulty;
     this.modeId = opts.modeId || modeIdFor(this.mode, opts.difficulty);
     this.seed = (Number(opts.seed) >>> 0) || 1;
@@ -402,6 +412,29 @@ export class Match {
     this.rngDraft = rng('draft');
     this.rngBots = rng('bots');
     this.rngMeta = rng('meta');
+    // 2V2 对抗期: the random drop of the opponent's originals (its own stream, so no other draw shifts)
+    this.rngConfront = rng('confront');
+    // 2V2 对抗期: the per-round draw of the four offered 特训敌人 types (2 UP + 2 normal)
+    this.rngConfrontTypes = rng('confront-types');
+    // 同盟狩猎: the system's prey picks (one stream of its own; a co-op match is the only consumer)
+    this.rngCoopHunt = rng('coop-hunt');
+    // 2V2 事件期: the type / entry draws (its own stream too — golden scenarios never enter the event phase)
+    this.rngEvent = rng('event');
+    // the monster entry's own stream: independent of the players' target choices (EVENT_FOE_CARDS)
+    this.rngFoeEvent = rng('event-foe');
+    // the 强力属性 subset's stream: share / attribute / which units (EVENT_FOE_ELITES)
+    this.rngFoeElite = rng('event-elite');
+
+    /**
+     * 狩猎期 start round: 2V2 draws R4/R5/R6 for its 对抗期; a co-op hunt draws the same way for its system-run 狩猎期
+     * (COOP_HUNT.startRounds). null in solo (no hunt at all). Exposed as m.public.contestStartRound.
+     */
+    const huntStarts = this.coopHuntOn ? COOP_HUNT.startRounds : [4, 5, 6];
+    this.contestStartRound = this.isVersus || this.coopHuntOn
+      ? huntStarts[Math.floor(rng('contest-start')() * huntStarts.length)]
+      : null;
+    /** 事件期 rounds: E1 = the hunt start, E2 = +4, E3 = R13 (eventRoundsFor; [] when the mode has no hunt). */
+    this.eventRounds = this.contestStartRound ? eventRoundsFor(this.contestStartRound) : [];
 
     /** @type {Map<string, PlayerState>} */
     this.players = new Map();
@@ -500,6 +533,27 @@ export class Match {
     /** 联防: { plan, bounds } — per leaker the most survivors settlement can bill (_uniteLeft's clamp) */
     this._uniteBounds = null;
     this.teamLp = null;
+    /** 2V2: the 对抗期 submissions of the current round (Map<attacker playerId, sub>); `confrontSubs` collects, `confront` is applied. */
+    this.confrontSubs = null;
+    this.confront = null;
+    /** 'target' | 'monster' | 'roster' while a 狩猎期 is open (2V2 对抗期 or the coop 投放公示); null otherwise. */
+    this.confrontStage = null;
+    /** 同盟狩猎: true while a co-op 狩猎期's 5 s 投放公示 holds the round between PREP and COMBAT (m.public.confront). */
+    this.coopRoster = false;
+    /** 2V2 事件期 (server/match/match/event.js): the current ally period { round, index, picks: Map, done } and the archive. */
+    this.event = null;
+    this.eventHistory = [];
+    this.eventIndex = 0;
+    /** 'roster' while the 5 s 词条公示 holds the period; null otherwise. */
+    this.eventStage = null;
+    /** the match's used ally / monster entries (no card repeats while its kind has an unused one) */
+    this.eventUsedAlly = new Set();
+    this.eventUsedFoe = new Set();
+    /** this event period's monster entry { round, index, card } and the match's monster archive */
+    this.foeEvent = null;
+    this.eventFoeHistory = [];
+    /** the round whose event period already resolved (eventDue) */
+    this._eventDoneRound = 0;
     this.bossPool = null;
     this.hiddenLayerSum = 0;
     this.hiddenReached = false;
@@ -513,7 +567,7 @@ export class Match {
 }
 
 // the method modules, in this order (a name defined twice is an error, never a silent override)
-for (const part of [MatchPlatform, MatchInfra, MatchMessaging, MatchViews, MatchWatch, MatchIntents, MatchPause, MatchPhases, MatchSetupVote, MatchSpDraft, MatchPrep, MatchCombat, MatchClientCombat, MatchRehearsal, MatchReports, MatchUnite, MatchBoss, MatchSettle, MatchTestCommands, MatchOffers]) {
+for (const part of [MatchPlatform, MatchInfra, MatchMessaging, MatchViews, MatchWatch, MatchIntents, MatchPause, MatchPhases, MatchSetupVote, MatchSpDraft, MatchPrep, MatchCombat, MatchClientCombat, MatchRehearsal, MatchReports, MatchUnite, MatchBoss, MatchSettle, MatchTestCommands, MatchOffers, MatchConfront, MatchEvent]) {
   for (const key of Reflect.ownKeys(part.prototype)) {
     if (key === 'constructor') continue;
     if (Object.prototype.hasOwnProperty.call(Match.prototype, key)) throw new Error(`Match.${String(key)} is defined twice`);

@@ -147,7 +147,7 @@ jobs:
           {
             echo "## 这是什么"
             echo
-            echo "**纯 mod 管理器发行物** —— 卫戍协议 0.3.1（\`APP_VERSION ${{ steps.v.outputs.app }}\`）的"
+            echo "**纯 mod 管理器发行物** —— 卫戍协议 \`${{ steps.v.outputs.app }}\`（= \`shared/constants.js\` 的 \`APP_VERSION\`）的"
             echo "**服务端运行时 + 模组管理器**。走的是上游自己的 \`tools/package.mjs --lite\`："
             echo "\`server/\`（含 \`server/mods/\` 管理器本体）、\`shared/\`、\`data/\`、\`public/\`、\`packs/\`、\`schemas/\`。"
             echo "**不含**游戏素材（\`npm run setup\` 首启自取）、\`public/dev/\`、\`test/\`、\`.github/\`。"
@@ -173,8 +173,10 @@ jobs:
             echo "## 这条线与上游的关系"
             echo
             echo "- 上游是 \`sganggs/Stronghold-Protocol\`（游戏本体）。这条线是它的直接后代："
-            echo "  在 0.3.2 之上只多出 10 个文件（管理器本体 4 个 + \`tools/mod.mjs\` + 文档 + 测试，"
-            echo "  以及对 \`server/index.js\` / \`server/http/routes.js\` / \`server/plugins/forgeImport.js\` 三个挂点）。"
+            echo "  在 \`${{ steps.v.outputs.app }}\` 之上另加**管理器本体 4 个文件**（\`server/mods/\`）、\`tools/mod.mjs\`、"
+            echo "  文档与测试，以及三个挂点（\`server/index.js\` / \`server/http/routes.js\` / \`server/plugins/forgeImport.js\`）；"
+            echo "  引擎面（对局 / 客户端 / 数据）也随本线前进，逐条见 \`CHANGELOG.md\` 与各次 PR。"
+            echo "  改了哪些上游也存在同路径的文件，登记在 \`.github/sync-allow.txt\`（\`mirror-upstream\` 的门控读它）。"
             echo "- 上游同步由 \`mirror-upstream.yml\` 自动做（merge，不 reset），四道门全过才推。"
             echo "- Forge 0.18.8 那条旧世系已归档：tag \`archive/forge-0.18.8-lineage\` + bundle。"
           } > "$NOTES"

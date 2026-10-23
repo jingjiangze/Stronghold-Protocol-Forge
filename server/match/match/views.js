@@ -258,6 +258,20 @@ export class MatchViews {
         const ps = this.players.get(id);
         return !ps || this.teamIdOf(ps) === viewerTeam;
       }));
+      // 2V2 狩猎期: only the OWN team's targeting and submissions WHILE the phase runs — who the opponents aim at stays
+      // hidden. The roster hold (confrontStage 'roster') is the reveal: both teams' lists are public there, exactly as
+      // the 悬赏名单 popup promises, so it must NOT be filtered.
+      if (v.confront && this.phase === PHASE.CONFRONT && this.confrontStage !== 'roster') {
+        const keep = (pid) => {
+          const ps = this.players.get(pid);
+          return !ps || this.teamIdOf(ps) === viewerTeam;
+        };
+        const targets = {};
+        for (const [pid, tg] of Object.entries(v.confront.targets || {})) if (keep(pid)) targets[pid] = tg;
+        const subs = {};
+        for (const [pid, s] of Object.entries(v.confront.subs || {})) if (keep(pid)) subs[pid] = s;
+        v.confront = { ...v.confront, targets, subs };
+      }
     }
     return v;
   }

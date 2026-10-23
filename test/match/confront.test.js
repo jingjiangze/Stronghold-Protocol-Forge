@@ -182,3 +182,26 @@ test('confront: a coop hunt plans one system placement per alive player and inse
     assert.equal(s.bounty.bank, true, 'its bounty is banked, never gold');
   }
 });
+
+test('confront: the opponent’s targeting and submissions stay hidden until the roster hold', () => {
+  const { m } = confrontReady();
+  m.enterConfront();
+  const p0 = m.players.get('p_0');
+  m.submitConfrontTarget(p0, { targetPlayerId: 'p_2' });
+  m.submitConfrontTarget(m.players.get('p_2'), { targetPlayerId: 'p_0' });
+
+  const mine = m.publicView(0);
+  assert.deepEqual(Object.keys(mine.confront.targets).sort(), ['p_0', 'p_1'], 'only the own team is listed');
+  const other = m.publicView(1);
+  assert.deepEqual(Object.keys(other.confront.targets).sort(), ['p_2', 'p_3'], 'the other team sees its own only');
+
+  // the roster hold is the reveal
+  const { group, picks } = affordable(m);
+  for (const ps of m.order) {
+    if (m.confrontStage !== 'monster') break;
+    m.submitConfront(ps, { group, position: 'front', picks: picks.map((p) => ({ enemyKey: p.key, gate: 'lower' })) });
+  }
+  assert.equal(m.confrontStage, 'roster');
+  const revealed = m.publicView(0);
+  assert.deepEqual(Object.keys(revealed.confront.subs).sort(), ['p_0', 'p_1', 'p_2', 'p_3'], 'both teams are public in the roster');
+});

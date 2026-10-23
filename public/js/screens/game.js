@@ -143,6 +143,7 @@ import { MatchEnded, PausedOverlay } from './game/overlays.js';
 import { inspectRange } from './game/range.js';
 import { t, tParts } from '../../../shared/i18n.js';
 import { TestConsole } from '../ui/testConsole.js';
+import { ConfrontOverlay, ConfrontClash } from '../ui/confrontOverlay.js';
 
 // 作战统计 is opt-in (settings `combatMetrics`, default off). The runner does not import the settings store;
 // this screen pushes the switch. Outside a browser battleRunner is null, so this is a no-op.
@@ -254,6 +255,7 @@ function MatchScreen() {
   const [bossPlate, setBossPlate] = useState(null);      // ui/bossPlates.js: { kind: 'final'|'core'|'end', … , key }
   const [readyBusy, setReadyBusy] = useState(false);
   const [spBusy, setSpBusy] = useState(null);
+  const [confBusy, setConfBusy] = useState(false);       // 2V2 对抗期: one request at a time (target / submit)
   const [personalBusy, setPersonalBusy] = useState(null); // { choiceId, idx }: an older request cannot clear a newer pick
   const [layer, setLayer] = useState('ALL');             // 联防 / 最终攻势 camera: 'L' | 'ALL' | 'R'
   const [pen, setPen] = useState(false);                 // the camera shows the enemy preview pen (research 09 §2)
@@ -1735,7 +1737,10 @@ function MatchScreen() {
         onDetailClose=${() => setDetail((d) => (d?.kind === 'chess' || d?.kind === 'item' ? null : d))}
         onRefuse=${(reason) => { toast(reason, 'warn'); audio.sfx('error', { volume: 0.5 }); }}
         reward=${phase === PHASE.PREP && !rewardMin ? priv?.shop?.rewardOffer || null : null}
-        onReward=${(i) => actions.reward(i)} onRewardLater=${() => setRewardMin(true)} onArm=${setArmedCard} />` : null}
+        onReward=${(i) => actions.reward(i)} onRewardLater=${() => setRewardMin(true)} onArm=${setArmedCard}
+        merchant=${phase === PHASE.PREP ? priv?.merchant || null : null}
+        onWithdraw=${(gold) => actions.merchantWithdraw(gold)}
+        versus=${!!pub?.contestStartRound} merchantRemind=${false} />` : null}
 
       ${phase === PHASE.PREP && priv?.shop?.rewardOffer ? html`<${RewardOverlay} priv=${priv} minimized=${rewardMin || barCollapsed}
         onMinimize=${(m) => { setRewardMin(m); if (!m) setCollapsed(false); }} />` : null}
@@ -1811,6 +1816,12 @@ function MatchScreen() {
       chev=${banner.chev} duration=${banner.duration} onDone=${() => setBanner(null)} />` : null}
     ${!hasOffers && banner && !banner.plate && !roundPop ? html`<${PhaseBanner} key=${banner.key} mode="overlay" title=${banner.title} sub=${banner.sub} micro=${banner.micro}
       tone=${banner.tone} duration=${banner.duration || 1500} onDone=${() => setBanner(null)} />` : null}
+
+    ${pub?.confront && (pub.confront.active || pub.confront.roster) ? html`<${ConfrontOverlay} pub=${pub} busy=${confBusy}
+      onTarget=${async (targetPlayerId) => { setConfBusy(true); try { await actions.confrontTarget(targetPlayerId); } finally { setConfBusy(false); } }}
+      onConfirm=${async (group, position, picks) => { setConfBusy(true); try { await actions.confront(group, position, picks); } finally { setConfBusy(false); } }} />` : null}
+
+    ${pub?.confront && !pub.confront.active && !pub.confront.roster ? html`<${ConfrontClash} pub=${pub} />` : null}
 
     ${resultBox ? html`<${ResultDialog} key=${resultBox.key} title=${resultBox.title} sub=${resultBox.sub} micro=${resultBox.micro}
       tone=${resultBox.tone} duration=${resultBox.duration} onDone=${() => setResultBox(null)} />` : null}

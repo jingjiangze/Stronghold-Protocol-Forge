@@ -93,7 +93,11 @@ export const actions = {
   offer: (offer, idx, refresh = false, cardId) => act(refresh ? 'g.offerRefresh' : 'g.offer', { offerId: offer.id, pluginId: offer.pluginId, seq: offer.seq, idx, cardId }),
   choice: (idx, choiceId) => act('g.choice', choiceId === undefined ? { idx } : { idx, choiceId }),
   ready: (ready) => act('g.ready', { ready }, { sfx: ready ? 'ready' : 'back' }),
-  emote: (id) => act('g.emote', { id }, { quiet: true }),
+  emote: (id) => {
+    // 先给 peers 一份（浏览器旁路，即时显示）；下面这条服务端帧仍是权威来源。
+    try { globalThis.__spP2P?.broadcast?.({ kind: 'emote', id }); } catch { /* no peer channel */ }
+    return act('g.emote', { id }, { quiet: true });
+  },
   // `playerId`: the player tapped in the team panel (a shared field shows two) — what an eliminated viewer follows
   watch: (fieldId, playerId = null) => act('g.watch', typeof playerId === 'string' && playerId ? { fieldId, playerId } : { fieldId }, { sfx: 'tab' }),
   autoplay: (on) => act('g.autoplay', { on }),

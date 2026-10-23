@@ -98,6 +98,15 @@ export function backoffDelay(attempt, rand = Math.random) {
  * @returns {string}
  */
 export function defaultWsUrl(loc = globalThis.location) {
+  // 入口与联机解耦：页面可以从任何域名来（隧道 / 自有域名 / 反代外壳），WS 仍可直连服务器本身。
+  // 优先级：?ws=wss://… → globalThis.__SP_WS__ → 同源推导（缺省，行为不变）。
+  const ok = (v) => typeof v === 'string' && /^wss?:\/\//.test(v.trim());
+  try {
+    const q = new URLSearchParams((loc && loc.search) || '').get('ws');
+    if (ok(q)) return q.trim();
+  } catch { /* a caller without a search string */ }
+  const forced = typeof globalThis.__SP_WS__ === 'string' ? globalThis.__SP_WS__ : '';
+  if (ok(forced)) return forced.trim();
   if (!loc || !loc.host) return 'ws://localhost:3000/ws';
   return `${loc.protocol === 'https:' ? 'wss' : 'ws'}://${loc.host}/ws`;
 }
@@ -163,6 +172,14 @@ export class Net {
     this._lastRx = 0;
     this._unansweredSince = null; // time of the oldest ping sent since the last inbound frame
     this._clockSamples = [];   // [{ offset, rtt }]
+
+    // 可选的浏览器点对点旁路（transport 插件）：按需加载 /js/p2p.js，权威消息永远走 WS。
+    this.p2p = null;
+    this._p2pPromise = null;
+    this._p2pFailedAt = 0;
+    this._p2pPeers = new Set();
+    this._p2pForce = undefined;
+    this._p2pOff = false;
   }
 
   // ---- events ----------------------------------------------------------------------------------
@@ -525,6 +542,86 @@ export class Net {
     return this._pending.size;
   }
 
+  // ---- optional peer side channel (the p2p-webrtc plugin) ---------------------------------------
+  //
+  // 浏览器原生 WebRTC，玩家机器上不装任何东西。DataChannel 的另一端是**另一个浏览器**，不是服务器，
+  // 所以这里只做非权威帧的旁路：hello / room.* / g.* / m.* 永远走 WebSocket。
+  // 模块由插件客户端覆盖层提供（/js/p2p.js），只有该插件被装载时才存在；房间在 room.state.content.plugins 里点名。
+
+  /** 安装（一次）并同步 peer 集合；任何失败都静默——WS 路径不受影响。 */
+  enableP2P(peers = []) {
+    this._p2pForced();
+    if (this._p2pOff) return Promise.resolve(null);
+    if (Date.now() - this._p2pFailedAt < 60_000) return Promise.resolve(null);
+    if (!this._p2pPromise) {
+      this._p2pPromise = import('/js/p2p.js')
+        .then((mod) => {
+          this.p2p = mod.install({
+            net: this,
+            self: this.playerId,
+            onMessage: (from, data) => this._emit('p2p.data', { from, data }),
+          });
+          return this.p2p;
+        })
+        .catch((err) => {
+          console.warn('[net] p2p unavailable:', (err && err.message) || err);
+          this._p2pPromise = null;
+          this._p2pFailedAt = Date.now();
+          return null;
+        });
+    }
+    return this._p2pPromise.then((api) => {
+      if (!api) return null;
+      this.p2p = api;
+      const want = Array.isArray(peers) ? peers.filter((id) => typeof id === 'string' && id) : [];
+      this._p2pPeers = new Set(want);
+      api.sync(want);
+      return api;
+    });
+  }
+
+  disableP2P() {
+    this._p2pPeers = new Set();
+    try { this.p2p?.closeAll(); } catch { /* already closed */ }
+    this.p2p = null;
+  }
+
+  /** 探针/控制台用：每个 peer 的通道状态。 */
+  p2pStats() {
+    let status = {};
+    try { status = this.p2p?.status?.() || {}; } catch { status = {}; }
+    return { enabled: !!this.p2p, peers: [...this._p2pPeers], status };
+  }
+
+  /** `?p2p=1`（或 __SP_P2P_FORCE__）可在不改房间内容 hash 的前提下开启；`?p2p=0` 永远优先。 */
+  _p2pForced() {
+    if (this._p2pForce !== undefined) return this._p2pForce;
+    let q = null;
+    try { q = new URLSearchParams((globalThis.location && globalThis.location.search) || '').get('p2p'); } catch { q = null; }
+    this._p2pForce = q === '1' || globalThis.__SP_P2P_FORCE__ === true;
+    this._p2pOff = q === '0' || globalThis.__SP_P2P_OFF__ === true;
+    return this._p2pForce;
+  }
+
+  /** 房间策略：内容集点名该插件，或页面用 ?p2p=1 强制；座位与观战者都是 peer。 */
+  _applyP2P(room) {
+    const plugins = room && Array.isArray(room.content && room.content.plugins) ? room.content.plugins : [];
+    const on = this._p2pForced() || plugins.some((p) => p && p.id === 'p2p-webrtc');
+    if (!on || this._p2pOff) {
+      if (this.p2p) this.disableP2P();
+      return;
+    }
+    const me = this.playerId;
+    const people = [
+      ...(Array.isArray(room.seats) ? room.seats : []),
+      ...(Array.isArray(room.spectators) ? room.spectators : []),
+    ];
+    const peers = people
+      .filter((s) => s && s.playerId && !s.isBot && s.connected && s.playerId !== me)
+      .map((s) => s.playerId);
+    this.enableP2P(peers).catch(() => { /* WS only */ });
+  }
+
   // ---- incoming --------------------------------------------------------------------------------
 
   _onMessage(data) {
@@ -541,6 +638,12 @@ export class Net {
     const { t } = msg;
     const rid = msg.rid;
     const isHelloError = t === 'error' && rid != null && rid === this._helloRid;
+
+    // 旁路信令；插件没装时丢弃（对端会重试）。房间状态驱动 peer 集合。
+    if (t.startsWith('p2p.') && this.p2p) {
+      Promise.resolve(this.p2p.ingest(msg)).catch((err) => console.warn('[net] p2p frame failed', err));
+    }
+    if (t === 'room.state') this._applyP2P(msg);
 
     if (t === 'welcome') {
       // A local ownership election can revoke a token after its hello went onto the wire.

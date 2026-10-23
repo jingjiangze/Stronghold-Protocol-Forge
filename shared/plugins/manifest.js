@@ -183,7 +183,7 @@ const SETTING_TYPES = ['boolean', 'integer', 'number', 'enum'];
 /** Top-level fields of manifest 2 (anything else is warned about and ignored). */
 const V2_FIELDS = new Set(['$schema', 'manifest', 'id', 'name', 'englishName', 'description', 'version', 'app', 'api', 'class', 'scope',
   'authors', 'credits', 'license', 'homepage', 'sourceLang', 'requires', 'optional', 'conflicts', 'loadAfter', 'loadBefore', 'priority',
-  'settings', 'permissions', 'overrides', 'rules', 'entry', 'slots', 'notices', 'files', 'lang', 'base', 'fallback', 'complete', 'machineTranslated', 'numberUnits', ...Object.keys(PARTS)]);
+  'settings', 'permissions', 'capabilities', 'overrides', 'rules', 'entry', 'slots', 'notices', 'files', 'lang', 'base', 'fallback', 'complete', 'machineTranslated', 'numberUnits', ...Object.keys(PARTS)]);
 /** Those fields, sorted, for the frozen API table (docs/PLUGIN-API.md). */
 export const MANIFEST_FIELDS = Object.freeze([...V2_FIELDS].sort());
 /** Fields only a lang plugin has. */
@@ -293,7 +293,7 @@ export function appVersionMatches(range, version = APP_VERSION) {
  *   compatible: boolean, api: number | null, scope: string[], authors: string[], credits: string, license: string,
  *   homepage: string, sourceLang: string, requires: Record<string, string>, optional: Record<string, string>,
  *   conflicts: Record<string, string>, loadAfter: string[], loadBefore: string[], priority: number,
- *   settings: Record<string, PluginSetting>, permissions: string[], parts: Record<string, PluginPart>,
+ *   settings: Record<string, PluginSetting>, permissions: string[], capabilities?: string[], parts: Record<string, PluginPart>,
  *   entry: Record<string, string>, slots: string[], files: Record<string, string>, overrides?: string[],
  *   themeVars?: Record<string, string>, notices?: PluginNotice[],
  *   lang?: string, base?: string | null, fallback?: string[], complete?: boolean, machineTranslated?: boolean,
@@ -312,7 +312,7 @@ export function appVersionMatches(range, version = APP_VERSION) {
 function v2Defaults(cls) {
   return {
     names: {}, description: {}, api: null, scope: [...(PLUGIN_CLASSES[cls]?.defaultScope || [])], homepage: '', sourceLang: SOURCE_LANG,
-    requires: {}, optional: {}, conflicts: {}, loadAfter: [], loadBefore: [], priority: 0, settings: {}, permissions: [], parts: {}, entry: {},
+    requires: {}, optional: {}, conflicts: {}, loadAfter: [], loadBefore: [], priority: 0, settings: {}, permissions: [], capabilities: [], parts: {}, entry: {},
     slots: [],
   };
 }
@@ -753,11 +753,21 @@ export function readPluginManifest(raw, ctx) {
   const overrides = m.overrides ?? [];
   if (m.overrides !== undefined && (!['script','trusted'].includes(cls) || !Array.isArray(overrides) || overrides.length > 200 || new Set(overrides).size !== overrides.length || overrides.some(x => typeof x !== 'string' || !/^[A-Za-z0-9_:-]{1,128}$/.test(x)))) list.problem('PLUGIN_SCRIPT_OVERRIDE', 'overrides must list official kit ids', {at:['overrides']});
 
+  // capabilities（2026-10-20）：插件自报的「面」，管理面板据此分组——transport 单列一栏，不混进美术/玩法。
+  // 只是个标签：不认识的值原样保留，不写这个字段的插件行为完全不变。
+  let capabilities = [];
+  if (m.capabilities !== undefined) {
+    const raw = Array.isArray(m.capabilities) ? m.capabilities : null;
+    if (!raw || raw.length > 8 || raw.some((x) => typeof x !== 'string' || !/^[a-z][a-z0-9-]{0,23}$/.test(x))) {
+      list.problem('PLUGIN_FIELD_UNKNOWN', 'capabilities must be up to 8 lowercase tags', { at: ['capabilities'] });
+    } else capabilities = [...new Set(raw)];
+  }
+
   /** @type {PluginManifest} */
   const out = {
     manifest: 2, id, class: cls, type: kind.packType, name, englishName, names, description, version, app: range, compatible, api, scope,
     authors: authorsOf(m.authors), credits: str(m.credits, 500), license: str(m.license, 100), homepage, sourceLang: sourceLang || SOURCE_LANG,
-    requires, optional, conflicts, loadAfter, loadBefore, priority, settings, permissions, parts, entry, slots, files: {},
+    requires, optional, conflicts, loadAfter, loadBefore, priority, settings, permissions, capabilities, parts, entry, slots, files: {},
     ...(m.overrides !== undefined ? { overrides } : {}),
     ...(parts.theme?.themeVars ? { themeVars: parts.theme.themeVars } : {}),
     ...(notices ? { notices } : {}),
@@ -915,6 +925,7 @@ export function pluginIndexEntry(p) {
   if (m.priority) e.priority = m.priority;
   if (Object.keys(m.settings).length) e.settings = JSON.parse(JSON.stringify(m.settings));
   if (m.permissions.length) e.permissions = [...m.permissions];
+  if (m.capabilities && m.capabilities.length) e.capabilities = [...m.capabilities];
   if (Number.isFinite(p.bytes)) e.bytes = p.bytes;
   if (Number.isFinite(p.count)) e.files = p.count;
   // [ASSUMED] A cosmetic whose overlay writes nothing does not publish `vs` or `artBytes`. The page would

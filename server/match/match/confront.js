@@ -514,7 +514,11 @@ export class MatchConfront {
     const cfgShare = Number(this.huntCfg().killIncomeShare) > 0 ? Number(this.huntCfg().killIncomeShare) : 1;
     let v = 0;
     for (let i = 0; i < k; i++) v += this.confrontValueOf(list[i] && list[i].enemyKey);
-    return Math.floor((v / wave) * income * cfgShare);
+    // Ceiling: one round's income. The formula pays for the VALUE a team threw, and a placement is meant to be a share of
+    // the receiver's wave — but `picks` here is the receiver's WHOLE batch, so a stack (N attackers on one player) would
+    // otherwise pay N × the single-placement rate. One round's income is the natural ceiling: a team cannot earn more
+    // from throwing monsters at somebody than a round of income pays, and the fixed phases already cap at 1/1/2/2 / 25.
+    return Math.min(Math.floor((v / wave) * income * cfgShare), Math.floor(income * cfgShare));
   }
 
   /**
@@ -823,6 +827,8 @@ export class MatchConfront {
   enterConfront() {
     this.phase = PHASE.CONFRONT;
     this.confrontStage = 'target';
+    /** receiver playerId → value of the original wave already replaced this round (the share is per RECEIVER) */
+    this._confrontRemoved = new Map();
     this.confrontTargets = new Map(); // attacker playerId → target playerId
     this.confrontSubs = new Map();    // attacker playerId → { target, group, position, picks, bosses, ratio, budget }
     this.setDeadline(this.soloUntimed ? null : VERSUS_CONFRONT.targetSeconds, () => this.finishConfrontTargets());
@@ -849,8 +855,15 @@ export class MatchConfront {
   }
 
   /**
-   * Give `ps` a target: the named one when it is still free, else the opponent that is left. `fillMates` also hands the
-   * teammate whatever remains (first come, first served: A picks C and B is given D) — never the other team.
+   * Give `ps` a target: the named one when it is still free, else the opponent nobody on this team picked yet, else the
+   * LEAST-attacked opponent (a stack). `fillMates` also hands the teammates whatever remains (first come, first served:
+   * A picks C and B is given D) — never the other team.
+   *
+   * Why the stack: a team can outnumber the opponents it still sees (4V4 with two alive opponents, or a 4-attacker team
+   * against a 2-player team). Before this, `free[0]` was `undefined` and the extra attackers simply got NO target — their
+   * submission carried `target: null`, `confrontFor` (which matches `s.target === ps.playerId`) never delivered it, and
+   * the budget was spent on monsters that reached nobody. A stack keeps the placement alive; the price is bounded where
+   * the placement is applied (`applyConfront` divides the round's replacement share by the number of attackers).
    */
   assignConfrontTarget(ps, want = null, fillMates = false) {
     const team = this.teamIdOf(ps);
@@ -858,17 +871,25 @@ export class MatchConfront {
     const oppIds = opp == null ? [] : this._aliveOf(opp).map((p) => p.playerId);
     const takenBy = (t) => [...this.confrontTargets.entries()]
       .filter(([pid]) => this.teamIdOf(this.players.get(pid)) === t).map(([, v]) => v);
-    if (!this.confrontTargets.has(ps.playerId)) {
+    /** The opponent this team attacks the fewest times (ties: seat order) — the stack target when nobody is free. */
+    const leastAttacked = () => {
+      const loads = new Map(oppIds.map((pid) => [pid, 0]));
+      for (const t of takenBy(team)) if (loads.has(t)) loads.set(t, loads.get(t) + 1);
+      let best = null;
+      for (const pid of oppIds) if (best == null || loads.get(pid) < loads.get(best)) best = pid;
+      return best;
+    };
+    const pickFor = (playerId) => {
+      if (this.confrontTargets.has(playerId)) return;
       const free = oppIds.filter((pid) => !takenBy(team).includes(pid));
-      const chosen = typeof want === 'string' && free.includes(want) ? want : free[0];
-      if (chosen) this.confrontTargets.set(ps.playerId, chosen);
-    }
+      const chosen = typeof want === 'string' && playerId === ps.playerId && free.includes(want)
+        ? want
+        : (free[0] ?? leastAttacked());
+      if (chosen) this.confrontTargets.set(playerId, chosen);
+    };
+    pickFor(ps.playerId);
     if (!fillMates) return;
-    for (const mate of this._aliveOf(team)) {
-      if (this.confrontTargets.has(mate.playerId)) continue;
-      const left = oppIds.filter((pid) => !takenBy(team).includes(pid));
-      if (left.length) this.confrontTargets.set(mate.playerId, left[0]);
-    }
+    for (const mate of this._aliveOf(team)) pickFor(mate.playerId);
   }
 
   /** Step 1 ends once EVERY alive player (both sides) holds a target, or its window runs out. */
@@ -1103,12 +1124,29 @@ export class MatchConfront {
     // replacement share must stay comparable with them.
     const valueOf = (key) => this.confrontValueOf(key, scale);
     const out = spawns.map((s) => ({ ...s, mods: s.mods ? { ...s.mods } : undefined }));
+    // The round's replacement share belongs to the RECEIVER, not to each attacker: when several placements land on the
+    // same player (a stack — see assignConfrontTarget), the LATER ones only add monsters — the original wave is shaved
+    // at most confrontRatio() in total. Without this a 4V4 stack would replace N × confrontRatio() of the wave (4 ×
+    // 5–15 %, and 2 × 50 % on R13 = the whole wave), silently exceeding the share the panel announces.
+    //
+    // A running per-receiver budget rather than `share / N`: this wave is coarse (14 bodies, ~8 000 value each), so a
+    // 2.5 % split falls below every single unit and would replace NOTHING for both attackers — the placement would turn
+    // purely additive. The first placement takes the share, the next ones see 0 left.
+    if (!this._confrontRemoved) this._confrontRemoved = new Map();
+    const share = this.confrontWaveValue() * sub.ratio;
+    const already = Math.max(0, Number(this._confrontRemoved.get(ps.playerId)) || 0);
     // 1) drop originals at random until the target value is (nearly) reached
-    const target = this.confrontWaveValue() * sub.ratio;
+    const target = Math.max(0, share - already);
     const units = [];
+    const rowValue = new Map();
     out.forEach((s, i) => {
+      // another attacker's placement is NEVER a removal candidate: two stacks must not eat each other's monsters
+      // (confrontPlaced marks them; the original wave — bounty spawns and data-level unharmful parts included — is fair game)
+      if (s && s.confrontPlaced === true) return;
       const cnt = Math.max(1, Math.floor(Number(s.count) || 1));
-      for (let k = 0; k < cnt; k++) units.push({ i, v: Math.max(1, valueOf(s.enemyKey)) });
+      const v = Math.max(1, valueOf(s.enemyKey));
+      rowValue.set(i, v);
+      for (let k = 0; k < cnt; k++) units.push({ i, v });
     });
     // shuffle (seeded), then close the target with the closest of two builds: (a) fill what fits, then add the single
     // remaining unit nearest the gap; (b) the shuffled order's first crossing of the target (and the one before it).
@@ -1157,6 +1195,10 @@ export class MatchConfront {
       }
       for (const u of bestList) take.set(units[u].i, (take.get(units[u].i) || 0) + 1);
     }
+    // the receiver's running total for this round (see the share note above)
+    let removed = 0;
+    for (const [i, n] of take) removed += n * (rowValue.get(i) || 0);
+    if (removed > 0) this._confrontRemoved.set(ps.playerId, already + removed);
     // 2) apply the drops by REBUILDING the list (splicing while iterating would shift the indexes under us);
     //    a spawn that loses every unit goes away
     const kept = [];
@@ -1191,7 +1233,7 @@ export class MatchConfront {
     sub.picks.forEach((p, i) => {
       kept.push({
         time: start + i * 1, enemyKey: p.enemyKey, count: 1, interval: 0, routeIndex: this.confrontRouteFor(p.enemyKey, p.gate),
-        mods: { ...mods }, ownerPlayerId: ps.playerId, confrontSeat: sentBy,
+        mods: { ...mods }, ownerPlayerId: ps.playerId, confrontSeat: sentBy, confrontPlaced: true,
         // 狩猎模拟: a placed monster leaks FOR FREE — `countInTotal: false` is exactly that (the flag drives both the
         // LP charge and the 完美作战 counter), so only killing it matters: the bounty below pays the killer.
         countInTotal: false,
@@ -1227,7 +1269,7 @@ export class MatchConfront {
       list.push({
         time: time++, enemyKey: p.enemyKey, count: 1, interval: 0,
         routeIndex: this.confrontRouteFor(p.enemyKey, p.gate),
-        mods: { ...mods }, ownerPlayerId: ps.playerId, confrontSeat: sentBy,
+        mods: { ...mods }, ownerPlayerId: ps.playerId, confrontSeat: sentBy, confrontPlaced: true,
         countInTotal: false,
         bounty: { coins: this.confrontBossCoin(p.enemyKey), ownerPlayerId: ps.playerId, bank: false },
       });

@@ -295,6 +295,8 @@ export class MatchPhases {
     this.confront = null;
     this.confrontSubs = null;
     this.confrontTargets = null;
+    // the per-receiver replacement budget of a 狩猎期 never survives its round
+    this._confrontRemoved = null;
     const alive = this.alivePlayers();
     // the round's enemies (shared composition, generated now so the prep preview is exact). Planned BEFORE the players'
     // round start: its recompute() checks the board on the field the player deploys on this round (deployFieldOf reads

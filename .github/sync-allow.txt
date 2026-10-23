@@ -1,0 +1,71 @@
+# sync-allow.txt — mirror-upstream 的「增量面」登记表
+#
+# `mirror-upstream.yml` 的 GATE 1 判据：合并上游之后，凡**上游也有同路径**的文件，必须在本文件里逐字登记，
+# 否则同步失败（分支被推成 sync-gatefail/<upstream-sha>-<branch>，绝不静默变绿）。我方新增的文件与
+# `.github/**` 控制面不需要登记。
+#
+# 什么时候加一条：你改了某个**上游也存在**的路径（引擎面、客户端、数据、文档、包清单…），
+#   1) 在下面加一行完整相对路径；
+#   2) 在 PR 描述里写清「为什么必须改上游文件」——这是与上游撞车的那一面，越少越好。
+# 什么时候删一条：上游已删掉该文件，或我们把它移到了叠加层（不再改上游路径）。
+#
+# 这份表 2026-10-23 从 `mod 管理器 + 2V2/4V4` 的实际增量回填（56 条）。此前它是 workflow 里一行写死的
+# 3 个路径，随引擎面增长而漂移，导致 mirror-upstream 连续 9 次红、release-manager 不再自动触发。
+
+.gitattributes
+.gitignore
+CHANGELOG.md
+README.md
+docs/PLUGIN-API.md
+docs/history/0.2.3.md
+package-lock.json
+package.json
+public/css/screens/game-panels.css
+public/css/screens/game-shop.css
+public/css/screens/game.css
+public/css/screens/lobby.css
+public/css/screens/room.css
+public/i18n/en.json
+public/js/screens/game.js
+public/js/screens/lobby.js
+public/js/screens/room.js
+public/js/ui/gameActions.js
+public/js/ui/shopBar.js
+public/js/ui/teamPanel.js
+schemas/plugin.schema.json
+server/http/routes.js
+server/http/static.js
+server/http/websocket.js
+server/index.js
+server/lobby.js
+server/match/Match.js
+server/match/PlayerState.js
+server/match/match/combat.js
+server/match/match/infra.js
+server/match/match/intents.js
+server/match/match/messaging.js
+server/match/match/phases.js
+server/match/match/prep.js
+server/match/match/settle.js
+server/match/match/views.js
+server/match/match/watch.js
+server/match/player/basics.js
+server/match/player/economy.js
+server/match/player/round.js
+server/match/player/views.js
+server/match/waves.js
+server/plugins/forgeImport.js
+server/sim/battle/deploy.js
+server/sim/battle/economy.js
+server/sim/battle/players.js
+server/sim/content/devices.js
+server/sim/content/index.js
+server/sim/spec.js
+shared/constants.js
+shared/plugins/manifest.js
+shared/plugins/surface.js
+shared/plugins/ui.js
+shared/protocol.js
+test/match/fuzz.test.js
+test/match/harness.js
+tools/ci.mjs

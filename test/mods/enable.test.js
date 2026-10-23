@@ -8,6 +8,7 @@ import { Readable } from 'node:stream';
 import { createMods, nextDefault } from '../../server/mods/index.js';
 import { loadStudioKey } from '../../server/studio/key.js';
 import { modPage } from '../../server/mods/page.js';
+import { MOD_PAGE_SCRIPT } from '../../server/mods/pageScript.js';
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'sp-mods-enable-'));
 
@@ -87,7 +88,9 @@ test('enable: a write needs the key; an unknown id is refused', async () => {
 
 test('the /mod page carries the switch for every row', () => {
   const page = modPage({ inbox: '/x/mod-inbox', keyHint: '/x/plugins/.studio-key' });
-  assert.match(page, /\/mod\/enable/);
-  assert.match(page, /data-toggle/);
-  assert.doesNotMatch(page, /<script[^>]+src=/, 'no external script');
+  // 站点 CSP 只哈希 importmap：脚本必须以外部文件（/mod/page.js）加载，页面里不许再出现内联脚本体。
+  assert.match(page, /<script src="\/mod\/page\.js"><\/script>/);
+  assert.doesNotMatch(page, /<script>\s*\(\(\)/, 'no inline script: siteCsp() would block it');
+  assert.match(MOD_PAGE_SCRIPT, /\/mod\/enable/, 'the external script still wires the enable switch');
+  assert.match(MOD_PAGE_SCRIPT, /data-toggle/, 'the external script still builds one row per plugin');
 });

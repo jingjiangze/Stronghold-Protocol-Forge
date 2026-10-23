@@ -83,7 +83,7 @@ test('/mod: the page and the status read are open; a write method is 405', async
     let r = await call(mods, { method: 'GET', url: '/mod' });
     assert.equal(r.status, 200);
     assert.match(String(r.headers['content-type']), /text\/html/);
-    assert.match(r.body, /\/mod\/upload/, 'the page still names the upload path');
+    assert.match(r.body, /<script src="\/mod\/page\.js"><\/script>/, 'the page loads its script as a file');
 
     r = await call(mods, { method: 'POST', url: '/mod' });
     assert.equal(r.status, 405);

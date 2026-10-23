@@ -9,6 +9,7 @@ import { importArchive, sniffArchive } from '../../server/mods/import.js';
 import { startInbox } from '../../server/mods/inbox.js';
 import { createMods } from '../../server/mods/index.js';
 import { modPage } from '../../server/mods/page.js';
+import { MOD_PAGE_SCRIPT } from '../../server/mods/pageScript.js';
 import { readVanillaAssets } from '../../server/plugins/registry.js';
 import { zipFiles } from '../../server/plugins/zip.js';
 import { main } from '../../tools/mod.mjs';
@@ -106,7 +107,7 @@ test('cli pack: a folder becomes a deterministic zip that sniff reads as a pack'
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
-test('the /mod host owns exactly its own paths and serves a self-contained page', () => {
+test('the /mod host owns exactly its own paths and loads its script as a file', () => {
   const dir = tmp();
   const mods = createMods({ root: ROOT, pluginsDir: dir, dataDir: path.join(ROOT, 'data'), autoInbox: false });
   try {
@@ -117,9 +118,10 @@ test('the /mod host owns exactly its own paths and serves a self-contained page'
     assert.equal(mods.handles('/modx'), false);
     const page = modPage({ inbox: mods.inboxDir, keyHint: path.join(dir, '.studio-key') });
     assert.match(page, /^<!doctype html>/);
-    assert.match(page, /\/mod\/upload/);
-    assert.match(page, /\/mod\/fetch/);
-    assert.doesNotMatch(page, /<script[^>]+src=/, 'no external script');
+    assert.match(page, /<script src="\/mod\/page\.js"><\/script>/, 'the one external script the CSP allows');
+    assert.match(MOD_PAGE_SCRIPT, /\/mod\/upload/, 'the external script still posts the upload');
+    assert.match(MOD_PAGE_SCRIPT, /\/mod\/fetch/, 'the external script still posts the fetch');
+    assert.doesNotMatch(page, /<script>\s*\(\(\)/, 'no inline script: siteCsp() would block it');
     assert.doesNotMatch(page, /<link[^>]+href=/, 'no external stylesheet');
   } finally { mods.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });

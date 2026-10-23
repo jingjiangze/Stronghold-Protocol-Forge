@@ -25,8 +25,8 @@
 // Installed on Match.prototype by server/match/Match.js (a method container: never instantiated; `this` is the match).
 
 import {
-  PHASE, ERR, EVENT_TARGETS, EVENT_SELF_MUL, EVENT_PICK_SECONDS, EVENT_CARDS, EVENT_SEQUENCE,
-  EVENT_FOE_CARDS, EVENT_FOE_ELITES, EVENT_ROSTER_MS, EVENT_DURATION_ROUNDS, COOP_HUNT,
+  PHASE, ERR, EVENT_TARGETS, EVENT_TARGETS_ALL, eventTargetsFor, EVENT_SELF_MUL, EVENT_PICK_SECONDS, EVENT_CARDS,
+  EVENT_SEQUENCE, EVENT_FOE_CARDS, EVENT_FOE_ELITES, EVENT_ROSTER_MS, EVENT_DURATION_ROUNDS, COOP_HUNT,
 } from '../../../shared/constants.js';
 import { OK, fail } from './common.js';
 
@@ -290,7 +290,7 @@ export class MatchEvent {
    * only `self` / `mate` (COOP_HUNT.targets — there is no opposing team).
    * @returns {readonly string[]}
    */
-  eventTargetKeys() { return this.isVersus ? EVENT_TARGETS : COOP_HUNT.targets; }
+  eventTargetKeys() { return this.isVersus ? eventTargetsFor(this.teamSize) : COOP_HUNT.targets; }
 
   /**
    * The teammate a co-op player gives the `mate` target to (user: "random / designated, via the existing alliesOf").
@@ -317,7 +317,9 @@ export class MatchEvent {
       ? (this.order.find((p) => p !== ps && p.team === ps.team) ?? null)
       : this.coopEventMate(ps);
     const opps = this.isVersus ? this.order.filter((p) => p.team !== ps.team).sort((a, b) => a.seat - b.seat) : [];
-    return { self: ps, mate, oppA: opps[0] ?? null, oppB: opps[1] ?? null };
+    // 2V2 exposes two opponents (oppA / oppB); 4V4 all four (oppC / oppD join them) — the keys the room offers are
+    // eventTargetKeys(), so a 2V2 pick can never name oppC.
+    return { self: ps, mate, oppA: opps[0] ?? null, oppB: opps[1] ?? null, oppC: opps[2] ?? null, oppD: opps[3] ?? null };
   }
 
   /** The target map as playerIds (`m.public.event.targets`). */

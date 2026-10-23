@@ -42,7 +42,9 @@
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 3.8rem));
-  grid-template-rows: minmax(0, 6rem);
+  /* rows flow: 4 seats fill one row (co-op / 2V2), 8 seats (4V4) wrap to a second one */
+  grid-auto-rows: minmax(0, 6rem);
+  grid-template-rows: none;
   justify-content: center;
   align-content: center;
   gap: .3rem;

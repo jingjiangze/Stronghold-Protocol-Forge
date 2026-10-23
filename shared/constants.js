@@ -20,6 +20,13 @@ export const PLUGIN_API = Object.freeze({ current: 2, min: 1 });
 
 export const MAX_SEATS = 4;
 /**
+ * Seats of a 4V4 versus room (TEAM_SIZE 4 × TEAMS 2). A versus room's capacity is `teamSize × TEAMS`, chosen at
+ * `room.create { teamSize }`: 2 → 4 seats (2V2, the default) and 4 → 8 seats (4V4). Co-op / solo keep MAX_SEATS.
+ */
+export const MAX_TEAM_SIZE = 4;
+export const TEAM_SIZES = Object.freeze([2, 4]);
+export const MAX_SEATS_VERSUS = MAX_TEAM_SIZE * 2;
+/**
  * Spectator seats of a co-op room (community report #26, owner's decision 2026-10-04) — a remake feature: the official
  * room has 1–4 players and no spectator seat (there only eliminated players and 联防 bystanders watch, research 09 §3.1).
  * A spectator never counts as a player, may not act, and watches like an eliminated player (server/lobby.js spectate,
@@ -103,8 +110,20 @@ export const merchantCapFor = (round, table = VERSUS_CONFRONT) =>
   (Math.floor(Number(round) || 0) === table.merchantUncappedRound ? Infinity : table.merchantRoundCap);
 /** R13 之后公开对方视角; solo/co-op have no opponent. */
 export const opponentRevealed = (round) => Math.floor(Number(round) || 0) > VERSUS_CONFRONT.huntRound;
-/** The team a seat plays for in a 'versus' room: seats 0,1 → team 0; seats 2,3 → team 1. */
-export const teamOfSeat = (seat) => Math.floor(seat / TEAM_SIZE) % TEAMS;
+/**
+ * The team a seat plays for in a 'versus' room: with teamSize 2 seats 0,1 → team 0 and 2,3 → team 1; with teamSize 4
+ * seats 0–3 → team 0 and 4–7 → team 1. The team size comes from the room (`{ teamSize: room.teamSize }`), so one
+ * binary serves both formats.
+ *
+ * The second argument is an OPTIONS OBJECT on purpose: `[0,1,2,3].map(teamOfSeat)` is a natural way to write the 2V2
+ * mapping, and a bare numeric second parameter would silently receive the array index there (0,1,2,3 → team size 1
+ * for the second seat). An options object is `undefined` for a plain map call, so the default holds.
+ * @param {number} seat @param {{ teamSize?: number }|null} [opts]
+ */
+export const teamOfSeat = (seat, opts = null) => {
+  const size = opts && Number.isInteger(opts.teamSize) && opts.teamSize > 0 ? opts.teamSize : TEAM_SIZE;
+  return Math.floor((Number(seat) || 0) / size) % TEAMS;
+};
 
 /** The last 事件期 period: R13, the 最终狩猎 (a normal hunt round, never a boss round). */
 export const EVENT_FINAL_ROUND = 13;
@@ -131,8 +150,24 @@ export const DIFFICULTY_COLORS = { FUNNY: '#f6a329', NORMAL: '#e85a1a', HARD: '#
 export const modeIdFor = (roomMode, difficulty) =>
   `mode_${roomMode === 'solo' ? 'single' : 'multi'}_${difficulty.toLowerCase()}`;
 
-/** The four target keys of `g.event.pick { target }`. */
+/** The four target keys of a 2V2 `g.event.pick { target }` (one teammate, two opponents). */
 export const EVENT_TARGETS = Object.freeze(['self', 'mate', 'oppA', 'oppB']);
+/**
+ * Every target key the event period may offer, in reading order: 自己 / 队友, then the opponents in seat order. A 2V2
+ * room uses the first four (EVENT_TARGETS); a 4V4 room adds `oppC` / `oppD`, so all four opponents are reachable.
+ * The protocol accepts this whole set and the match slices it by `teamSize` — a key outside the room's slice is a
+ * plain ERR.BAD_TARGET.
+ */
+export const EVENT_TARGETS_ALL = Object.freeze(['self', 'mate', 'oppA', 'oppB', 'oppC', 'oppD']);
+/**
+ * The target keys of a versus room with `teamSize` players per team.
+ * @param {number} [teamSize] 2 = 2V2 (4 keys), 4 = 4V4 (6 keys)
+ * @returns {readonly string[]}
+ */
+export const eventTargetsFor = (teamSize = 2) => {
+  const n = Math.max(2, Math.min(4, Math.trunc(Number(teamSize) || 2)));
+  return n <= 2 ? EVENT_TARGETS : EVENT_TARGETS_ALL.slice(0, 2 + n);
+};
 /** A self-targeted entry's magnitude multiplier (all numeric values in the entry, refresh uses included). */
 export const EVENT_SELF_MUL = 2;
 /**

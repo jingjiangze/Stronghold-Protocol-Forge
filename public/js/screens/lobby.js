@@ -90,6 +90,11 @@ const MODE_CARDS = [
     desc: N_('与至多 {n} 名博士组成同盟，共享干员池，联防协作抵御敌潮。'), params: { n: MAX_SEATS - 1 },
     points: [N_('1–{n} 名博士 · 可由 AI 队友补位'), N_('联防阶段 · 最终攻势合并生命值')], pointParams: { n: MAX_SEATS },
   },
+  {
+    id: 'versus', name: N_('对抗模拟'), en: 'VERSUS SIMULATION', icon: 'swords',
+    desc: N_('两支队伍共享目标生命，在狩猎期用预算把怪物投进对方的波次。'),
+    points: [N_('2V2 或 4V4 · 每队共享生命池'), N_('狩猎期投放 · 击杀投放怪得赏金')],
+  },
 ];
 
 /**
@@ -263,7 +268,13 @@ export function LobbyScreen() {
   const me = useStore((s) => s.me, shallowEqual);
   const conn = useStore((s) => s.connection, shallowEqual);
   useData('config');
-  const [roomMode, setRoomMode] = useState(() => (loadPref('lobby.mode', 'coop') === 'solo' ? 'solo' : 'coop'));
+  // 'versus' is a real room mode too (2V2 / 4V4); the stored preference is clamped to a known mode
+  const [roomMode, setRoomMode] = useState(() => {
+    const saved = loadPref('lobby.mode', 'coop');
+    return saved === 'solo' || saved === 'versus' ? saved : 'coop';
+  });
+  /** versus only: players per team (2 = 2V2, 4 = 4V4) — the room's seat capacity is teamSize × 2 */
+  const [teamSize, setTeamSize] = useState(() => (Number(loadPref('lobby.teamSize', 2)) === 4 ? 4 : 2));
   const [difficulty, setDifficulty] = useState(() => {
     const d = loadPref('lobby.difficulty', 'FUNNY');
     return DIFFICULTIES.includes(d) ? d : 'FUNNY';
@@ -296,7 +307,9 @@ export function LobbyScreen() {
     }
   };
   const create = () => run('create', () => net.request('room.create', {
-    mode: roomMode, difficulty, ...(testMode && asTest ? { test: true } : {}),
+    mode: roomMode, difficulty,
+    ...(roomMode === 'versus' ? { teamSize } : {}),
+    ...(testMode && asTest ? { test: true } : {}),
   }));
   const join = (c = code) => {
     // `onClick=${join}` hands the click EVENT as the first argument, and a default parameter only applies to
@@ -368,6 +381,12 @@ export function LobbyScreen() {
         <div class="mode-cards">
           ${MODE_CARDS.map((c) => html`<${ModeCard} key=${c.id} card=${c} selected=${roomMode === c.id} onSelect=${pickMode} />`)}
         </div>
+        ${roomMode === 'versus' ? html`<div class="team-size" role="group" aria-label=${t('每队人数')}>
+          ${[2, 4].map((n) => html`<button key=${n} type="button" class=${`team-size__opt${teamSize === n ? ' is-on' : ''}`}
+            onClick=${() => { setTeamSize(n); savePref('lobby.teamSize', n); }}>
+            ${n === 2 ? t('2V2') : t('4V4')}<span class="team-size__hint">${t('每队 {n} 人', { n })}</span>
+          </button>`)}
+        </div>` : null}
 
         <div class="section-label"><span class="section-label__idx num">03</span>${t('加入同盟')}<${MicroLabel}>JOIN WITH ALLIANCE KEY<//></div>
         <${Panel} class="join-panel" tone="amber">

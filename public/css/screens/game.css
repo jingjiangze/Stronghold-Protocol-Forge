@@ -466,7 +466,11 @@
 }
 
 /* ---- team panel ------------------------------------------------------------------------------------------- */
-.team { position: absolute; left: .22rem; top: 2.36rem; display: flex; flex-direction: column; gap: .14rem; pointer-events: none; }
+.team { position: absolute; left: .22rem; top: 2.36rem; display: flex; flex-direction: column; gap: .14rem; pointer-events: none;
+  /* 4V4: eight seat rows (plus the 本回合词条 strip) scroll instead of running off the screen; the row itself keeps its
+     size, so a 4-seat room is untouched. */
+  max-height: calc(100vh - 2.6rem - .4rem); overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin; scrollbar-color: rgba(234, 255, 248, .28) transparent; }
 .team__row { position: relative; display: flex; align-items: center; gap: .1rem; pointer-events: auto; }
 .team__btn {
   position: relative; padding: 0; background: none; border: 0;

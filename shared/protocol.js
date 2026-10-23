@@ -1,7 +1,7 @@
 // Normative message catalogue (DESIGN §8). Used by server (validation) and client (building requests).
 // Every client→server message is `{ t, rid?, ...fields }`. Unknown `t` or invalid fields ⇒ ERR.BAD_MSG.
 
-import { DIFFICULTIES, NAME_MAX_LEN, ROOM_CODE_LEN, MAX_SEATS, EMOTES, GEO, ROOM_MODES, EVENT_TARGETS } from './constants.js';
+import { DIFFICULTIES, NAME_MAX_LEN, ROOM_CODE_LEN, MAX_SEATS_VERSUS, EMOTES, GEO, ROOM_MODES, EVENT_TARGETS_ALL, TEAM_SIZES } from './constants.js';
 import { isDroppableChess } from './standIn.js';
 import { diySlotIds, validateDiyPicks } from './diy.js';
 import { cultivatedStats, isPotential, isCultivate, POTENTIAL_DEFAULT, CULTIVATE_DEFAULT, hasPotentialData } from './potential.js';
@@ -504,9 +504,11 @@ export const C2S = {
   ping: { c: (v) => typeof v === 'number' && Number.isFinite(v) },
   // test: only the literal true (DESIGN §34.8). Omit it for a normal room — `false` is a bad field, so a
   // string cannot sneak in as "not a test". The server still refuses it unless SP_TEST_MODE is on.
-  'room.create': { mode: (v) => ROOM_MODES.includes(v), difficulty: (v) => DIFFICULTIES.includes(v), private: (v) => v === true || v === false, variant: (v) => v == null || (typeof v === 'string' && v.length > 0 && v.length <= 64 && /^[A-Za-z0-9_.:-]+$/.test(v)), test: (v) => v === true, $optional: ['test', 'variant', 'private'] },
+  // teamSize: versus only — players per team, 2 (2V2, the default) or 4 (4V4); the room's seat capacity is
+  // teamSize × TEAMS. Any other mode ignores it (the room keeps 1–4 seats).
+  'room.create': { mode: (v) => ROOM_MODES.includes(v), difficulty: (v) => DIFFICULTIES.includes(v), private: (v) => v === true || v === false, variant: (v) => v == null || (typeof v === 'string' && v.length > 0 && v.length <= 64 && /^[A-Za-z0-9_.:-]+$/.test(v)), test: (v) => v === true, teamSize: (v) => TEAM_SIZES.includes(v), $optional: ['test', 'variant', 'private', 'teamSize'] },
   // 2V2: the host moves a seat between the two teams before the match (the team follows the seat, teamOfSeat)
-  'room.swapSeats': { a: (v) => isInt(v, 0, MAX_SEATS - 1), b: (v) => isInt(v, 0, MAX_SEATS - 1) },
+  'room.swapSeats': { a: (v) => isInt(v, 0, MAX_SEATS_VERSUS - 1), b: (v) => isInt(v, 0, MAX_SEATS_VERSUS - 1) },
   'room.join': { $optional: ['testAck'], testAck: (v) => v === true, code: (v) => isStr(v, ROOM_CODE_LEN + 2) && /^[A-Za-z0-9]+$/.test(v) },
   // 包通道（§1.9.6）：pack 是包 id，channel 由包声明；data 有界（引擎不解释载荷）。
   'pack.msg': { pack: (v) => typeof v === 'string' && /^[a-z0-9][a-z0-9-]{1,31}$/.test(v), channel: (v) => typeof v === 'string' && /^[a-z][a-z0-9_-]{0,63}$/.test(v), data: (v) => v === undefined || packMsgBytes(v) <= PACK_MSG_LIMITS.bytes, $optional: ['data'] },
@@ -520,10 +522,10 @@ export const C2S = {
   // human seat before every AI seat (server/match/match/phases.js humansFirst); room.state.aiPicksLast
   'room.setAiPicksLast': { on: isBool },
   'room.addBot': {},
-  'room.removeBot': { seat: (v) => isInt(v, 0, MAX_SEATS - 1) },
+  'room.removeBot': { seat: (v) => isInt(v, 0, MAX_SEATS_VERSUS - 1) },
   // the host removes another human before the match (server/lobby.js kick; community report #17); playerId = the one the
   // host confirmed — a seat that changed hands meanwhile is refused
-  'room.kick': { seat: (v) => isInt(v, 0, MAX_SEATS - 1), playerId: isId },
+  'room.kick': { seat: (v) => isInt(v, 0, MAX_SEATS_VERSUS - 1), playerId: isId },
   'room.start': {},
   'room.rerollSetup': { setupRevision: (v) => isInt(v, 0, 2 ** 31) },
   'room.cancelReroll': { voteId: (v) => isInt(v, 1, 2 ** 31) },
@@ -611,7 +613,7 @@ export const C2S = {
   'g.confront.withdraw': { gold: (v) => isInt(v, 1, 100000) },
   // 2V2 事件期: this player gives one random entry to one target — self / mate / oppA / oppB. The server owns the target
   // mapping, the no-repeat rule, the type odds and the seeded card draw (server/match/match/event.js).
-  'g.event.pick': { target: (v) => EVENT_TARGETS.includes(v) },
+  'g.event.pick': { target: (v) => EVENT_TARGETS_ALL.includes(v) },
   // solo pause (official PauseUp / ResumeUp, DESIGN §14): freezes the running battle (field clock, deadlines, the
   // browser's local runner) — solo matches only (co-op ⇒ WRONG_PHASE), only while a battle runs; m.public.paused
   'g.pause': { on: isBool },

@@ -162,7 +162,7 @@
 //     a player seat (the seat is kept and given back on resume).
 
 import { randomBytes, randomInt } from 'node:crypto';
-import { DIFFICULTIES, ERR, MAX_SEATS, MAX_SPECTATORS, ROOM_CODE_LEN, modeIdFor, teamOfSeat, TEAMS } from '../shared/constants.js';
+import { DIFFICULTIES, ERR, MAX_SEATS, MAX_SPECTATORS, ROOM_CODE_LEN, modeIdFor, teamOfSeat, TEAMS, TEAM_SIZE, TEAM_SIZES } from '../shared/constants.js';
 import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, checkDiyPicks, charPotentialChanges, checkSkinSelection, operatorCharIds } from '../shared/protocol.js';
 import { encode, isDroppable, isErrCode, sendRaw, sendSession } from './net.js';
 import { getData as defaultGetData, lookup } from './data.js';
@@ -264,11 +264,20 @@ function freezeSkins(skins, hasOperator) {
 
 /** One room: 4 seat slots, host, difficulty, optional running match. */
 export class Room {
-  /** @param {string} code @param {'solo'|'coop'|'versus'} mode @param {string} difficulty @param {number} now */
-  constructor(code, mode, difficulty, now) {
+  /**
+   * @param {string} code @param {'solo'|'coop'|'versus'} mode @param {string} difficulty @param {number} now
+   * @param {number} [teamSize] versus only: players per team (2 = 2V2, 4 = 4V4); ignored in solo / co-op
+   */
+  constructor(code, mode, difficulty, now, teamSize = TEAM_SIZE) {
     this.code = code;
     this.mode = mode;
     this.difficulty = difficulty;
+    /**
+     * Players per team of a 'versus' room (2 = 2V2, 4 = 4V4). The room's seat capacity is `teamSize × TEAMS`, so the
+     * two formats share one binary: lobby, protocol bounds and Match all read this number instead of a constant.
+     * Solo / co-op keep 1 here and MAX_SEATS seats.
+     */
+    this.teamSize = mode === 'versus' && TEAM_SIZES.includes(teamSize) ? teamSize : (mode === 'versus' ? TEAM_SIZE : 1);
     /**
      * 「AI 队友最后选择」 (room.setAiPicksLast, GitHub #338; co-op only, off by default): the match's strategy and 机变 drafts
      * put every human seat before every AI seat (Match opts.aiPicksLast). Kept across the room's matches.
@@ -279,7 +288,8 @@ export class Room {
     /** @type {string | null} */
     this.hostId = null;
     /** @type {(Seat | null)[]} */
-    this.seats = new Array(MAX_SEATS).fill(null);
+    // versus: teamSize × TEAMS seats (4 for 2V2, 8 for 4V4); solo / co-op: the official 1–4
+    this.seats = new Array(mode === 'versus' ? this.teamSize * TEAMS : MAX_SEATS).fill(null);
     /** @type {{ playerId: string, name: string, connected: boolean }[]} spectator seats, ≤ MAX_SPECTATORS (header) */
     this.spectators = [];
     /** @type {any} running Match instance */
@@ -351,7 +361,7 @@ export class Room {
       seats: this.seats.map((s) => (s
         ? { seat: s.seat, playerId: s.playerId, name: s.name, isBot: s.isBot, ready: s.ready, connected: s.connected && !s.left,
           // 2V2: the team this seat fights for — present only in a versus room (solo / coop keep their shape)
-          ...(this.mode === 'versus' ? { team: teamOfSeat(s.seat) } : {}),
+          ...(this.mode === 'versus' ? { team: teamOfSeat(s.seat, { teamSize: this.teamSize }) } : {}),
           // a room with gameplay plugins (header "Gameplay plugins"): has this player's page loaded and checked its content?
           ...(this.modded && !s.isBot ? { content: s.content || 'loading' } : {}) }
         : null)),
@@ -359,8 +369,8 @@ export class Room {
       ...(this.content ? { content: this.content.trusted ? {...this.content, trusted:{...this.content.trusted, consent:Object.fromEntries(this.seats.filter(x => x && !x.isBot).map(x => [x.seat,x.consentCs === this.content.cs]))}} : this.content } : {}),
       // omitted when false so a normal room.state stays identical
       ...(this.test ? { test: true } : {}),
-      // 2V2: how many teams the room splits its seats into — present only in a versus room
-      ...(this.mode === 'versus' ? { teams: TEAMS } : {}),
+      // versus: how many teams the room splits its seats into, and how many players each holds (2 = 2V2, 4 = 4V4)
+      ...(this.mode === 'versus' ? { teams: TEAMS, teamSize: this.teamSize } : {}),
     };
   }
 }
@@ -737,7 +747,7 @@ export class Lobby {
   // room.* handlers
   // ---------------------------------------------------------------------------------------------------
 
-  create(session, { mode, difficulty, private: isPrivate, test } = {}) {
+  create(session, { mode, difficulty, private: isPrivate, test, teamSize } = {}) {
     // A test room exists only when the process switch allowed it. The check runs before the room is built.
     if (test === true && this.testEnabled !== true) return fail(ERR.TEST_DISABLED);
     const cur = this.roomOf(session);
@@ -755,7 +765,8 @@ export class Lobby {
     const code = this.genCode();
     if (!code) return fail(ERR.INTERNAL, 'no room code available');
     if (cur) this.removeMember(cur, session.playerId);
-    const room = new Room(code, mode, difficulty, this.now());
+    // 4V4: a versus room may be created with 4 players per team; any other mode ignores it (teamSize 1)
+    const room = new Room(code, mode, difficulty, this.now(), teamSize);
     room.test = test === true;
     room.private = mode !== 'solo' && isPrivate === true;
     room.content = this.vanilla;
@@ -1441,6 +1452,8 @@ export class Lobby {
         modeId: room.content?.modeId || modeIdFor(room.mode, room.difficulty),
         // 「AI 队友最后选择」 (GitHub #338): fixed for the match
         aiPicksLast: room.mode !== 'solo' && room.aiPicksLast === true,
+        // versus: players per team (2 = 2V2, 4 = 4V4) — PlayerState.team and the views derive from it
+        ...(room.mode === 'versus' ? { teamSize: room.teamSize } : {}),
         seats,
         // the spectator seats (header): watched like eliminated players, never players
         spectators: room.spectators.map((s) => s.playerId),

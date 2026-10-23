@@ -870,8 +870,8 @@ button.bpop__harmony:hover { border-style: solid; color: #fff; }
 .conffoe--red { border: 2px solid #c4583d; box-shadow: inset 0 0 .4rem rgba(255, 106, 74, .16); }
 .conffoe:disabled { cursor: default; opacity: .85; }
 .conffoe.is-sel { transform: scale(1.06); border-color: var(--mint-400); box-shadow: 0 0 .3rem rgba(23, 249, 183, .5); }
-.conffoe__q { font-size: .8rem; font-weight: 700; color: var(--text-lo); }
-.conffoe__p { position: absolute; right: .04rem; bottom: .02rem; font-size: .14rem; font-weight: 700; padding: 0 .05rem; background: rgba(8, 11, 10, .9); border: 1px solid var(--line-2); }
+.conffoe__q { font-size: calc(.8 * var(--t)); font-weight: 700; color: var(--text-lo); }
+.conffoe__p { position: absolute; right: .04rem; bottom: .02rem; font-size: calc(.14 * var(--t)); font-weight: 700; padding: 0 .05rem; background: rgba(8, 11, 10, .9); border: 1px solid var(--line-2); }
 .conffoe--blue .conffoe__p { color: #8cc6ff; border-color: #3d78c4; }
 .conffoe--red .conffoe__p { color: #ffab97; border-color: #c4583d; }
 .confov__pairs { display: flex; gap: .3rem; }
@@ -1024,14 +1024,14 @@ button.bpop__harmony:hover { border-style: solid; color: #fff; }
 .confclash__side--blue { border-color: #4aa3ff; box-shadow: inset 0 0 .4rem rgba(74, 163, 255, .28); }
 .confclash__side--red { border-color: #ff6a4a; box-shadow: inset 0 0 .4rem rgba(255, 106, 74, .28); }
 .confclash__side .pavatar { --av: 1rem; }
-.confclash__q { font-size: .7rem; font-weight: 700; color: var(--text-lo); }
-.confclash__p { position: absolute; right: .02rem; bottom: 0; font-size: .14rem; font-weight: 700; padding: 0 .04rem; background: rgba(8, 11, 10, .9); }
+.confclash__q { font-size: calc(.7 * var(--t)); font-weight: 700; color: var(--text-lo); }
+.confclash__p { position: absolute; right: .02rem; bottom: 0; font-size: calc(.14 * var(--t)); font-weight: 700; padding: 0 .04rem; background: rgba(8, 11, 10, .9); }
 .confclash__side--blue .confclash__p { color: #8cc6ff; }
 .confclash__side--red .confclash__p { color: #ffab97; }
 .confclash__mid { display: flex; align-items: center; gap: .05rem; flex: 1 1 auto; min-width: 0; max-width: none; justify-content: flex-start; }
 .confclash__mid img { width: .42rem; height: .42rem; object-fit: contain; }
 .confclash__more { flex: none; padding: 0 .04rem; font-size: calc(.13 * var(--t)); font-weight: 800; color: var(--text-md); }
-.confclash__vs { font-size: .46rem; font-weight: 700; color: var(--orange-hi); animation: clashHit 5.2s ease both; }
+.confclash__vs { font-size: calc(.46 * var(--t)); font-weight: 700; color: var(--orange-hi); animation: clashHit 5.2s ease both; }
 .confclash .confclash__coin { font-size: calc(.14 * var(--t)); font-weight: 700; color: var(--gold); white-space: nowrap; }
 /* The seat / source line (P1 / P2 …, "P1 已选择", the P label of a bounty row): one step BELOW body text, always a
    single horizontal line, ellipsised instead of wrapping into a stack on a narrow phone (user 2026-10-17). */

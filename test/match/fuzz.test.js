@@ -55,6 +55,8 @@ function randomIntent(rng, m, ps) {
     case 'g.confront': return { t, group: rng() < 0.5 ? 1 + rng.int(16) : null, position: rng.pick(['front', 'mid', 'back']), picks: [{ enemyKey: 'enemy_1422_lrsldr', gate: rng.pick(['upper', 'lower']) }], ...(rng() < 0.3 ? { bosses: [{ enemyKey: 'enemy_1427_lrnazg' }] } : {}) };
     case 'g.confrontTarget': return { t, targetPlayerId: rng.pick(playerIds()) };
     case 'g.confront.withdraw': return { t, gold: 1 + rng.int(99999) };
+    // the 2V2 事件期 (a vanilla match has no event period, so every one is a refusal)
+    case 'g.event.pick': return { t, target: rng.pick(['self', 'mate', 'oppA', 'oppB']) };
     // the plugin interaction windows (PLUGIN API v2, docs/PLUGINS.md §10b): random ids and slots — no window of a
     // vanilla match is ever open, so every one of them is a refusal, which is exactly what the fuzz run checks
     case 'g.offer': case 'g.offerRefresh': return { t, pluginId: 'demo', seq: rng.int(1000), offerId: rng.pick(['early-pick', 'x', 'a'.repeat(64)]), idx: rng.int(6) };

@@ -66,6 +66,7 @@ import { createAssetIndex } from './http/assetIndex.js';
 import { createManifestViews } from './http/assetViews.js';
 import { answerClientError } from './http/common.js';
 import { lanUrls, displayHost, isProcessEntry, runMain } from './http/boot.js';
+import { shadowEntry, spawnShadow, OVERLAY_DIR } from './plugins/engineOverlay.js';
 
 // The public API of this module (tests and tools import it from here); the code lives in ./http/.
 export {
@@ -196,7 +197,36 @@ export async function startServer(opts = {}) {
       }
     }
   } catch (e) { log.warn?.(`[plugins] client overlay: ${e.message}`); }
-  if (clientOverlay.size) log.info?.(`[plugins] client overlay: ${clientOverlay.size} files`);
+  if (clientOverlay.size) log.info?.(`[plugins] client overlay: ${clientOverlay.size} files (code.client + engine overlay)`);
+
+  // 影子根（engine overlay）叠在同一张表上：后写覆盖同路径 —— 它是「改了引擎」的那一层，
+  // 优先于普通 code.client 插件。只认 plugins/config.json 的 overlay，与 registry 加载状态无关。
+  // 影子根的客户端覆盖：`.shadow/` 里被插件顶替的文件，按原路径服务。
+  // 只认 plugins/config.json 的 `overlay` 指定的那一个（server/plugins/engineOverlay.js），
+  // 与 registry 的加载状态无关 —— 影子根本身就是「改了引擎」的那一层。
+  try {
+    const shadowDir = path.join(ROOT, OVERLAY_DIR);
+    for (const top of ['public', 'shared']) {
+      const dir = path.join(shadowDir, top);
+      if (!fs.existsSync(dir)) continue;
+      const walk = (d, rel) => {
+        for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+          const child = rel ? `${rel}/${e.name}` : e.name;
+          const abs = path.join(d, e.name);
+          if (e.isDirectory()) { walk(abs, child); continue; }
+          // 只收**实体文件**：目录级符号链接是引擎原文件，插件覆盖的那一个在链接被「降级」时
+          // 已经换成实体（engineOverlay.ensureDir）。所以这里不用 isSymbolicLink 判，用 lstat 的形态判。
+          const st = fs.lstatSync(abs);
+          if (!st.isFile()) continue;
+          const body = fs.readFileSync(abs);
+          // 键用请求路径（/js/…、/css/…）：static.js 命中时拿到的是 decoded.slice(1)，不带 public/ 前缀。
+          const key = top === 'public' ? child : `${top}/${child}`;
+          clientOverlay.set(key, { body, type: MIME[path.extname(child)] || 'application/octet-stream' });
+        }
+      };
+      walk(dir, '');
+    }
+  } catch (e) { log.warn?.(`[plugins] client overlay: ${e.message}`); }
   const serveStatic = createStaticHandler({ publicDir, dataDir, sharedDir, simDir, packsDir, pluginsDir, packs, content, log, assetIndex, views, visual, contents, clientOverlay });
   const studio = opts.studio === false ? null : createStudio({ publicDir, pluginsDir, dataDir, registry: packs, lobby, sessions: registry, log, fetch: opts.fetch });
   // the mod manager (server/mods/): the /mod page and the drop-in inbox. Imports go through the plugin system's own
@@ -300,4 +330,8 @@ export async function startServer(opts = {}) {
 }
 
 // `node server/index.js` / npm start: listen, print the banner, stop on SIGINT / SIGTERM (http/boot.js).
-if (isProcessEntry(import.meta.url)) runMain(startServer);
+if (isProcessEntry(import.meta.url)) {
+  const shadow = shadowEntry({ root: ROOT, pluginsDir: path.join(ROOT, 'plugins') });
+  if (shadow) spawnShadow({ entry: shadow.entry });
+  else runMain(startServer);
+}

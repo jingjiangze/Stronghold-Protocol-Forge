@@ -681,7 +681,11 @@ export const C2S = {
     seatCap: (v) => v === undefined || v === null || isInt(v, MIN_SEATS, SEAT_CAP),
     // test 房间（DESIGN §36.8，上游 0.3.1）：只认字面 true；普通房间不发这个键
     test: (v) => v === true,
-    $optional: ['mods', 'modIds', 'chatMode', 'seatCap', 'test'],
+    // 官方版本（DESIGN §35.23，上游 0.3.2）：缺席 = 服务器缺省版本；给了就必须是启用的版本 id
+    version: isVersionId,
+    // 「不限时」（DESIGN §35.23.10，上游 0.3.2）：只认字面布尔
+    soloUnlimited: isBool,
+    $optional: ['mods', 'modIds', 'chatMode', 'seatCap', 'test', 'version', 'soloUnlimited'],
   },
   // 房间同意（W7, DESIGN §28.53）：进一个**声明了模组集合**的房间（`room.state.mods`）时，真人玩家必须**明确
   // 同意**才继续 —— 这是「我知道这一局要跑别人写的内容」那句话的落点。它与 `checkModSet` 要客户端回一个摘要
@@ -709,8 +713,6 @@ export const C2S = {
   // soloUnlimited: the timed-solo opt-out 「不限时」 (DESIGN §35.23.10). Optional, and only the literal boolean —
   // the server applies `true` solely to a solo room of a version whose solo is timed, and ignores it otherwise, so a
   // default create stays the message it was.
-  'room.create': { mode: (v) => v === 'solo' || v === 'coop', difficulty: (v) => DIFFICULTIES.includes(v), test: (v) => v === true, version: isVersionId, soloUnlimited: isBool, $optional: ['test', 'difficulty', 'version', 'soloUnlimited'] },
-  'room.join': { $optional: ['testAck'], testAck: (v) => v === true, code: (v) => isStr(v, ROOM_CODE_LEN + 2) && /^[A-Za-z0-9]+$/.test(v) },
   'room.leave': {},
   // 上局战绩（`SP_ACCOUNTS=1`, server/matchRecords.js, docs/RECORDS.md）：空消息，答案走 `records.latest`
   // 给**请求者本人**。开着账号时它是「我这个账号的最近一局」；关着账号时按会话 playerId 查（每次连接的新 id，

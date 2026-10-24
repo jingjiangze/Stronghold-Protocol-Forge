@@ -376,6 +376,24 @@ export async function startServer(opts = {}) {
     : null;
   log.info(`[versions] enabled: ${versions.ids.map((id) => `${id} (${t(/** @type {any} */ (versionById(id)).label)}${id === versions.defaultId ? ', default' : ''})`).join(', ')}`);
   const simPool = createRoomWorkerPool({ data });
+  // Main-thread event-loop delay sampling (server/health/eventLoop.js): opt-in with SP_LOOP_SAMPLE=1, no worker pool involved, and a
+  // LOCAL log line per window (`[loop] p50=… p95=… p99=… max=… cpu=… mem=… rooms=… humans=… phase=…`) — deliberately not
+  // part of /healthz. This is what tells an operator whether a stall is the rehearsal / battle slice or something else.
+  const eventLoop = createEventLoopMonitor({
+    log,
+    windowMs: opts.loopSample?.windowMs,
+    counts: () => {
+      const s = lobby.stats();
+      const phases = new Set();
+      let rehearsals = 0;
+      for (const room of lobby.rooms.values()) {
+        if (room.match?.phase) phases.add(room.match.phase);
+        rehearsals += room.match?._rehearsalTasks?.size || 0;
+      }
+      return { rooms: s.rooms, matches: s.matches, humans: s.humans, spectators: s.spectators,
+        phase: [...phases].sort().join('+') || 'idle', rehearsals };
+    },
+  });
   const workshopAssets = workshopAssetsFor(workshopLoaded, workshopDir);
   // 包声明的只读路由（`pack.json.routes`, DESIGN §28.13）：绝对路径 → 包内 `.json`，带声明的 `Cache-Control`。
   // `mount` 让「核心先吃」这条判据（DESIGN §28.35）读到**真正的**核心挂载目录：与 createStaticHandler 那份同一组

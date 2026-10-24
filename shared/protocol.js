@@ -658,6 +658,7 @@ export const C2S = {
   ping: { c: (v) => typeof v === 'number' && Number.isFinite(v) },
   'room.create': {
     mode: (v) => v === 'solo' || v === 'coop',
+    // difficulty 可缺席（上游 0.3.2）：房间按服务器缺省难度开，房主再在房间里改
     difficulty: (v) => DIFFICULTIES.includes(v),
     mods: (v) => v == null || isModDigest(v),
     // the room's own mod set (W-A, DESIGN §28.9): pack ids the server has loaded, sorted+deduped server-side.
@@ -685,7 +686,7 @@ export const C2S = {
     version: isVersionId,
     // 「不限时」（DESIGN §35.23.10，上游 0.3.2）：只认字面布尔
     soloUnlimited: isBool,
-    $optional: ['mods', 'modIds', 'chatMode', 'seatCap', 'test', 'version', 'soloUnlimited'],
+    $optional: ['difficulty', 'mods', 'modIds', 'chatMode', 'seatCap', 'test', 'version', 'soloUnlimited'],
   },
   // 房间同意（W7, DESIGN §28.53）：进一个**声明了模组集合**的房间（`room.state.mods`）时，真人玩家必须**明确
   // 同意**才继续 —— 这是「我知道这一局要跑别人写的内容」那句话的落点。它与 `checkModSet` 要客户端回一个摘要

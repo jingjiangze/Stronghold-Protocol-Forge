@@ -235,6 +235,7 @@ import { modSetOf, isModId, modSetDrift } from '../shared/modIdentity.js';
 import { encode, isErrCode, sendRaw, sendSession } from './net.js';
 import { getData as defaultGetData, lookup } from './data.js';
 import { Match as DefaultMatch } from './match/Match.js';
+import { MatchmakeQueue } from './matchmaking.js';
 import { KITTED_CHARS } from './sim/content/kits/index.js';
 
 const VANILLA_KITTED = new Set(KITTED_CHARS);
@@ -628,7 +629,7 @@ export class Room {
        */
       ...(this.seatCap !== MAX_SEATS ? { seatCap: this.seatCap } : {}),
       // 服务器声明的助战目录（客户端推不出来，所以只有服务端能给）
-      ...(support ? { support } : {}),
+      ...(support && typeof support === 'object' ? { support } : {}),
       inMatch: !!this.match,
       seats: this.seats.map((s) => (s
         ? { seat: s.seat, playerId: s.playerId, name: s.name, isBot: s.isBot, ready: s.ready, connected: s.connected && !s.left,
@@ -775,6 +776,8 @@ export class Lobby {
      * @type {{ digest: string, packs: Array<object> }|null}
      */
     this.modSet = modSetOf(Array.isArray(this.workshop?.mods) ? this.workshop.mods : []);
+    /** 野排匹配（server/matchmaking.js）：`room.queue` / `room.dequeue` 的全部状态都在它里面 */
+    this.matchmake = new MatchmakeQueue(this, this.opts.queue || undefined);
     this.quickPhrases = new Set(
       Array.isArray(this.opts.quickPhrases) ? this.opts.quickPhrases : DEFAULT_QUICK_PHRASES,
     );
@@ -918,6 +921,7 @@ export class Lobby {
    * @param {{ resumed: boolean, repeat: boolean }} info
    */
   onHello(session, { resumed, repeat }) {
+    this.matchmake.onHello(session);
     if (!resumed && !repeat) return;
     const room = this.roomOf(session);
     if (!room) {
@@ -1034,6 +1038,7 @@ export class Lobby {
       case 'room.dequeue': return this.matchmake.leave(session);
       // 房内聊天（引擎特性）：打字与快捷短语，形状由 shared/protocol.js 判死，能不能说由这里裁决
       case 'room.chat': return this.chat(session, msg);
+      case 'room.quickMsg': return this.quickMsg(session, msg);
       case 'pack.msg': return this.packMsg(session, msg);
 
     case 'room.create': return this.create(session, msg);
@@ -1041,6 +1046,7 @@ export class Lobby {
       case 'room.leave': return this.leave(session);
       case 'room.ready': return this.ready(session, msg);
       case 'room.setDifficulty': return this.setDifficulty(session, msg);
+      case 'room.setSeatCap': return this.setSeatCap(session, msg);
       case 'room.setAiPicksLast': return this.setAiPicksLast(session, msg);
       case 'room.setSoloUnlimited': return this.setSoloUnlimited(session, msg);
       case 'room.setAiTakeover': return this.setAiTakeover(session, msg);
@@ -1078,6 +1084,7 @@ export class Lobby {
 
   /** The session's socket closed. @param {import('./net.js').Session} session */
   onDisconnect(session) {
+    this.matchmake.onDisconnect(session);
     this.clearResync(session.playerId); // the next resume resyncs immediately
     const room = this.roomOf(session);
     // a solo run may be resumed within singleReconnectTime (24 h); everything else keeps the registry's window
@@ -1106,6 +1113,7 @@ export class Lobby {
 
   /** The session's reconnect window elapsed (already removed from the registry). */
   onExpire(session) {
+    this.matchmake.onExpire(session.playerId);
     session.notice = null;
     session.pendingResult = null;
     this.clearResync(session.playerId);
@@ -1125,6 +1133,7 @@ export class Lobby {
    * @param {string} [reason]
    */
   shutdown(reason = 'shutdown') {
+    this.matchmake.shutdown();
     this.offStale?.();
     this.offContentStale?.();
     this.offStale = null;
@@ -1788,6 +1797,8 @@ export class Lobby {
   supportView(room = null) {
     const data = this.roomData(room);
     const cfg = normalizeSupportConfig(data && data.support);
+    // 没启用助战就返回 null：`room.state` 里连这个键都不出现，干净安装的帧因此逐字节不变（与 `mods` 同一条纪律）。
+    if (!cfg.enabled) return null;
     return {
       enabled: cfg.enabled,
       label: cfg.label,

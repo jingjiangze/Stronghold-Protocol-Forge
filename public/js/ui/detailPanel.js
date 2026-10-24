@@ -43,7 +43,7 @@ import { updateSettings, settingsStore, useSettings } from './settings.js';
 import { dubsInstalled } from '../voiceDubs.js';
 import { VOICE_LANG_NAMES } from '../../../shared/constants.js';
 import { morphSlotPolicy } from '../../../shared/plugins/rules.js';
-import { chessPortraitUrl, skillIconUrl, skillRecordIconUrl, profIconUrl, subProfIconUrl, itemIconUrl, enemyIconUrl, tokenAvatarUrl, factionIconUrl, uiUrl, moduleTypeIconUrl } from './assetUrls.js';
+import { skillIconUrl, skillRecordIconUrl, profIconUrl, subProfIconUrl, itemIconUrl, enemyIconUrl, tokenAvatarUrl, factionIconUrl, uiUrl, moduleTypeIconUrl } from './assetUrls.js';
 // 立绘走**统一解析链**（`portraitChain.js`）：同一个干员在详情页 / 手牌 / 商店卡 / 自选池里是同一个函数，
 // 所以不会再出现「卡面是那套外观、详情页是原版」。没有外观提供者时它与 `chessPortraitUrl` 逐字相同。
 import { portraitUrlOf, currentAppearanceLookup } from './portraitChain.js';

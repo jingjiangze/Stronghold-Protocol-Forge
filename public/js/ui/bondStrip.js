@@ -145,7 +145,7 @@ export const BondStrip = modComponent('game.bondStrip', function BondStrip({ bon
  *   note, no 在场 count and no 当前效果 block (its numbers would promise an effect the mode never gives; the bond text stays).
  *   `entry.harmony` (the server's bond views: the +1 调和 added to `count`): 在场 n（含调和 +1） and the 调和 row
  */
-export function BondPopup({ bondId, entry, priv, banned = [], onClose, onMember, place = null, over = false, beside = null, owner = null, off = false }) {
+export function BondPopup({ bondId, entry, priv, banned = [], onClose, onMember, place = null, over = false, beside = null, owner = null, off = false, ownerId = null }) {
   const b = data.lookup('bonds', bondId);
   if (!b) return null;
   const count = entry?.count ?? 0;

@@ -153,11 +153,11 @@ left out), caches the bundles' prefab lists under `.cache/fx/` (per bundle size 
 
 | file | content |
 |---|---|
-| `index.json` | §35.12: per unit (operator / enemy / token) the attack modes, skills, talents and common / general abilities (§35.17), projectiles and mount points; the projectiles; the generic keys; one summary per exported prefab |
-| `textures.json` | §35.8: texture key → size, wrap, filter, alpha, files |
-| `prefabs/<file>.json` | §35.4: one descriptor per effect prefab (effect key → file: `fx_file(key)` — the key itself when it is URL-safe (`[A-Za-z0-9_.-]`), else the safe form + `-` + the key's CRC32 in hex, e.g. `buff_ fragile_01` → `buff__fragile_01-9c1f…`) |
-| `tex/<key>.webp`, `tex/half/<key>.webp` | §35.8: every texture (WebP q90, alpha kept), and a half-size copy for the light tier (both sides ≥ 64 px) |
-| `mesh/<key>.json` | §35.9: meshes of mesh particles, MeshRenderers, skinned meshes and mesh-shaped emitters |
+| `index.json` | §33.12: per unit (operator / enemy / token) the attack modes, skills, talents and common / general abilities (§33.17), projectiles and mount points; the projectiles; the generic keys; one summary per exported prefab |
+| `textures.json` | §33.8: texture key → size, wrap, filter, alpha, files |
+| `prefabs/<file>.json` | §33.4: one descriptor per effect prefab (effect key → file: `fx_file(key)` — the key itself when it is URL-safe (`[A-Za-z0-9_.-]`), else the safe form + `-` + the key's CRC32 in hex, e.g. `buff_ fragile_01` → `buff__fragile_01-9c1f…`) |
+| `tex/<key>.webp`, `tex/half/<key>.webp` (or `.png`) | §33.8: every texture (WebP q90 by default; optional lossless PNG), and a half-size copy for the light tier (both sides ≥ 64 px) |
+| `mesh/<key>.json` | §33.9: meshes of mesh particles, MeshRenderers, skinned meshes and mesh-shaped emitters |
 
 **The file list: `data/local-fx.json`** (written next to `data/local-assets.json`, `--manifest`; gitignored like it).
 It names every file, so the server's asset index hashes its URL: the server hands it out at `GET /data/local-fx.json` as
@@ -177,7 +177,7 @@ effects out while `tools/package.mjs FULL_ZIP_FX` is off. The runtime takes URLs
 |---|---|
 | `fx` | `index` `{ path, kind: 'FxIndex', version, set, prefabs }`, `textures` `{ path, kind: 'FxTextures', count }` |
 | `fx/prefabs` | effect key → `{ path, kind: 'FxPrefab' }` |
-| `fx/tex` | texture key → `{ path, w, h, kind: 'Texture2D', half? }` (`half`: the half-size copy's URL) |
+| `fx/tex` | texture key → `{ path, w, h, kind: 'Texture2D', encoding?: 'png' \| 'webp', half? }` (`half`: the half-size copy's URL; default WebP entries omit `encoding`) |
 | `fx/mesh` | mesh key → `{ path, kind: 'FxMesh', verts }` |
 
 Each JSON file starts with `format` (`fx-index`, `fx-textures`, `fx-prefab`, `fx-mesh`) and `version` (1; since Phase
@@ -530,7 +530,7 @@ Disturb variants offset the main UVs by a scrolled distortion texture.
 
 ```
 { name (the Unity name), w, h, format (the client's encoding: DXT1, DXT5, RGBA32, …), mips, srgb, alpha,
-  file: 'tex/<key>.webp', half: 'tex/half/<key>.webp' | null,
+  encoding?: 'png' | 'webp', file: 'tex/<key>.webp', half: 'tex/half/<key>.webp' | null,
   wrapU, wrapV ('repeat' | 'clamp' | 'mirror' | 'mirrorOnce'), filter ('point' | 'bilinear' | 'trilinear'), aniso }
 ```
 
@@ -539,7 +539,18 @@ different bundles share one file (`star_02` alone exists ~50 times in the client
 (written as RGB). Textures are straight (not premultiplied) alpha; the half-size copy is resized premultiplied (no dark
 fringes). `srgb` is informational: render in gamma space (§35.2). Built-in textures appear as `builtin:<path id>`.
 
-### 35.9 Meshes (`mesh/<key>.json`)
+Optional PNG textures are documented in history §35.96 (PR #806). WebP quality 90, method 4 is the extraction default, with the existing Pillow options, image bytes and
+metadata. `extract.py --only fx --fx-texture-format png` selects lossless PNG when WebP's RGB artefacts matter.
+Both full and half files use the selected encoding; dimensions, keys, sampler settings and effect descriptors stay
+the same. `format` keeps the original texture's GPU encoding. PNG output adds `encoding: 'png'` to this metadata
+and the file list; default WebP output keeps the existing metadata without that optional field. The loader already
+decodes the URL named by the file list, so a set may mix PNG and WebP, including after a `--fx-keys` update. The
+server hashes and serves both suffixes through the existing asset pipeline.
+
+Encoded sizes depend on the texture and selected format: lossless PNG avoids WebP's RGB loss, while the default
+WebP usually reduces transfer bytes. Both formats use the same decoded image dimensions and GPU memory.
+
+### 33.9 Meshes (`mesh/<key>.json`)
 
 ```
 { format: 'fx-mesh', version: 2, name, vertexCount,
@@ -1297,8 +1308,20 @@ index.json — version 1 and the version 2 fields (§35.12, §35.15; Phase 3c) �
     effects at the fx's tile for the area's time (the projectile stays where it lands: AuraHitBehaviour); 异客 S3's
     strikes `pasngr_skill_03_hit`; 溯光星源 S2's links the link projectile's hit on each pulled enemy; 焰影苇草 S2's
     fire strikes `reed2_skill_02_hit`; 蕾缪安 S3's lock the aim projectile's crosshair (`lemuen_skill_03_crosshair_range`
-    / `_02`, 1.5 s without a hold [ASSUMED])
-    and her bombard the attack projectile's reached hit.
+    / `_02`), held as `hold: 'lock'` since 0.3.2 (PR #862, history §35.39): on the locked enemy, at its last spot once
+    it is gone, until the bombard of the shell that claimed it (a `bombardShell` takes her nearest free lock within
+    `LOCK_SHELL_NEAR` 3); a lock no shell claims ends `LOCK_T` 5 s after the last sign of her S3, locks with no shell
+    end when she is knocked out, at most `MAX_LOCKS` 48, and a tier switch clears them (the 5 s / 48 / 3 are carried
+    over from render/fx/locks.js [ASSUMED]; before, the kit's `hold: 1` flag stopped each crosshair after 1 s)
+    and her bombard the attack projectile's reached hit. Since 0.3.1 (history §34.5): 号角 S1's flare (the light
+    projectile `projectile_chr_horn_s1_light`'s reached `horn_skill_01_hit_02_buff` / `_02`), and the 自选 pick 琴柳's
+    flags — S2 `sleach_skill_02_flag_01` with its ground, S3 `sleach_skill_03_flag_01` with its range loops and its strike
+    `sleach_skill_03_range_start_01` / `_02` (the flag model itself — a pole and a skinned cloth of the unported SimSpine
+    shader, drawn through the basic fallback — does not show yet [open]).
+    A binding at 'point' lies on the field's tile there (OfficialFx ctx.heightAt; before, its owner's height — 锡人's
+    flask on the road at his high ground's 0.42), and a flight whose projectile a binding of the shooter's places
+    leaves its reached effects to it (SkillFx.bindsReached; before, 锡人's flask also played at the target's HitPoint
+    where the drawn flight ended, for up to LOOP_TTL).
   - A kit fx kind the skill's own official effects stand for is skipped while the skill lasts (`FX_COVER`: on, its
     activation frame, `COVER_AFTER_S` = 1 s after its end [ASSUMED], or a binding of the owner still held) when the
     skill's plan has an installed prefab: 莫斯提马 S2's zone, 白面鸮 S2's and 流明 S1's heal fields (his: the skill's

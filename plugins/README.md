@@ -6,6 +6,7 @@ The server lists what it finds at `/plugins/index.json` and notices a new or cha
 folders (manifest, file types, sizes, paths, JSON).
 
 **This version (0.3.1; the 0.3.1 additions — theme variables, notices, rule switches, gameplay records, interaction windows, operator traits, panels, effects and skins — are in docs/PLUGINS.md and history §36):**
+**This version (0.3.2; the 0.3.1 additions — theme variables, notices, rule switches, gameplay records, interaction windows, operator traits, panels, effects and skins — are in docs/PLUGINS.md and history §34):**
 
 - the original game is always the default; a plugin is marked unofficial wherever it is shown;
 - class `lang` (a language) loads, like a language pack in `packs/`;

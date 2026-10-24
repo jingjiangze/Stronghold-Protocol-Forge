@@ -1398,6 +1398,405 @@ export class Lobby {
     return true;
   }
 
+  /**
+   * `room.appearance`（皮肤层）：把**别人看到的你长什么样**存到会话与座位上，并向全房广播。
+   *
+   * 两个字段：`picks`（按干员的换装）与 `avatar`（玩家自己那张头像）—— **合并进同一份**会话/座位状态，
+   * 因为对别人来说它们就是同一件事（「他现在长这样」）。
+   *
+   * 与 `room.diy` / `room.ownership` 有三处刻意的不同：
+   *   * **服务端不判定内容**。形状由 `validateC2S`（`isAppearanceMsg`）卡死，但「这个 skinId 存不存在」要看包
+   *     声明的 `assets.skins`，而**服务端看不见包内容** —— 所以这一层只转发，不认识的那一项由画的一方回落原版
+   *     （`portraitChain` 的回落：可见、可解释，不会串到别的干员身上）；
+   *   * **比赛中也接受**（不像 diy / ownership 存起来等下一局）：它只改显示、**不碰战果**，没有理由等；
+   *   * **变更即广播**（同房的人要立刻看到），而不是等下一次状态推送。
+   *
+   * 合并语义是**浅合并**：这一条只带 `avatar` 时，已经选过的 `picks` 原样保留（反之亦然）——
+   * 「换头像把皮肤清空」是没人会报的错（两个字段说的是两件事）。
+   * @param {any} session
+   * @param {{ picks?: Record<string, { skinId?: string, avatar?: string }>, avatar?: { avatar?: string } }} msg
+   */
+  appearance(session, msg) {
+    const prev = session.appearance && typeof session.appearance === 'object' ? session.appearance : null;
+    const picks = msg.picks !== undefined
+      ? Object.freeze(Object.fromEntries(Object.entries(msg.picks).map(([charId, pick]) => [charId, Object.freeze({ ...pick })])))
+      : (prev ? prev.picks : null);
+    const avatar = msg.avatar !== undefined
+      ? Object.freeze({ ...msg.avatar })
+      : (prev ? prev.avatar : null);
+    const kept = Object.freeze({
+      ...(picks && Object.keys(picks).length ? { picks } : {}),
+      ...(avatar ? { avatar } : {}),
+    });
+    session.appearance = kept;
+    const room = this.roomOf(session);
+    if (!room) return OK;
+    const seat = room.seatOf(session.playerId);
+    if (seat) seat.appearance = kept;
+    // 广播：外观是**给别人看的**，所以它必须立刻到达同房的人（不像 loadout 那样只对本人生效）
+    this.broadcastState(room);
+    return OK;
+  }
+
+  /**
+   * 触发一个房间级钩子事件。**本文件唯一的装配触点** —— 生命周期点各调它一次，怎么分发（闭枚举校验、逐钩子
+   * try/catch、`ROOM_HOOK_THREW`）全在 `server/roomPack.js`。
+   * @param {Room} room
+   * @param {string} event
+   * @param {object} [payload]
+   */
+  hookFire(room, event, payload = null) {
+    this.roomHooks.fire(room, event, payload);
+  }
+
+  /**
+   * 一个玩家/观战者座位的**钩子侧快照**（`join` / `leave` / `spectate` 的 `by`）—— 与 `room.players` 里的条目同形，
+   * 所以包读 `by.playerId` 与读 `room.players` 一样，不需要记住两套形状。
+   * @param {string} playerId
+   */
+  hookPlayer(playerId) {
+    for (const p of this.hookSnapshot().seats) if (p && p.playerId === playerId) return p;
+    for (const s of this.hookSnapshot().spectators) if (s && s.playerId === playerId) return { ...s, seat: null, isBot: false, ready: false, left: false };
+    return null;
+  }
+
+  /**
+   * 包里**房间钩子**在事件那一刻看到的房间快照（DESIGN §28.20）：`toState()` 去掉 `t` 与 `support`（一个是
+   * 线格式的帧类型，一个是服务端按需查的助战目录 —— 钩子不需要它，而信封里少一个键就少一份要维护的形状），
+   * 并且**不带 `mods`**：房间自己的集合是**安装那一刻**就定死的（钩子的 `room.modIds` 就是它），事件里再带这一大坨
+   * 只是把不变的静态数据复制 N 遍。
+   *
+   * 这份快照是给**钩子**的，不是给玩家的：它不经过 `encode`，所以它照 `room.state` 的字段形状走、不带 `t`。
+   */
+  hookSnapshot() {
+    const state = this.toState();
+    delete state.t;
+    delete state.support;
+    delete state.mods;
+    return state;
+  }
+
+  /**
+   * **每名真人须同意**的判据（W7, DESIGN §28.53）。返回 `null` = 通过，否则是要回给客户端的 `fail(...)`。
+   *
+   * 同意的内容就是**这一份字节指纹**：`seat.modConsent === room.modSet.digest` 才算同意过。集合一变，两个摘要就
+   * 不同 ⇒ 自动作废、必须重新表态（`setRoomMods` 里显式清空，下面那一句是第二层保险）。这比「同意过一次就永远算」
+   * 诚实：他当初同意的是另一份字节。
+   *
+   * 三条边界都是**判断**，不是漏判：
+   *   * **房主不受它约束**：他 `room.create` 报出的 `modIds` 就是在钉这一份字节（`create` 据此把他的座位写成
+   *     `modConsent = digest`）—— 要求一个人对自己刚钉下的东西再点一次同意，不增加任何信息。
+   *   * **AI 座位不算**：`addBot` 建出来的座位天生 `ready: true`，而 AI 从不对齐任何字节、也没有客户端 ——
+   *     与 `roomModsRefusal` 只数 `!seat.isBot` **逐字同一条口径**。
+   *   * **观战者不算**：他们不走 `join`、不占玩家座位、不参与开局门槛（`activeHumans`）—— 他们不跑这一房的内容。
+   *
+   * `detail` 点名到**人**与**包**：4 人房里一句「还有博士没同意」等于没说，而客户端正需要那串包名来告诉玩家他
+   * 要同意的是什么。
+   * @param {Room} room @param {Seat|null} seat
+   * @returns {{ error: string, detail?: string }|null}
+   */
+  modConsentRefusal(room, seat) {
+    if (!room || !room.modSet) return null;
+    if (!seat || seat.isBot) return null;
+    if (seat.modConsent === room.modSet.digest) return null;
+    return fail(ERR.MOD_CONSENT_REQUIRED,
+      `${seat.name || seat.playerId} has not agreed to this room's mod set (${room.modSet.packs.map((p) => p.id).join(', ') || 'none'} · ${room.modSet.digest.slice(0, 12)}…)`);
+  }
+
+  /**
+   * **服主 pin 的字节指纹漂了没有**（W7, DESIGN §28.53）。
+   *
+   * pin 就是房间自己的字节指纹 `room.modSet.digest` —— `modSetOf` 算的那个（`[id, hash]` 排序对的 sha256），没有
+   * 第二套「pin」对象：一个房间声明了集合，那份 `modSet` 就是它钉住的东西。所以「指纹变了」只有两种形态，两种都
+   * **复用既有守卫**（业主口径：能复用就复用，别造第二套），本函数只负责点名到包：
+   *
+   *   * 包**没了** ⇒ `MOD_UNKNOWN`（既有那句「本服务器没有这个包」本来就是这件事）；
+   *   * 包**被换了**（同一 id、另一个 hash）⇒ `MOD_SET_LOCKED` + 一句说真话的 detail：房间钉的是**字节**，字节
+   *     变了就是另一份内容，已经在座 / 已经对齐过的人对不上，要重开房间让所有人重新对齐。
+   *
+   * 判据本身住在 `shared/modIdentity.js modSetDrift`（算摘要的同一个文件、同一条 `[id, hash]` 口径）。
+   * 没声明集合的房间（`modSet === null`）走第一行早退 —— 那种房间与从前逐字节相同。
+   * @param {Room} room
+   * @returns {{ error: string, detail?: string }|null}
+   */
+  modPinRefusal(room) {
+    if (!room || !room.modSet) return null;
+    const loaded = this.workshop && Array.isArray(this.workshop.mods) ? this.workshop.mods : [];
+    const drift = modSetDrift(room.modSet, loaded);
+    if (drift.missing.length) {
+      return fail(ERR.MOD_UNKNOWN, `this room pinned the mod pack(s) (${drift.missing.join(', ')}) and this server no longer runs them — reopen the room`);
+    }
+    if (drift.changed.length) {
+      const shown = drift.changed.map((c) => `${c.id} (${c.was.slice(0, 12)}… → ${c.now.slice(0, 12)}…)`).join(', ');
+      return fail(ERR.MOD_SET_LOCKED, `this room pinned the mod pack byte(s) of (${shown}) and those bytes changed on this server since — reopen the room so every client re-aligns`);
+    }
+    return null;
+  }
+
+  /**
+   * 空席房间的回收裁决（DESIGN §28.57）。默认行为与从前逐字相同：**没有包申请留，就照旧销毁**。
+   * 有包申请（`server.room.hold` + `room.canHold`）则把房间留到裁决给出的时限（宿主夹到
+   * `ROOM_HOLD_MAX_MS` 之内），到点重新判一次：那时若还空着就销毁，有人回来了就什么都不做（加入路径本来就会
+   * 广播状态）。房间留在 `this.rooms` 里、不广播新事件 —— 对成员而言它还是那个等着重连的房间。
+   *
+   * 为什么是「最小替换」：没有包申请时这一行**就是**原来那行 `disposeRoom(room, 'empty')`，逐字相同。
+   * 定时器 `unref()`：一个等重连的房间不该把进程吊住（与 `startGrace` 同一个口径）。
+   */
+  reapEmptyRoom(room) {
+    if (room.disposed) return;
+    const want = holdDecision(room, { log: this.log });
+    if (!want.hold) { this.disposeRoom(room, 'empty'); return; }
+    if (room.holdTimer) clearTimeout(room.holdTimer);
+    room.holdTimer = setTimeout(() => {
+      room.holdTimer = null;
+      if (room.disposed || room.activeHumans().length > 0) return;
+      this.disposeRoom(room, 'empty');
+    }, Math.max(0, want.until - Date.now()));
+    room.holdTimer.unref?.();
+    this.log.info(`[lobby] ${room.code} held for reconnect until ${new Date(want.until).toISOString()} (${want.packs.join('+')})`);
+  }
+
+  /**
+   * 房间数（业主裁令：**只报数，不枚举**）。
+   *
+   * `publicRooms` 是公开面（`GET /api/rooms`）唯一的那个数，`total` 是运维面（`/healthz` 的 `rooms`）的那个数。
+   *
+   * **今天两者恒等**：引擎今天**没有「公开 / 私有」这个属性** —— `room.setInviteOnly` / `room.list` 都不存在
+   * （那是投稿 7ca51de6f346 与别的刀的内容，本刀**不预埋** `inviteOnly` 字段）。所以「公开房间数」暂时就是
+   * 「房间数」，这里如实返回同一个计数，而不是假装有一个筛选。**`inviteOnly` 落地后**，这个函数是**唯一**
+   * 该改的地方：把 `publicRooms` 改成排除 `inviteOnly` 的房间即可。
+   *
+   * **solo 房算数**（业主裁令，与 `stats().rooms` 同口径、零歧义）：`this.rooms` 只装**在册**房间，
+   * `disposeRoom` 会立刻 `delete`（`this.rooms.delete(room.code)`），所以它没有「已销毁但还在数里」的窗口。
+   *
+   * `out` 是给 `stats()` 复用的：**一次遍历，一件事一个真相** —— 两份「什么算房间」的口径是不允许的。
+   * @param {{ matches?: number, humans?: number, bots?: number, spectators?: number }} [out]
+   * @returns {{ publicRooms: number, total: number }}
+   */
+  roomCounts(out = {}) {
+    let matches = 0;
+    let humans = 0;
+    let bots = 0;
+    let spectators = 0;
+    for (const r of this.rooms.values()) {
+      if (r.match) matches++;
+      for (const s of r.seats) if (s && !s.left) (s.isBot ? bots++ : humans++);
+      spectators += r.spectators.length;
+    }
+    out.matches = matches; out.humans = humans; out.bots = bots; out.spectators = spectators;
+    // 今天 publicRooms === total（见上）。共用的这个 `rooms.size` 就是两者唯一的来源。
+    return { publicRooms: this.rooms.size, total: this.rooms.size };
+  }
+
+  /**
+   * The data one room's checks run on — the room's own set when it declared one, the process singleton otherwise
+   * (the header above `opsCharIds` states why the lobby and the match must read the same object).
+   * @param {{ modSet: { digest: string, packs: Array<{ id: string }> }|null }|null} room
+   */
+  roomData(room) {
+    const assets = room && this.workshop && this.workshop.roomAssets ? this.workshop.roomAssets.forRoom(room.modSet) : null;
+    return assets ? assets.data : this.safeData();
+  }
+
+  /**
+   * `room.mods` 的两条「改不了」判据（G2）。返回 `null` = 通过，否则是要回给客户端的 `fail(...)` 结果。
+   *
+   * 单独一个函数是为了**双检**（见 `setRoomMods`）：同一个判据调两次，中间不许出现第二份写法 —— 两份写法就是
+   * 两个会漂的真相，而漂的方向是「第一次放行、第二次放行、中间那一瞬的状态谁都没看」。
+   * @param {Room} room
+   * @returns {{ error: string, detail?: string }|null}
+   */
+  roomModsRefusal(room) {
+    if (room.match) return fail(ERR.MOD_SET_LOCKED, 'the running match took this room\'s mod set when it started');
+    for (const seat of room.seats) {
+      if (seat && !seat.isBot && seat.ready === true) {
+        return fail(ERR.MOD_SET_LOCKED, `${seat.name || seat.playerId} is ready — that client aligned to this room\'s current set`);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * `room.mods { modIds }` —— **房主在房间里改本房间的模组集合**（G1；docs/WORKSHOP.md §1.9.3）。
+   *
+   * 为什么需要它：建房的 picker（`room.create.modIds`）是**一次性**的 —— 房主点错了、或者开好房才发现这一房要跑
+   * 哪几个包，此前唯一的办法是解散重开，而重开会把已经坐进来的博士全赶出去。这一格让「改集合」不再等于「重开房」。
+   *
+   * 集合本身由 `resolveRoomModSet` 解析 —— **与 `room.create` 同一个函数**（W-A 起就是唯一真相）：ids 必须点名这台
+   * 服务器**真的装着的**包（`MOD_UNKNOWN` 同时列出未知与可用的），摘要是 `modSetOf` 算的那一个（不是第二份口径）。
+   * 改完**立刻物化**这一份（`roomAssets.forRoom`），所以新摘要的数据面在广播出去之前就已经有了。
+   *
+   * **三道守卫**（全部点名拒绝，一条都不静默）：
+   *   1. 只有房主（`NOT_HOST`）—— 集合是这一房所有人的共同前提，不是谁都能改的；
+   *   2. 对局已开 ⇒ `MOD_SET_LOCKED`：正在跑的那一局拿的是**开局那一刻**的集合（`startMatch` 已经把它交给
+   *      Match / BattleSpec），现在改只会让「声明的」与「正在跑的」变成两个真相；
+   *   3. **任一真人座位 `ready === true`** ⇒ `MOD_SET_LOCKED`：那个人是按**旧集合**对齐完才点的准备就绪
+   *      （W-D 的客户端硬门），他的字节可能正好缺新集合里的包。**AI 座位不算**：`addBot` 建出来的座位天生
+   *      `ready: true`，而 AI 从不对齐任何字节 —— 照字面把它收进这条判据，房主一加 AI 队友就再也改不了集合，
+   *      而那条拒绝说的还是一句与事实无关的话。
+   *
+   * **双检**（借 Ave-Mujica 的设计：进 handler 先判一次，真正应用之前再判一次）。今天这个 handler 从头到尾是
+   * **同步**的（没有 await、没有回调），所以第二次判**不可能**被别的会话插进来 —— 但「守卫」与「改动」之间的距离
+   * 是这段代码唯一的脆弱点，而「另一个会话刚刚让某个座位就绪 / 开了局」在任何**未来**的异步化（读盘、物化、钩子）
+   * 里会立刻变成真的。所以第二次判写在这里，并且紧挨着那两行赋值：谁把它挪远，谁就把这条不变量挪走了。
+   *
+   * **房间级钩子的边界**（DESIGN §28.20）：包声明的 `server.room` 钩子在 `install(room)` 那一刻拿到的
+   * `ctx.room.modIds` 是**快照**。新集合里该装的那几个钩子包与**已经装上的**不一致时，改集合会让某个包的观察面
+   * 与房间的真实集合对不上（它按旧集合装上，却继续看着一个不再声明它的房间）⇒ 点名拒绝，而不是让它偷偷漂。
+   * 只改「不含房间钩子的那几个包」时这条判据不挡路（两边算出来的钩子包名单相同）。
+   * @param {import('./net.js').Session} session
+   * @param {{ modIds: string[] }} msg
+   */
+  setRoomMods(session, { modIds }) {
+    const room = this.roomOf(session);
+    if (!room) return fail(ERR.NOT_IN_ROOM);
+    if (room.hostId !== session.playerId) return fail(ERR.NOT_HOST);
+    const early = this.roomModsRefusal(room);
+    if (early) return early;
+    const resolved = resolveRoomModSet(Array.isArray(modIds) ? modIds : [], this.workshop?.mods);
+    if (!resolved.ok) {
+      const unknown = resolved.unknown.length ? resolved.unknown.join(', ') : '(none)';
+      const available = resolved.available.length ? resolved.available.join(', ') : '(none)';
+      return fail(ERR.MOD_UNKNOWN, `this server does not run the mod pack(s) (${unknown}); available: ${available}`);
+    }
+    const nextIds = resolved.modIds.length ? resolved.modIds : null;
+    // 幂等：同一份集合（含「两边都不声明」）不是一个变更 —— 不广播、不重物化，也不动别人的就绪状态。
+    if (sameModIds(room.modIds, nextIds)) return OK;
+    const hookIds = (this.workshop && Array.isArray(this.workshop.roomHooks) ? this.workshop.roomHooks : [])
+      .filter((h) => h && typeof h.id === 'string' && typeof h.install === 'function')
+      .map((h) => h.id);
+    if (hookIds.length) {
+      const nextDeclared = resolved.modSet ? new Set(resolved.modSet.packs.map((p) => p.id)) : null;
+      const wanted = hookIds.filter((id) => !nextDeclared || nextDeclared.has(id)).sort();
+      const installed = this.roomHooks.packsFor(room).slice().sort();
+      if (wanted.length !== installed.length || wanted.some((id, i) => id !== installed[i])) {
+        return fail(ERR.BAD_MSG, `this room's server.room hooks are installed for (${installed.join(', ') || 'none'}), and this set needs (${wanted.join(', ') || 'none'}) — a hook sees the room's modIds as a snapshot taken at install, so which packs have hooks must be decided when the room is created`);
+      }
+    }
+    // 第二次判（双检）：紧挨着下面两行赋值，见上面那段。
+    const late = this.roomModsRefusal(room);
+    if (late) return late;
+    this.dropReplay(room, session.playerId);
+    room.modIds = nextIds;
+    room.modSet = resolved.modSet;
+    if (room.modSet && this.workshop && this.workshop.roomAssets) this.workshop.roomAssets.forRoom(room.modSet);
+    // 集合变了 ⇒ 所有**真人**座位（房主除外，他就是改的人）重新回到未就绪：他们可能缺新集合的文件。这是
+    // 「集合变更后加入者如何重新对齐」的服务端那一半；客户端那一半是 W-D 的准备就绪硬门 ——
+    // `public/js/screens/room.js` 的 RoomModsPanel 按 `room.state.mods.digest` 重跑 planAlignment，没对齐完
+    // 就点不了准备就绪（客户端在这一刀里也补上了「摘要一变就先锁住，别拿旧结论放行」）。
+    //
+    // **同意也一起作废**（W7, DESIGN §28.53）：他们同意的是**旧的那一份字节**，而 pin 的是新的。不清空的话
+    // 「同意过」会退化成「点过一次就一直算」，那正是这一格要消灭的那种谎话。房主的座位写上新摘要 —— 他刚用这条
+    // 消息把新集合钉下来（`room.mods` 就是他的表态），除非他改回「不声明」（那时这一格整条不适用，写 `null`）。
+    for (const s of room.seats) if (s && !s.isBot && s.playerId !== room.hostId) { s.ready = false; s.modConsent = null; }
+    const hostSeat = room.seatOf(room.hostId);
+    if (hostSeat && !hostSeat.isBot) hostSeat.modConsent = room.modSet ? room.modSet.digest : null;
+    this.log.info(`[lobby] ${room.code} mod set is now ${room.modSet ? room.modSet.packs.map((p) => p.id).join(', ') : '(none)'} by ${session.name}`);
+    this.broadcastState(room);
+    return OK;
+  }
+
+  /**
+   * 本房座位上限 (业主裁决 B5, docs/META.md §1.9): the HOST resizes the room it is already in.
+   *
+   * 三条守卫，一条都不许省：
+   *   1. `code` 必须是**你现在所在的这个房间**。一条消息只能改一个明确点名的房间 —— 一个停在旧 `room.state` 上的
+   *      标签页因此不会把房主刚换到的新房间改小。不匹配 ⇒ `NOT_IN_ROOM`（**不**是「默默改你现在待着的那个」）。
+   *   2. 只有房主 ⇒ `NOT_HOST`；模拟进行中 ⇒ `ROOM_STARTED`（房间的 `seats` 数组是**大厅**的，正在跑的 Match 拿的是
+   *      它自己那份副本，所以这里本来就改不了比赛 —— 但也不给一个正在打的人临时多开／少开座位）；solo 房没有可选的
+   *      座位数（它的形状就是 1）⇒ `BAD_TARGET`。
+   *   3. **新上限不许小于房间内现有的人数（真人 + AI）** ⇒ `SEAT_CAP_TOO_SMALL`。这一条就是「**永远不踢人**」的
+   *      **全部**保证：只要它成立，缩容只会砍掉**空**座位。
+   *
+   * 「越界 / 垃圾值」与「低于现有人数」**两个错误码分得开**，因为它们要的是两个不同的动作：前者去改数字
+   * （`BAD_MSG` + 点名的 `detail`，与 `room.create.seatCap` 同一套口径），后者去请人离开（`SEAT_CAP_TOO_SMALL`）。
+   * **两者都不静默钳制** —— 一个被悄悄换成别的数字的上限，房主没有任何办法看出来。
+   *
+   * 上限本身（`this.opts.maxSeats` = `SP_MAX_SEATS`，缺省 20）是「**绝不信任客户端**」的那一条：协议已经
+   * 判过 `[MIN_SEATS, SEAT_CAP]`，这里再按这台服务器真正的天花板判一次，好让不走协议的调用方也过不去。
+   */
+  setSeatCap(session, { code, seatCap }) {
+    const room = this.roomOf(session);
+    if (!room || room.code !== code) return fail(ERR.NOT_IN_ROOM, `you are not in room ${code}`);
+    if (room.hostId !== session.playerId) return fail(ERR.NOT_HOST);
+    if (room.match) return fail(ERR.ROOM_STARTED);
+    if (room.mode === 'solo') return fail(ERR.BAD_TARGET, 'a solo room has exactly one seat');
+    const ceiling = this.opts.maxSeats;
+    if (!Number.isInteger(seatCap) || seatCap < MIN_SEATS || seatCap > ceiling) {
+      return fail(ERR.BAD_MSG, `seatCap is not a seat count this server allows (an integer in [${MIN_SEATS}, ${ceiling}])`);
+    }
+    // 「不踢人」的守卫：`occupied` 是裁决书上的口径（人数），`highest` 是它的**充分**版本 —— 座位允许有空洞
+    // （房主永久离开后 `seats[0]` 会是 null，而 `seats[2]` 还坐着人），只数人数会让 `seatCap = 2` 砍掉 2 号位。
+    const occupied = room.occupiedSeats().length;
+    const highest = room.seats.reduce((m, s, i) => (s ? i : m), -1);
+    if (seatCap < occupied || seatCap <= highest) {
+      return fail(ERR.SEAT_CAP_TOO_SMALL, `${occupied} player(s) are in ${room.code}; a smaller cap would evict somebody`);
+    }
+    if (room.seatCap === seatCap) return OK;   // idempotent: no state change, so no broadcast either
+    this.dropReplay(room, session.playerId);
+    room.seatCapTo(seatCap);
+    this.log.info(`[lobby] ${room.code} seat cap set to ${seatCap} by ${session.name}`);
+    this.broadcastState(room);
+    return OK;
+  }
+
+  /**
+   * room.support (助战, shared/support.js): check the selection against the SERVER's pool (data/support.json), store it
+   * on the session and the seat, and — while a match runs — hand it to the match (accepted until the match leaves
+   * INFO_CHECK, exactly like the loadout). An operator the pool does not list rejects the whole message: unlike the
+   * loadout there is deliberately no fallback, because falling back would silently grant a disabled operator.
+   */
+  support(session, { entries }) {
+    const room = this.roomOf(session);
+    // the room's own pool AND the room's own chess table: `checkSupport` reads one and looks the other up
+    const data = this.roomData(room);
+    const cfg = normalizeSupportConfig(data && data.support);
+    const res = checkSupport(entries, cfg, (id) => lookup('chess', id, data));
+    if (!res || res.error) return fail(res && isErrCode(res.error) ? res.error : ERR.BAD_MSG, res && res.detail);
+    const support = freezeSupport(res.entries);
+    session.support = support;
+    if (!room) return OK;
+    const seat = room.seatOf(session.playerId);
+    if (seat) seat.support = support;
+    if (!room.match || !seat) return OK; // a spectator's selection stays on its session, never reaching the match
+    if (typeof room.match.setSupport !== 'function') return fail(ERR.ROOM_STARTED, 'stored for the next match');
+    let r;
+    try {
+      r = room.match.setSupport(session.playerId, support);
+    } catch (e) {
+      this.log.error(`[lobby] ${room.code} match.setSupport threw`, e);
+      return fail(ERR.INTERNAL);
+    }
+    if (r && typeof r === 'object' && r.error) {
+      return fail(isErrCode(r.error) ? r.error : ERR.INTERNAL, typeof r.detail === 'string' ? r.detail : undefined);
+    }
+    return OK;
+  }
+
+  /**
+   * The 助战 catalog a client may show (`supportPicker` names this as its purpose), plus the player's own current picks.
+   * An operator the pool does not list is DISABLED — the picker must not be able to offer it, and the server refuses a
+   * request that names it (shared/support.js checkSupport) — so this is the only way the client learns the pool.
+   *
+   * **The same data the check runs on** (`roomData`, see its header): this is the VISIBLE face of the pool and
+   * `support()` is the CHECKING face, so reading `safeData()` here while `support()` reads the room would list a
+   * pickable-looking operator the very same server then refuses — "the client can see it but cannot pick it". A room
+   * that declared nothing (or everything), and a session with no room, still resolve to the process singleton itself,
+   * so 4 座 output is byte-for-byte unchanged.
+   * @param {{ modSet: { digest: string, packs: Array<{ id: string }> }|null }|null} [room]
+   */
+  supportView(room = null) {
+    const data = this.roomData(room);
+    const cfg = normalizeSupportConfig(data && data.support);
+    return {
+      enabled: cfg.enabled,
+      label: cfg.label,
+      tiers: supportPicker(cfg),
+      capacity: supportCapacity(cfg),
+      slots: supportTiers(cfg).reduce((o, t) => ({ ...o, [t]: cfg.slots[t] }), {}),
+    };
+  }
+
   join(session, { code, testAck }) {
     const norm = String(code).trim().toUpperCase();
     const room = norm.length === ROOM_CODE_LEN ? this.rooms.get(norm) : undefined;

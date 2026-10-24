@@ -982,6 +982,9 @@ function LoadoutScreen({ st, leaving = false }) {
       : html`<main class=${cx('lo-body', narrowDetail && 'is-detail')}>
       <section class="lo-roster">
         <${Filters} m=${m} filters=${st.filters} bonds=${bonds} onFilters=${(filters) => loadoutStore.set({ filters })} onDeck=${() => setView('deck')} />
+        ${/* 干员卡的**槽位**宿主（`screen.loadout.card`，docs/WORKSHOP.md §1.9.3 的第 12 槽）：容器由组件自己渲染；
+             包在这里画的东西跟着名单一起滚，不会盖住详情栏。 */ null}
+        <div class="mod-host" data-mod-slot="screen.loadout.card"></div>
         <div class="lo-list" ref=${gridRef}>
           <${RosterHead} />
           <div class="lo-list__rows" role="list" aria-label=${t('干员列表')}>

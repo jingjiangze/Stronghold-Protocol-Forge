@@ -230,7 +230,8 @@
 import { aiTakeover, resetAiTakeover, reconcileAiTakeover } from './aiTakeover.js';
 import { randomBytes, randomInt } from 'node:crypto';
 import { DIFFICULTIES, ERR, MAX_SEATS, MIN_SEATS, MAX_SPECTATORS, ROOM_CODE_LEN, modeIdFor, maxSeatsFrom, clampSeats } from '../shared/constants.js';
-import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, checkDiyPicks, charPotentialChanges, checkSkinSelection, operatorCharIds } from '../shared/protocol.js';
+import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, checkDiyPicks, charPotentialChanges, checkSkinSelection, operatorCharIds, PACK_MSG_LIMITS, CHAT_LIMITS } from '../shared/protocol.js';
+import { modSetOf, isModId, modSetDrift } from '../shared/modIdentity.js';
 import { encode, isErrCode, sendRaw, sendSession } from './net.js';
 import { getData as defaultGetData, lookup } from './data.js';
 import { Match as DefaultMatch } from './match/Match.js';
@@ -768,6 +769,12 @@ export class Lobby {
      * 快捷短语的服务端白名单（`room.quickMsg`）：表里没有的 id 一律点名拒绝。
      * @type {Set<string>}
      */
+    /**
+     * What this server is running, as one identity (DESIGN §28.2): `{ digest, packs }`，null = 干净安装。
+     * 摘要随 `welcome` 下发，且 `room.create` / `room.join` 在非原生房间里必须回它。
+     * @type {{ digest: string, packs: Array<object> }|null}
+     */
+    this.modSet = modSetOf(Array.isArray(this.workshop?.mods) ? this.workshop.mods : []);
     this.quickPhrases = new Set(
       Array.isArray(this.opts.quickPhrases) ? this.opts.quickPhrases : DEFAULT_QUICK_PHRASES,
     );
@@ -2339,6 +2346,21 @@ export class Lobby {
     let versions = null;
     try { versions = this.versions?.welcome?.() || null; } catch (e) { this.log.error('[lobby] the versions list failed', e); }
     if (versions) info.versions = versions;
+    // 本房座位上限 (业主裁令 2026-10-12): **总是发** —— 缺省上限已经是 20（不是官方 `MAX_SEATS`）。
+    // ⚠️ `this.opts` 在单元测试里可能没有（测试直接调 `welcomeInfo.call({ vanilla, plugins })`）⇒ 那时不发。
+    if (this.opts) info.maxSeats = this.opts.maxSeats;
+    // 创意工坊：集合 / 面板清单 / 素材清单 / 主题 / 传输档 —— 没有包声明时**一个键都不多**
+    if (this.modSet) info.mods = this.modSet;
+    {
+      const panels = this.workshop && Array.isArray(this.workshop.panels) ? this.workshop.panels : [];
+      const assets = this.workshop && Array.isArray(this.workshop.assets) ? this.workshop.assets : [];
+      const theme = this.workshop && this.workshop.theme && typeof this.workshop.theme === 'object' ? this.workshop.theme : null;
+      const transport = this.workshop && this.workshop.transport && typeof this.workshop.transport === 'object' ? this.workshop.transport : null;
+      if (panels.length) info.modPanels = panels;
+      if (assets.length) info.modAssets = assets;
+      if (theme && theme.vars && Object.keys(theme.vars).length) info.modTheme = theme;
+      if (transport) info.transport = transport;
+    }
     // Omitted when the switch is off, so a welcome from a normal server stays identical.
     if (this.testEnabled === true) info.testMode = true;
     return info;

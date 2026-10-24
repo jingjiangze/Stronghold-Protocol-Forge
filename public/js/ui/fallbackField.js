@@ -34,7 +34,7 @@ const DMG_TTL = 900;
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
 
 /** Avatar URL for a UnitInfo `avatar` asset id (chars / E2 / tokens / enemies). */
-function unitArt(m, info) {
+export function unitArt(m, info, appearance = {}) {
   const id = info?.avatar || info?.defId;
   if (!m || !id) return null;
   if (info.side === 'enemy' || String(id).startsWith('enemy_')) return enemyIconUrl(m, id);
@@ -106,7 +106,7 @@ export function createFallbackView(host, opts = {}) {
     mode: 'prep', priv: null, editable: false, canPlace: null,
     field: null, units: new Map(), snapUnits: new Map(), highlight: new Map(), hlGroups: new Map(), held: new Map(), dirs: new Map(),
     drag: null, hoverTarget: null, floats: [], settings: { damageNumbers: true, officialDamageNumbers: false, ...(opts.settings || {}) },
-    size: { w: 0, h: 0 }, destroyed: false, pen: [],
+    size: { w: 0, h: 0 }, destroyed: false, pen: [], myId: null, players: [],
   };
 
   const emit = (type, payload) => {
@@ -277,7 +277,7 @@ export function createFallbackView(host, opts = {}) {
     const py = (st.rect.r1 - y + 0.5) * L.tile;
     const enemy = info.side === 'enemy';
     const size = info.boss ? L.tile * 1.3 : L.tile * 0.86;
-    const src = unitArt(m(), info);
+    const src = unitArt(m(), info, { myId: st.myId, players: st.players, otherSkins: st.settings.otherSkins });
     const dead = anim === 4;
     const hpPct = maxHp > 0 ? Math.max(0, Math.min(100, (hp / maxHp) * 100)) : 0;
     const spPct = spMax > 0 ? Math.max(0, Math.min(100, (sp / spMax) * 100)) : 0;
@@ -525,6 +525,8 @@ export function createFallbackView(host, opts = {}) {
       schedule();
     },
     setSettings(s) { st.settings = { ...st.settings, ...(s || {}) }; schedule(); },
+    setMe(id) { st.myId = id; schedule(); },
+    setSkins(players) { st.players = players || []; schedule(); },
     on(type, fn) {
       if (typeof fn !== 'function') return () => {};
       if (!listeners.has(type)) listeners.set(type, new Set());

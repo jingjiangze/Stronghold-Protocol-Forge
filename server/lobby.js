@@ -373,6 +373,77 @@ function freezeSkins(skins, hasOperator) {
 }
 
 /** Do two skin selections hold the same pairs (a resend of the same map is not broadcast again)? */
+/**
+ * Broadcast deliveries that did not reach every connected member: the frame object → `{ sent, dropped }`
+ * (server/lobby.js broadcastRoom). A frame that missed a socket leaves that client behind the engine's incremental
+ * `m.public` baseline, so the match answers with a full frame next time (`Match._notePublicDelivery`) — the reader is
+ * `publicDeliveryGap` below, and nothing else in this module looks at it.
+ * @type {WeakMap<object, { sent: number, dropped: number }>}
+ */
+const PUBLIC_DELIVERY = new WeakMap();
+
+/** Whether a broadcast frame failed to reach at least one connected member (see PUBLIC_DELIVERY). */
+export const publicDeliveryGap = (msg) => PUBLIC_DELIVERY.has(msg);
+
+/** Deep-frozen copy of a checked 助战 selection (shared by the session, the seat and the match's PlayerState). */
+function freezeSupport(entries) {
+  return Object.freeze([...(entries || [])]);
+}
+
+/**
+ * Resolve a `room.create` `modIds` list into the room's own mod set (W-A, DESIGN §28.9).
+ *
+ * The ids are matched against the packs THIS PROCESS already loaded (`Lobby.workshop.mods`), because a room picks a
+ * subset of the catalogue — the server owns every hash, so a client cannot name content the server does not have. The
+ * digest is computed by `modSetOf` — the SAME function the process set, `welcome` and every BattleSpec go through — so
+ * the room's digest can never be a second opinion about the same list.
+ *
+ * `modSetOf` sorts by id, so the room's `packs` are sorted whatever order the client sent.
+ * @param {any[]} requested pack ids as they arrived (`isModId`-checked by shared/protocol.js)
+ * @param {Array<{ id: string, hash: string, layer: string, combat: boolean, api?: string }>} catalogue loaded packs
+ * @returns {{ ok: true, modIds: string[], modSet: { digest: string, packs: Array<object> } }
+ *          | { ok: false, unknown: string[], available: string[] }}
+ */
+function resolveRoomModSet(requested, catalogue) {
+  const available = (Array.isArray(catalogue) ? catalogue : []).filter((p) => p && isModId(p.id));
+  const known = new Set(available.map((p) => p.id));
+  const ids = [];
+  const unknown = [];
+  for (const raw of requested) {
+    if (typeof raw !== 'string' || !isModId(raw)) continue;   // shared/protocol.js already refused these
+    if (!known.has(raw)) { if (!unknown.includes(raw)) unknown.push(raw); continue; }
+    if (!ids.includes(raw)) ids.push(raw);
+  }
+  if (unknown.length) {
+    return { ok: false, unknown: unknown.sort(), available: [...known].sort() };
+  }
+  if (!ids.length) return { ok: true, modIds: [], modSet: null };
+  // The catalogue entry is copied, never handed out by reference: the room must not be able to reach into the loader's
+  // pack objects (and `api` is dropped when the pack declared none — the wire shape is what `isModEntry` accepts).
+  const picked = ids.map((id) => {
+    const p = available.find((e) => e.id === id);
+    return p.api == null ? { id: p.id, hash: p.hash, layer: p.layer, combat: p.combat }
+      : { id: p.id, hash: p.hash, layer: p.layer, combat: p.combat, api: p.api };
+  });
+  const modSet = modSetOf(picked);
+  // A pack the loader identified but `modSetOf` will not accept (an empty hash, an unknown layer) is a server-side
+  // inconsistency, not a client error: say so instead of quietly handing back a room with a different set than asked.
+  if (!modSet) return { ok: false, unknown: [], available: [...known].sort() };
+  return { ok: true, modIds: Object.freeze(ids.slice().sort()), modSet };
+}
+
+/**
+ * 两份「房间声明的模组 id 列表」是不是**同一份**（`null` = 不声明）。`resolveRoomModSet` 交给房间的列表已经排序
+ * 去重，所以逐位比较就够。
+ *
+ * 为什么需要它：`room.mods` 要能认出「你发的就是我现在的这一份」——那不是一个变更，不该广播、不该把别人的就绪
+ * 状态清掉。判的是**同一份集合**，不是同一批字节（后者是摘要的事，`modSetOf` 已经保证一致）。
+ */
+function sameModIds(a, b) {
+  if (!a || !b) return !a && !b;
+  return a.length === b.length && a.every((id, i) => id === b[i]);
+}
+
 function sameSkins(a, b) {
   const ka = a ? Object.keys(a) : [], kb = b ? Object.keys(b) : [];
   return ka.length === kb.length && ka.every((k) => a[k] === b[k]);
@@ -404,6 +475,11 @@ export class Room {
      * @type {object[]}
      */
     this.chat = [];
+
+    /** 本房声明的模组 id 列表（已排序去重；null = 没声明集合 = 跑服务器加载的全部） */
+    this.modIds = null;
+    /** @type {{ digest: string, packs: Array<object> } | null} */
+    this.modSet = null;
     /**
      * the open version vote, else null: `{ id, proposerId, version, voters, agreed, expiresAt, timer }`
      * @type {{ id: number, proposerId: string, version: string, voters: string[], agreed: Set<string>, expiresAt: number, timer: any } | null}
@@ -469,6 +545,16 @@ export class Room {
   }
 
   /** Does the room play a content set with gameplay plugins (its own cs; header "Gameplay plugins")? */
+  /**
+   * 往环形缓冲里放一条（超出上限就丢最旧的）。
+   * @param {object} frame 已塑形的 `chat.msg` 帧
+   */
+  addChat(frame) {
+    this.chat.push(frame);
+    if (this.chat.length > CHAT_LIMITS.history) this.chat.splice(0, this.chat.length - CHAT_LIMITS.history);
+    return this.chat.length;
+  }
+
   get modded() { return !!this.content && this.content.vanilla === false; }
 
   /**
@@ -496,7 +582,33 @@ export class Room {
    * `room.state` frame (DESIGN §8.1) plus `inMatch`.
    * @param {number} [now] the lobby's clock (an open version vote's remainingMs)
    */
-  toState(now = Date.now()) {
+  /** Every seat that holds somebody, AI included, in seat order (`left` seats are still IN the room). @returns {Seat[]} */
+  occupiedSeats() { return this.seats.filter(Boolean); }
+
+  /**
+   * 本房座位上限 (业主裁决 B5, docs/META.md §1.9): resize this room's seat array — the ONLY way `seats` ever changes
+   * length (`Room` deliberately never resizes it anywhere else, and a running match holds its own copy of the seats, so
+   * this never touches a match in progress).
+   *
+   * 不变量：**绝不挤掉任何人**。调用方（`Lobby.setSeatCap`）已经证明没有任何**非空**座位落在新上限之外，这里再自己
+   * 校一遍 —— 因为「缩容丢人」这种错误一旦发生就是静默的（数组短了，人不见了，谁也不报错），而这次的防线只有几行
+   * 代码，值得重复一次。任何非空座位会被丢掉时**整个调用什么都不做**（数组、`seatCap` 都不变），调用方的前置校验
+   * 保证这条分支不可达。
+   *
+   * @param {number} cap the new seat count (an integer ≥ 1)
+   * @returns {number} the room's seat cap after the call (unchanged when nothing was done)
+   */
+  seatCapTo(cap) {
+    if (!Number.isInteger(cap) || cap < 1 || cap === this.seatCap) return this.seatCap;
+    const next = this.seats.slice(0, cap);
+    while (next.length < cap) next.push(null);
+    if (next.filter(Boolean).length !== this.occupiedSeats().length) return this.seatCap; // would evict someone
+    this.seats = next;
+    this.seatCap = cap;
+    return this.seatCap;
+  }
+
+  toState(support = null, now = Date.now()) {
     return {
       t: 'room.state',
       ...(this.aiTakeoverEnabled ? { aiTakeoverEnabled: true, aiTakeoverVotes: this.aiTakeoverVotes || [] } : {}),
@@ -507,11 +619,15 @@ export class Room {
       aiPicksLast: this.aiPicksLast,
       // 房内聊天模式：客户端据此决定要不要显示输入框。**服务端强制**（`chat` / `quickMsg` 各自再判一次）。
       chatMode: this.chatMode,
+      // 本房声明的模组集合（W-A, DESIGN §28.9）：形状与 `welcome.mods` 相同；没声明就**不带这个键**
+      ...(this.modSet ? { mods: this.modSet } : {}),
       /**
        * 座位容量 (100 人版移植)：**只在容量 ≠ `MAX_SEATS` 时出现**，所以一个官方 4 座房的帧逐字节不变。
        * 客户端按它补齐座位卡（`public/js/screens/room.js normalizeSeats`）。
        */
       ...(this.seatCap !== MAX_SEATS ? { seatCap: this.seatCap } : {}),
+      // 服务器声明的助战目录（客户端推不出来，所以只有服务端能给）
+      ...(support ? { support } : {}),
       inMatch: !!this.match,
       seats: this.seats.map((s) => (s
         ? { seat: s.seat, playerId: s.playerId, name: s.name, isBot: s.isBot, ready: s.ready, connected: s.connected && !s.left,
@@ -540,6 +656,26 @@ export class Room {
 }
 
 /** Room registry + lobby message handlers. Pass an instance as the `handler` of net.js Network. */
+/**
+ * 一条聊天文本的**塑形**：按 Unicode 码点截到 `CHAT_LIMITS.text`，去掉控制字符，两端空白抹平；全是空白 ⇒ `''`。
+ *
+ * 为什么按**码点**切而不是 `slice`：`'🙂'.length === 2`，按 UTF-16 单元切会把一个代理对劈成两半，接收端渲染出
+ * 一个替换字符。`[...s]` 走的是码点迭代，这是 `sanitizeName`（昵称那条）的同一条思路。
+ *
+ * 控制字符（含 `\n` / `\t` / DEL）一律换成空格：聊天是**单行**展示，一条消息不该有能力自己排版。
+ * @param {unknown} raw
+ * @returns {string} 可直接广播的文本；无内容时是空串
+ */
+export function chatText(raw) {
+  const s = typeof raw === 'string' ? raw : '';
+  return [...s]
+    .map((ch) => (ch.codePointAt(0) < 0x20 || ch.codePointAt(0) === 0x7f ? ' ' : ch))
+    .slice(0, CHAT_LIMITS.text)
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export class Lobby {
   /**
    * @param {{
@@ -568,7 +704,7 @@ export class Lobby {
    *   the other versions (server/match/host/index.js, kind 'version')
    */
   constructor({ registry, log = noopLog, MatchClass = DefaultMatch, getData = defaultGetData, now = Date.now, seedFn, content = null, plugins = null, hosts = null,
-    versions = null, versionHosts = null, simPool = null, options = {} }) {
+    versions = null, versionHosts = null, simPool = null, records = null, workshop = null, options = {} }) {
     this.registry = registry;
     /** the vanilla content set every room plays (header "Content identity"), or null */
     this.vanilla = content && isContentHash(content.cs) ? Object.freeze({ cs: content.cs, vanilla: true, plugins: Object.freeze([]) }) : null;
@@ -597,6 +733,44 @@ export class Lobby {
       delete options.testHost;
     }
     this.opts = { ...LOBBY_DEFAULTS, ...options };
+
+    /**
+     * 对局战绩（`SP_ACCOUNTS=1`, server/matchRecords.js）：每局**完整结算**时落一条。`null` ⇒ 结算点不落盘。
+     * @type {import('./matchRecords.js').MatchRecords | null}
+     */
+    this.records = records;
+    /**
+     * 工坊行为层 (docs/WORKSHOP.md §4)：`{ kits, modules, panels, mods, roomAssets, ... }`。null = 干净安装。
+     */
+    this.workshop = workshop && typeof workshop === 'object' ? workshop : null;
+    /**
+     * 包通道白名单（docs/WORKSHOP.md §1.9.6）：`<包id>` → 这个包声明过的通道名集合，由**面板清单**推出来。
+     * @type {Map<string, Set<string>>}
+     */
+    this.packChannels = new Map();
+    for (const panel of (this.workshop && Array.isArray(this.workshop.panels) ? this.workshop.panels : [])) {
+      if (!panel || typeof panel.pack !== 'string' || !Array.isArray(panel.messages)) continue;
+      if (!this.packChannels.has(panel.pack)) this.packChannels.set(panel.pack, new Set());
+      for (const channel of panel.messages) this.packChannels.get(panel.pack).add(channel);
+    }
+    /**
+     * 包通道的**投递面**（`server.modules[].channels`）：`<包id>` → 该包服务端模块声明过的接收通道集合。
+     * @type {Map<string, Set<string>>}
+     */
+    this.serverChannels = new Map();
+    const declaredServerChannels = this.workshop && this.workshop.serverChannels;
+    if (declaredServerChannels instanceof Map) {
+      for (const [packId, channels] of declaredServerChannels) {
+        if (typeof packId === 'string' && channels) this.serverChannels.set(packId, new Set(channels));
+      }
+    }
+    /**
+     * 快捷短语的服务端白名单（`room.quickMsg`）：表里没有的 id 一律点名拒绝。
+     * @type {Set<string>}
+     */
+    this.quickPhrases = new Set(
+      Array.isArray(this.opts.quickPhrases) ? this.opts.quickPhrases : DEFAULT_QUICK_PHRASES,
+    );
     // A fixed alliance key (--room-code / roomCode): every room this process creates uses it. server/index.js parses
     // the argument once at startup; a test passes it directly. Nothing is read from the environment or persisted.
     if (this.opts.roomCode) {
@@ -839,7 +1013,23 @@ export class Lobby {
    */
   handleMessage(session, msg, ctx = null) {
     switch (msg.t) {
-      case 'room.create': return this.create(session, msg);
+        // 上局战绩（server/matchRecords.js, docs/RECORDS.md）：空消息，回执是**只发给请求者**的
+      // `records.latest`。没有 `records` 时照样回一条 `record: null` —— 客户端因此不需要「服务器有没有开这个
+      // 功能」这件事，它只会看到「暂无完整对局战绩」。可见档位：请求者就是 playerId 的持有者 ⇒ `OWNER`。
+      case 'records.mine':
+      // 房间内改本房间的模组集合（G1/G2，docs/WORKSHOP.md §1.9.3）：房主、开局前、且没有真人已就绪
+      case 'room.mods': return this.setRoomMods(session, msg);
+      case 'room.support': return this.support(session, msg);
+      // 外观选择（皮肤层）：别人看到的你长什么样 —— 纯展示，比赛中也接受，变更即广播
+      case 'room.appearance': return this.appearance(session, msg);
+      // 野排匹配 (quick match): the queue lives in server/matchmaking.js; these two cases are its only entry points
+      case 'room.queue': return this.matchmake.join(session, msg);
+      case 'room.dequeue': return this.matchmake.leave(session);
+      // 房内聊天（引擎特性）：打字与快捷短语，形状由 shared/protocol.js 判死，能不能说由这里裁决
+      case 'room.chat': return this.chat(session, msg);
+      case 'pack.msg': return this.packMsg(session, msg);
+
+    case 'room.create': return this.create(session, msg);
       case 'room.join': return this.join(session, msg);
       case 'room.leave': return this.leave(session);
       case 'room.ready': return this.ready(session, msg);
@@ -1025,6 +1215,180 @@ export class Lobby {
     this.log.info(`[lobby] ${code} created (${mode}/${difficulty}${version !== DEFAULT_VERSION ? `, ${version}` : ''}${room.test ? ', test' : ''}) by ${session.name}`);
     this.broadcastState(room);
     return OK;
+  }
+
+  /**
+   * The mod-set gate (DESIGN §28.2): on a server that runs workshop packs, entering a room means running THEIR content,
+   * so the client must say which content it thinks it is joining. A client that does not answer (or answers with what
+   * the server is not running) is refused with a reason it can act on — the alternative is a player silently playing
+   * content the UI never told them about.
+   *
+   * ▸ W-A DOES NOT CHANGE THIS. It still judges `msg.mods` against the PROCESS-wide set (`this.modSet`), i.e. everything
+   * the server loaded — NOT the set a room declared in `modIds`. A room's declared set is only DECLARED and handed out
+   * (`Room.modSet` → `room.state.mods`) in this cut; it starts deciding what the simulation runs in W-B, when the room's
+   * merged data reaches `Match` and the two bypass singletons (`server/sim/content/support/index.js`, `server/data.js`).
+   * Until then a client is let into a room whose declared set is a strict subset of the server's — deliberately, because
+   * the simulation is still running the server's whole set either way, and pretending otherwise would be the lie.
+   * @param {any} msg the `room.create` / `room.join` message
+   * @returns {{ ok: true } | { error: string, detail?: string }}
+   */
+  checkModSet(msg) {
+    if (!this.modSet) return OK;
+    if (msg.mods === this.modSet.digest) return OK;
+    return fail(ERR.BAD_MSG, msg.mods
+      ? `this server runs a different mod set (${this.modSet.digest.slice(0, 12)}…) — reload the page`
+      : `this server runs ${this.modSet.packs.length} workshop pack(s) (${this.modSet.packs.map((p) => p.id).join(', ')}); a client must confirm the mod set to enter — reload the page`);
+  }
+
+  /**
+   * `pack.msg`（docs/WORKSHOP.md §1.9.6，业主裁决 2026-10-10 的「消息额度」那一半）：**包自己的通道**，引擎只当
+   * 不透明载荷转发。四道判据，全部落在「不认识的声明要响亮」那条线上：
+   *   1. 必须**在房间里**（通道是房间内的，不在大厅里广播全网）；
+   *   2. `pack` 必须是这个服务器真的装着的包，且它**声明过**这个通道（`this.packChannels`）—— 一个包说不出另一个
+   *      包的通道，也说不出自己没写进 `client.panels[].messages` 的通道；
+   *   3. 载荷大小由 `validateC2S` 卡过（`PACK_MSG_LIMITS.bytes`），这里再卡**频率**（每会话令牌桶，超了 `ERR.RATE`）；
+   *   4. 送回**同一个房间**的成员与旁观者。引擎不解释 `data`，也不判断谁该收到 —— 客户端只把消息交给声明过这个
+   *      通道的面板，那是「第二个读者」的判据（`extensions.js` 的 `net.on(channel, …)`）。
+   *   5. 若房间里跑着对局、它的 `Match` 上有 `handlePackMsg(playerId, msg)`（这是 `server.modules` 的
+   *      `matchClass` 包装器唯一能收到网络消息的地方，DESIGN §28.14），**且这个包的服务端模块声明过这个通道**
+   *      （`server.modules[].channels`，§28.23）—— 三条齐了才**在限流之后、转发之前**调一次：
+   *      返回 `true` 或 `{ consumed: true }` = **已消费**，不再转发给同房其它人；其余返回值（含 `false` /
+   *      `undefined`）与**抛错**都当作未消费，照旧转发 —— 一条坏消息不能把整个转发打断。没声明过的通道**投都不投**
+   *      （转发照旧）：`channels` 是接收入口，不是注释。
+   * @param {import('./net.js').Session} session
+   * @param {{ pack: string, channel: string, data?: any }} msg
+   */
+  packMsg(session, msg) {
+    const room = this.roomOf(session);
+    if (!room) return fail(ERR.NOT_IN_ROOM);
+    const declared = this.packChannels.get(msg.pack);
+    if (!declared || !declared.has(msg.channel)) {
+      return fail(ERR.BAD_MSG, `pack "${String(msg.pack).slice(0, 32)}" does not declare the channel "${String(msg.channel).slice(0, 32)}"`);
+    }
+    if (!this.packMsgAllowed(session)) return fail(ERR.RATE);
+    // 对局子类的触发点（业主裁决 2026-10-10 的 A 方案，DESIGN §28.14）：`matchClass` 包装器本来就能碰到整个 Match，
+    // 这里只补「消息到了」这一下。**投递收窄到本包服务端模块声明过的通道**（`server.modules[].channels`，§28.23）：
+    // 没声明过的通道没有接收入口，投都不投 —— 这是本格的判据，不是注释，`test/packMatchMsg.test.js` 钉住它。
+    // 转发口径一字未动：这仍然是**面板**那半边（§1.9.6）的事，收窄只影响「送不送进这一局」。复用 `callMatch` 已有的
+    // try/catch 与点名日志 ⇒ 钩子抛错时返回 undefined，落进下面「未消费」那一条，转发照旧。`session.playerId`
+    // **可能是观战者**（`pack.msg` 没有旁观者判据，与 `room.chat` 的 `ERR.SPECTATOR` 不同口径），判不判由包自己决定。
+    const declaredInMatch = this.serverChannels.get(msg.pack);
+    if (declaredInMatch && declaredInMatch.has(msg.channel)) {
+      const hook = this.callMatch(room, 'handlePackMsg', session.playerId, msg);
+      if (hook === true || (hook !== null && typeof hook === 'object' && hook.consumed === true)) return OK;
+    }
+    const out = {
+      t: 'pack.msg', pack: msg.pack, channel: msg.channel, from: session.playerId,
+      ...(msg.data === undefined ? {} : { data: msg.data }),
+    };
+    for (const seat of room.seats) {
+      if (!seat || seat.isBot) continue;
+      const target = this.registry.byId(seat.playerId);
+      if (target && target.connected) sendSession(target, out);
+    }
+    for (const seat of room.spectators) {
+      const target = this.registry.byId(seat.playerId);
+      if (target && target.connected) sendSession(target, out);
+    }
+    return OK;
+  }
+
+  /**
+   * `room.chat { text }` —— **房内打字聊天**（引擎特性，不是包能力；包要用自己的消息走 `pack.msg`）。
+   *
+   * 四道判据，全部落在「不认识的请求要响亮」那条线上，没有一道是静默丢弃：
+   *   1. 必须**在房间里**（`ERR.NOT_IN_ROOM`）；
+   *   2. **旁观者不可发言**（`ERR.SPECTATOR`）—— 他们收得到每一条，但说不出话，与既有的 `g.*` 同一条口径；
+   *   3. 房间的 `chatMode` 允许打字（`ERR.CHAT_MODE`）：`'quick'` 只许快捷短语，`'off'` 全禁；
+   *   4. 每会话令牌桶限流（`ERR.RATE`）。
+   *
+   * **超长是截断，不是拒绝**：按 Unicode 码点切到 `CHAT_LIMITS.text`（一个 emoji 算 1 个码点），与昵称
+   * `sanitizeName` 同一条「显示用上限」的思路；到不了 `CHAT_LIMITS.inbound` 的消息在 `validateC2S` 就被拒了。
+   *
+   * 空白消息（全是空白的也算）**不广播**、也不报错 —— 它没有任何可观察效果，回一个错误只会让客户端为难。
+   * @param {import('./net.js').Session} session
+   * @param {{ text: string }} msg
+   */
+  chat(session, msg) {
+    const room = this.roomOf(session);
+    if (!room) return fail(ERR.NOT_IN_ROOM);
+    if (room.spectatorOf(session.playerId)) return fail(ERR.SPECTATOR);
+    if (room.chatMode !== 'open') return fail(ERR.CHAT_MODE, `this room only allows ${room.chatMode === 'quick' ? 'quick messages' : 'no chat'}`);
+    const seat = room.seatOf(session.playerId);
+    if (!seat) return fail(ERR.NOT_IN_ROOM);
+    if (!this.chatAllowed(session, 'chat')) return fail(ERR.RATE);
+    const text = chatText(msg.text);
+    if (!text) return OK;                                   // whitespace only: nothing to say, nothing to report
+    this.sayInRoom(room, seat, { text });
+    return OK;
+  }
+
+  /**
+   * `room.quickMsg { ids, arg? }` —— **快捷短语**（引擎特性）。`ids` 是逗号分隔的短语 id，`arg` 是可选的短参。
+   *
+   * 为什么 id 要有服务端白名单：短语的**文案在客户端**（`public/i18n/*`），服务端只认 id。没有白名单的话，
+   * 任何字符串都能当 id 送进来，接收端就得对着一堆不认识的 id 猜。所以 `this.quickPhrases` 是唯一真源：
+   * 未声明的 id 点名拒绝（`ERR.BAD_MSG`）。
+   *
+   * 与打字聊天共用同一套房间判据（在房间 / 不是旁观者 / 限流），但**模式判据不同**：`'quick'` 模式放行的正是
+   * 这一条，`'off'` 才一起禁掉。
+   * @param {import('./net.js').Session} session
+   * @param {{ ids: string, arg?: string }} msg
+   */
+  quickMsg(session, msg) {
+    const room = this.roomOf(session);
+    if (!room) return fail(ERR.NOT_IN_ROOM);
+    if (room.spectatorOf(session.playerId)) return fail(ERR.SPECTATOR);
+    if (room.chatMode === 'off') return fail(ERR.CHAT_MODE, 'chat is off in this room');
+    const seat = room.seatOf(session.playerId);
+    if (!seat) return fail(ERR.NOT_IN_ROOM);
+    for (const id of String(msg.ids).split(',')) {
+      if (!this.quickPhrases.has(id)) return fail(ERR.BAD_MSG, `unknown quick phrase "${id.slice(0, 32)}"`);
+    }
+    if (!this.chatAllowed(session, 'quick')) return fail(ERR.RATE);
+    this.sayInRoom(room, seat, {
+      quick: String(msg.ids).split(','),
+      ...(msg.arg === undefined ? {} : { arg: msg.arg }),
+    });
+    return OK;
+  }
+
+  /** 房内说话的**唯一出口**（打字与短语共用）：塑形 → 进环形缓冲（重连回放用）→ 广播。 */
+  sayInRoom(room, seat, payload) {
+    const out = { t: 'chat.msg', from: seat.playerId, name: seat.name, seat: seat.seat, at: this.now(), ...payload };
+    room.addChat(out);
+    this.broadcastRoom(room, out);
+    return out;
+  }
+
+  /**
+   * 聊天的**每会话**令牌桶，**打字与快捷短语各自一份**（`kind` 区分）：短语是「零成本的按一下」，打字要走
+   * 输入框，两者的合理频率差得很远 —— 共用一只桶会让「连点几下短语」把人的打字额度吃掉，反过来也一样。
+   * 与包通道（`packMsgAllowed`）同样各自一份。
+   * @param {import('./net.js').Session} session
+   * @param {'chat'|'quick'} kind
+   */
+  chatAllowed(session, kind, now = this.now()) {
+    const key = kind === 'quick' ? 'quickBucket' : 'chatBucket';
+    const bucket = session[key] || (session[key] = { tokens: CHAT_LIMITS.burst, at: now });
+    const elapsed = Math.max(0, now - bucket.at) / 1000;
+    bucket.at = now;
+    bucket.tokens = Math.min(CHAT_LIMITS.burst, bucket.tokens + elapsed * CHAT_LIMITS.perSec);
+    if (bucket.tokens < 1) return false;
+    bucket.tokens -= 1;
+    return true;
+  }
+
+  /** 包通道的**每会话**令牌桶（`PACK_MSG_LIMITS`）：一个没有限流的聊天通道就是一个刷屏通道，
+   *  而「引擎不解释载荷」不等于「引擎不管频率」。 */
+  packMsgAllowed(session, now = this.now()) {
+    const bucket = session.packMsgBucket || (session.packMsgBucket = { tokens: PACK_MSG_LIMITS.burst, at: now });
+    const elapsed = Math.max(0, now - bucket.at) / 1000;
+    bucket.at = now;
+    bucket.tokens = Math.min(PACK_MSG_LIMITS.burst, bucket.tokens + elapsed * PACK_MSG_LIMITS.perSec);
+    if (bucket.tokens < 1) return false;
+    bucket.tokens -= 1;
+    return true;
   }
 
   join(session, { code, testAck }) {

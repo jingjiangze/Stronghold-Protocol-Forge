@@ -883,7 +883,6 @@
 .lo-info:hover { border-color: var(--mint-500); color: var(--mint-400); }
 .lo-info .icon { width: 56%; height: 56%; }
 .lo-top__note { margin: 0; max-width: 8.4rem; font-size: max(.15rem, 10px); color: var(--text-lo); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lo-top__note.is-locked { color: var(--amber); }
 .lo-tbtn { position: relative; display: inline-flex; align-items: center; gap: .06rem; height: max(.4rem, 28px); padding: 0 max(.14rem, 8px);
   font: inherit; font-size: max(.15rem, 11px); font-weight: 700; color: var(--text-md); background: rgba(255, 255, 255, .04);
   border: 1px solid var(--line-2); cursor: pointer; white-space: nowrap; }
@@ -944,8 +943,6 @@
 .lo-tmark__n { display: grid; place-items: center; width: 76%; aspect-ratio: 1 / 1.3; font-family: var(--font-num); font-size: max(.38rem, 20px); font-weight: 900;
   line-height: 1; color: var(--tc); border: 1px solid rgba(255, 255, 255, .22); background: rgba(0, 0, 0, .35); }
 .lo-tmark__cnt { margin-top: auto; font-size: max(.15rem, 10px); color: var(--text-lo); }
-.lo-tmark::after { content: 'RHODES ISLAND · OPERATOR DISPATCH'; position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%) rotate(180deg);
-  writing-mode: vertical-rl; font-family: var(--font-display); font-size: max(.09rem, 7px); letter-spacing: .3em; color: rgba(255, 255, 255, .12); white-space: nowrap; }
 .lo-tgrid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, minmax(0, 1fr)); grid-auto-columns: max-content; gap: .16rem .14rem; min-height: 0; }
 
 /* ---- an operator card ---- */
@@ -1018,8 +1015,7 @@
 
 /* ---- the detail drawer ---- */
 .lo-drawer { position: absolute; left: 0; top: 0; bottom: 0; z-index: 4; width: var(--drawer-w); display: flex; flex-direction: column;
-  background: #0e1211; border-right: 1px solid var(--line-2); box-shadow: .1rem 0 .4rem rgba(0, 0, 0, .55); animation: lo-drawer-in 200ms var(--ease-out) backwards; }
-@keyframes lo-drawer-in { from { transform: translateX(-24px); opacity: 0; } }
+  background: #0e1211; border-right: 1px solid var(--line-2); box-shadow: .1rem 0 .4rem rgba(0, 0, 0, .55); }
 .lo-drawer__close { flex: none; display: flex; align-items: center; gap: .06rem; height: max(.42rem, 30px); padding: 0 .16rem; font: inherit;
   font-size: max(.15rem, 11px); font-weight: 700; color: var(--text-md); background: #161b19; border: 0; border-bottom: 1px solid var(--line); cursor: pointer; }
 .lo-drawer__close:hover { color: var(--mint-400); }
@@ -1135,8 +1131,6 @@
 .lo-tgroup:nth-child(2) { --g: 1; } .lo-tgroup:nth-child(3) { --g: 2; } .lo-tgroup:nth-child(4) { --g: 3; }
 .lo-tgroup:nth-child(5) { --g: 4; } .lo-tgroup:nth-child(6) { --g: 5; } .lo-tgroup:nth-child(n+7) { --g: 6; }
 .lo-bbar { animation: tr-rise 420ms var(--tr-ease) 380ms backwards; }
-.lo-roster { animation: tr-left 440ms var(--tr-ease) 220ms backwards; }
-.lo-detail-wrap { animation: tr-right 440ms var(--tr-ease) 280ms backwards; }
 .own, .diy { animation: tr-fade 300ms ease-out 150ms backwards; }
 .own-tier { animation: tr-right 420ms var(--tr-ease) backwards; animation-delay: calc(200ms + var(--g, 0) * 60ms); }
 .own-tier:nth-child(2) { --g: 1; } .own-tier:nth-child(3) { --g: 2; } .own-tier:nth-child(4) { --g: 3; } .own-tier:nth-child(n+5) { --g: 4; }

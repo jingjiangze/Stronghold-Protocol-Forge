@@ -365,7 +365,7 @@ export function buildBoard(stage, opts = {}) {
   // only the gates inside `AREAS.boss` are collected.
   const areaSet = opts.area || null;
   const bossField = !!areaSet && sameAreas(areaSet, AREAS.boss);
-  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
     const g = grid[r][c].glyph;
     if (g !== 'S' && g !== 'E') continue;
     if (bossField && !areaSet.some((a) => r >= a.r0 && r <= a.r1 && c >= a.c0 && c <= a.c1)) continue;

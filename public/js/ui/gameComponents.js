@@ -11,6 +11,7 @@ import { skinsStore, ownerSkin } from './skins.js';
 import { settingsStore } from './settingsStore.js';
 import {
   uiUrl, itemIconUrl, tokenAvatarUrl, enemyIconUrl, bondIconUrl, bandIconUrl,
+  chessAvatarUrl, chessPortraitUrl,
 } from './assetUrls.js';
 // 头像统一走解析链（皮肤层）：`UnitThumb` 是结算页 / 队伍面板 / 手牌共用的小头像组件，
 // 所以接这一处就等于把「时装也影响小头像」这件事一次接对所有消费点。

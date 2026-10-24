@@ -450,6 +450,26 @@ function PauseGlyph() {
  * Solo pause / resume control (g.pause): pressed while paused.
  * @param {{ paused: boolean, busy?: boolean, onToggle: () => void }} props
  */
+/**
+ * 战斗倍速按钮（×1 / ×2 / ×3 / ×4 循环）。
+ *
+ * **纯本地播放选择**：同一段确定的 tick 序列只是推进得更快，因此**战果一字不变** —— 这一条由
+ * `public/js/battle/runner.js` 的 `setRate` 保证（倍速只改「墙钟 → tick」的映射，`test/match/runner.test.js`
+ * 用「4× 与 1× 跑完后 `b.result` 逐字节相同」钉住它）。服务端在 `b.start` 里给的 `speed` 是**对局**节奏，
+ * 这里改的是**这台机器看得多快**，两者相乘，服务端不参与、也不需要参与。
+ *
+ * 与「暂停」的区别（原件注释同一条）：暂停是服务端往返（单人对局），倍速不是。
+ * @param {{ speed?: number|null, onSpeed: (next: number) => void }} props
+ */
+export function SpeedButton({ speed, onSpeed }) {
+  const cur = RATE_STEPS.includes(Number(speed)) ? Number(speed) : 1;
+  const next = RATE_STEPS[(RATE_STEPS.indexOf(cur) + 1) % RATE_STEPS.length];
+  return html`<${Tooltip} text=${t('战斗倍速 {cur}× · 点击切到 {next}×（只加快播放，结果不变）', { cur, next })} placement="bottom">
+    <button type="button" class="speedbtn tapx" aria-label=${t('战斗倍速 {cur}×', { cur })}
+        data-testid="speed" onClick=${() => onSpeed?.(next)}><span class="num">${cur}×</span></button>
+  <//>`;
+}
+
 export function PauseButton({ paused, busy = false, onToggle }) {
   const label = paused ? t('继续作战') : t('暂停');
   const key = hotkeyLabelOf('ready'); // the ready key pauses a solo battle (Space unless rebound: 设置 → 快捷键)

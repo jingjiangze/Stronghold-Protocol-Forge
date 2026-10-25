@@ -53,8 +53,11 @@ export class MatchPrep {
    * @returns {number|null}
    */
   prepDeadlineSeconds() {
-    // SOLO only — NOT `soloUntimed`, which is also true for the lone-human co-op room this whole guard exists for.
-    if (this.isSolo) return null;
+    // 维护者口径（与 infra.js `soloUntimed` 的注释同一条）：**历史版本的 solo 走它自己的计时** ——
+    // `config.version.rules.soloTimed === true` 就是"这一期的 solo 有时限"，此时 prep 也要计时；
+    // 「不限时」打开、或该版本没有这个字段（今天的默认版本）时才是 null。
+    // 注意不能写成 `if (this.isSolo) return null` —— 那会把历史版本的 solo 计时一起关掉。
+    if (this.isSolo && this.soloUntimed) return null;
     const declared = this.gd.prepTime(this.round);
     if (declared != null) return declared;
     return this.prepFallbackGuard ? this.gd.timer('infoCheck') : null;

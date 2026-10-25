@@ -31,7 +31,7 @@ export const MOD_API_VERSION = 1;
 /** Release version shown to players (title screen, server banner, /healthz). Kept equal to package.json "version"
  * (test/version.test.js); PROTOCOL_VERSION above is the separate wire-format number. The release TAG spells both halves
  * out — `v<this>-<upstream>` (README 「版本号」) — because this one has to stay a plain three-part semver. */
-export const APP_VERSION = '0.20.0';
+export const APP_VERSION = '0.21.0';
 /**
  * The UPSTREAM game version this checkout bundles (README 「版本号」). The release TAG spells both halves out —
  * `v<APP_VERSION>-<UPSTREAM_VERSION>` — because `APP_VERSION` itself has to stay a plain three-part semver.
@@ -43,7 +43,7 @@ export const APP_VERSION = '0.20.0';
  * `scripts/make-update-package.mjs` tell "the next release" from "the very release I am building"
  * (a bundle that only names `0.14.0` cannot: 0.14.0-0.2.3 and 0.14.0-0.2.4 look identical to it).
  */
-export const UPSTREAM_VERSION = '0.3.2';
+export const UPSTREAM_VERSION = '0.3.3';
 /**
  * The version a **plugin** manifest's `app` range is judged against — the **upstream half**, NOT `APP_VERSION`.
  *

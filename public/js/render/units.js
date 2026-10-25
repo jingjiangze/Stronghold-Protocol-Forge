@@ -2678,7 +2678,7 @@ export class ItemView {
     ctx.layers.shadow.addChild(this.shadow);
     this.root = new P.Container();
     ctx.layers.units.addChild(this.root);
-    this.plate = new P.Sprite(itemTexture(String(info.defId || 'item'), null, info.color || 0x9aa5a0));
+    this.plate = new P.Sprite(itemTexture('none', null, info.color || 0x9aa5a0));
     this.plate.anchor.set(0.5, 1);
     this.root.addChild(this.plate);
     this.info.icon = null;
@@ -2687,10 +2687,13 @@ export class ItemView {
   }
   /** Show the item's icon (an URL; the plain plate until it loads) — again when the asset manifest named it late. */
   setIcon(url) {
-    if (this.destroyed || !url || url === this.info.icon) return;
+    if (this.destroyed || url === this.info.icon) return;
     this.info.icon = url;
+    // 上游 0.3.3：道具 id 在官方版本之间会复用，所以缓存按**解析出来的图 URL** 存（和装备小标那套一致）
+    this.plate.texture = itemTexture(url || 'none', null, this.info.color || 0x9aa5a0);
+    if (!url) return;
     const a = this.ctx.assets;
-    if (a?.image) a.image(url).then((img) => { if (!this.destroyed && img && this.info.icon === url) this.plate.texture = itemTexture(String(this.info.defId), img, this.info.color || 0x9aa5a0); }, () => {});
+    if (a?.image) a.image(url).then((img) => { if (!this.destroyed && img && this.info.icon === url) this.plate.texture = itemTexture(url, img, this.info.color || 0x9aa5a0); }, () => {});
   }
   setWorld(x, y, z = 0) { this.x = x; this.y = y; this.z = z; }
   /** A battle snapshot sample (syncBattle syncs every unit of the field): a hand item on a scouted prep board rides

@@ -1641,15 +1641,6 @@ export class Lobby {
     return { publicRooms: this.rooms.size, total: this.rooms.size };
   }
 
-  /**
-   * The data one room's checks run on — the room's own set when it declared one, the process singleton otherwise
-   * (the header above `opsCharIds` states why the lobby and the match must read the same object).
-   * @param {{ modSet: { digest: string, packs: Array<{ id: string }> }|null }|null} room
-   */
-  roomData(room) {
-    const assets = room && this.workshop && this.workshop.roomAssets ? this.workshop.roomAssets.forRoom(room.modSet) : null;
-    return assets ? assets.data : this.safeData();
-  }
 
   /**
    * `room.mods` 的两条「改不了」判据（G2）。返回 `null` = 通过，否则是要回给客户端的 `fail(...)` 结果。

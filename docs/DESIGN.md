@@ -127,6 +127,7 @@ normative lines it rewrote).
 | §35 | [design/vfx-format.md](design/vfx-format.md) | Official battle effects: the extracted format (0.3.0, Phase 1a–1d) |
 | §36 | [history/0.3.1.md](history/0.3.1.md) | 0.3.1 — after the 0.3.0 release (2026-10-18) |
 | §37 | [history/0.3.2.md](history/0.3.2.md) | 0.3.2 — released 2026-10-24, fixes after 0.3.1; AI strategy framework (§37.7), external AI (§37.8), official versions (§37.22, §37.23) |
+| §38 | [history/0.3.3.md](history/0.3.3.md) | 0.3.3 — released 2026-10-25, hotfixes after 0.3.2; 第一期商店装备与空栏 (§38.1), 满休整区双向互换 (§38.2), 切版本后的旧装备图标 (§38.3) |
 
 
 Default-off spectator AI handover (maintainer decision 2026-10-24, §37.100): [AI handover rules](history/0.3.2/ai-handover.md).

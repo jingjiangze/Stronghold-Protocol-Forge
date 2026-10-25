@@ -34,7 +34,8 @@ export const TEXT_SIZES = Object.freeze(['sm', 'md', 'lg', 'xl']);
 // 配音三件套：默认语言、本土语言开关、逐干员的覆盖（空表）。合并时这三个键从默认对象里掉了，
 // sanitizeSettings 于是拿到了 undefined —— 老档案读出来就没有 voiceLang。
 export const DEFAULT_SETTINGS = Object.freeze({ bgm: 0.6, sfx: 0.8, voice: 0.8,
-  voiceLang: 'cn', voiceNative: false, voiceLangByChar: Object.freeze({}), muted: false, damageNumbers: true, officialDamageNumbers: false, ammoEnergyCount: false, combatMetrics: false, prepDeployFold: true, otherSkins: true, bondTimers: false, fullscreenWakeLock: false, workshopSkins: true, workshopSources: true, quality: 'high', officialFx: 'auto', textSize: 'sm', keys: DEFAULT_HOTKEYS, voiceLang: DEFAULT_VOICE_LANG, voiceLangByChar: Object.freeze({}) });
+  voiceNative: false,   // 本土语言开关（上游 0.3.2）；voiceLang / voiceLangByChar 在本行后面已有
+ muted: false, damageNumbers: true, officialDamageNumbers: false, ammoEnergyCount: false, combatMetrics: false, prepDeployFold: true, otherSkins: true, bondTimers: false, fullscreenWakeLock: false, workshopSkins: true, workshopSources: true, quality: 'high', officialFx: 'auto', textSize: 'sm', keys: DEFAULT_HOTKEYS, voiceLang: DEFAULT_VOICE_LANG, voiceLangByChar: Object.freeze({}) });
 /**
  * 设置「显示弹药与能量数量」的取值（上游 0.3.1 把「弹药数量」与「秘术师能量」两个开关合并成一个）：
  * 新键是布尔就用它；否则读旧键 —— 任一为 true 即为 true。旧键只在这里被读，**永不写回**。

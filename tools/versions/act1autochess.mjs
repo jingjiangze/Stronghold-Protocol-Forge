@@ -34,7 +34,7 @@ export default Object.freeze({
     // Deploy order row by row from the bottom (PRTS 卫戍协议/帮助,
     // changed on 2026-03-14), a timed solo prep (300 s), no bench equipment, no full-bench swap, no boss shared by both
     // sides (news 5114 lists the last three as 下半 additions)
-    rules: Object.freeze({ deployOrder: 'rowBottomUp', soloTimed: true, benchEquip: false, benchFullSwap: false, bossMirrorShare: false }),
+    rules: Object.freeze({ deployOrder: 'rowBottomUp', soloTimed: true, benchEquip: false, bossMirrorShare: false }),
   }),
   expect: Object.freeze({ bonds: 18, bands: 30, visibleNonDiy: 95, triggerDeviations: 'none' }),
 });

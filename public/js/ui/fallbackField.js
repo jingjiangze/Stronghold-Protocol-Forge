@@ -22,7 +22,7 @@
 import { render } from '../../vendor/preact.module.js';
 import { html, TierChip } from './components.js';
 import { GEO } from '../../../shared/constants.js';
-import { itemIconUrl, tokenAvatarUrl, enemyIconUrl, chessAvatarUrl } from './assetUrls.js';
+import { itemIconUrl, tokenAvatarUrl, enemyIconUrl } from './assetUrls.js';
 import { ownerSkin } from './skins.js';
 import { avatarUrlOf, currentAppearanceLookup } from './portraitChain.js';
 import { layoutOf, mapRectOf } from '../render/layout.js';
@@ -48,7 +48,9 @@ export function unitArt(m, info, opts = {}) {
   const skinKey = id;
   const skin = ownerSkin(skinKey, { ...opts, ownerId: info.ownerId, skin: info.skin });
   if (skin) {
-    const bySkin = chessAvatarUrl(m, { assets: { avatar: id }, charId: skinKey, isGolden: !!info.golden }, { skin });
+    // 同样走链上的简写：皮肤由链的第 0.5 步解析（直接调 chessAvatarUrl 会绕过整条链）
+    const bySkin = avatarUrlOf(m, { assets: { avatar: id }, charId: skinKey, isGolden: !!info.golden },
+      { lookup: currentAppearanceLookup(), skin });
     if (bySkin) return bySkin;
   }
   // 走统一解析链（0.2.4 起每一个头像 / 立绘消费点都接它）：同一颗棋子在结算页、手牌、补位板上是同一张图。

@@ -15,7 +15,7 @@ import {
 } from './assetUrls.js';
 // 头像统一走解析链（皮肤层）：`UnitThumb` 是结算页 / 队伍面板 / 手牌共用的小头像组件，
 // 所以接这一处就等于把「时装也影响小头像」这件事一次接对所有消费点。
-import { avatarUrlOf, currentAppearanceLookup } from './portraitChain.js';
+import { avatarUrlOf, portraitUrlOf, currentAppearanceLookup } from './portraitChain.js';
 
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
 
@@ -88,8 +88,11 @@ export function OperatorImage({ m, chess, ownerId, skin = null, portrait = false
   const otherSkins = useStore((s) => s.otherSkins, Object.is, settingsStore);
   const selected = useStore((s) => ownerSkin(chess?.charId, { ownerId, skin, myId: s.me.playerId,
     players: s.match.public?.players || [], localSkins, otherSkins }));
-  const art = portrait ? chessPortraitUrl(m, chess, { skin: selected }) : null;
-  const src = art || (!portrait || avatarFallback ? chessAvatarUrl(m, chess, { skin: selected }) : null);
+  // 走**链上的简写**（与手牌 / 详情 / 结算同一个入口）：皮肤由链的第 0.5 步解析，
+  // 时装（外观提供者）由第 0 步解析 —— 直接调 chessPortraitUrl/chessAvatarUrl 会绕过两者。
+  const lookup = currentAppearanceLookup();
+  const art = portrait ? portraitUrlOf(m, chess, { lookup, skin: selected }) : null;
+  const src = art || (!portrait || avatarFallback ? avatarUrlOf(m, chess, { lookup, skin: selected }) : null);
   return html`<${Img} ...${props} src=${src} class=${art ? portraitClass ?? props.class : avatarClass ?? props.class} />`;
 }
 

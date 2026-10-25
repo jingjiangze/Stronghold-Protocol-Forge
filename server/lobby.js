@@ -1731,7 +1731,6 @@ export class Lobby {
     room.modIds = nextIds;
     room.modSet = resolved.modSet;
     if (room.modSet && this.workshop && this.workshop.roomAssets) this.workshop.roomAssets.forRoom(room.modSet);
-    if (room.modSet && this.workshop && this.workshop.roomAssets) this.workshop.roomAssets.forRoom(room.modSet);
     // 集合变了 ⇒ 所有**真人**座位（房主除外，他就是改的人）重新回到未就绪：他们可能缺新集合的文件。这是
     // 「集合变更后加入者如何重新对齐」的服务端那一半；客户端那一半是 W-D 的准备就绪硬门 ——
     // `public/js/screens/room.js` 的 RoomModsPanel 按 `room.state.mods.digest` 重跑 planAlignment，没对齐完
@@ -2879,6 +2878,10 @@ export class Lobby {
     let seed = 0;
     try { seed = this.seedFn() >>> 0; } catch { seed = randomInt(2 ** 32); }
     const modded = room.modded;
+    // 这一房的物化结果（W-B）：数据 / kit / 模块清单都来自 `roomAssets.forRoom(room.modSet)`。没声明集合（或
+    // 声明了全部）时它返回的正是进程级那一份**本体**，那种房间与从前逐字节相同；一个包都没装时 `roomAssets`
+    // 根本不存在，走 `this.workshop` 那三个字段 —— 干净安装的 opts 因此不多一个键。
+    const assets = this.workshop && this.workshop.roomAssets ? this.workshop.roomAssets.forRoom(room.modSet) : null;
     try {
       const opts = {
         roomCode: room.code,
@@ -2912,6 +2915,16 @@ export class Lobby {
         // KITTED_CHARS, and the worker payload / test journal of a normal match do not grow a key.
         ...(modded ? { kitted: this.kittedFor(room) } : {}),
         ...(room.content?.rules ? { rules: room.content.rules } : {}),
+        // 工坊行为层：同一份 kits 必须同时到达服务端跑的这一局与浏览器跑的那一份。
+        workshopKits: assets ? assets.kits : (this.workshop && this.workshop.kits ? this.workshop.kits : null),
+        workshopKitModules: assets ? assets.modules : (this.workshop && Array.isArray(this.workshop.modules) ? this.workshop.modules : []),
+        workshopTokenKits: assets ? assets.tokenKits : (this.workshop && this.workshop.tokenKits ? this.workshop.tokenKits : null),
+        // 「谁的 kit 账上算一次」正是靠这两张表 —— 与 workshopKits 同一条纪律：只在真的装了包时才有值。
+        ...(this.workshop && this.workshop.kitOwners ? { workshopKitOwners: this.workshop.kitOwners } : {}),
+        ...(this.workshop && this.workshop.tokenKitOwners ? { workshopTokenKitOwners: this.workshop.tokenKitOwners } : {}),
+        ...(this.workshop && this.workshop.kitBudgets ? { workshopKitBudgets: this.workshop.kitBudgets } : {}),
+        // 这一局跑的是**房间**声明的字节（W-A/W-B），不是进程那一份。
+        mods: room.modSet || this.modSet,
         data,
         log: this.log,
         now: this.now,

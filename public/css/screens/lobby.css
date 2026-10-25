@@ -2042,7 +2042,6 @@ button.sw-eth:hover { border-color: #fff; }
 .proto-private { display: inline-flex; align-items: center; gap: .08rem; font-size: calc(.17 * var(--t)); color: #c9cecc; cursor: pointer; }
 .proto-private input { width: max(.22rem, 15px); height: max(.22rem, 15px); accent-color: var(--mint-500); }
 .proto-hint { margin: 0; font-size: calc(.14 * var(--t)); color: #858b89; }
-.proto-start { position: relative; display: flex; align-items: center; gap: .26rem; width: 100%; height: max(1.04rem, 54px); padding: 0 0 0 .26rem; overflow: hidden;
   font: inherit; color: #0d2a23; cursor: pointer; text-align: left;
   background: linear-gradient(180deg, #4fe0bf, #34c8a6); border: 3px solid #121313; box-shadow: 0 0 0 1px rgba(79, 224, 191, .5), 0 .06rem .2rem rgba(0, 0, 0, .55);
   transition: filter var(--t-fast); }

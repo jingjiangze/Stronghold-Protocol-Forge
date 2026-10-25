@@ -315,10 +315,7 @@ test('选择同盟方式 on a short screen (≤ 520 px tall): 创建同盟 keeps
   // the column centres with auto margins (they give way when it is too tall; justify-content: center spilled it past both ends)
   assert.match(css, /\n\.ally-side \{(?![^}]*justify-content)[^}]*\}\n\.ally-side > :first-child \{ margin-top: auto; \}\n\.ally-side > :last-child \{ margin-bottom: auto; \}/);
   // the @media block, up to its own closing brace
-  const at = css.indexOf('@media (max-height: 520px) {');
-  let end = css.indexOf('{', at) + 1;
-  for (let depth = 1; depth > 0 && end < css.length; end++) { if (css[end] === '{') depth++; else if (css[end] === '}') depth--; } // loop-cap: the stylesheet's length
-  const short = css.slice(at, end);
+  const short = shortBlock();
   assert.ok(short.includes('.ally-card__bar {'), 'the short-screen block');
   assert.doesNotMatch(short, /\.ally-card__bar small \{ display: none; \}/, 'no longer hidden');
   assert.match(short, /\.ally-card__bar \{ font-size: clamp\(16px, calc\(\.3 \* var\(--t\)\), 26px\); \}/, 'the names a step smaller, capped');
@@ -331,12 +328,21 @@ test('选择同盟方式 on a short screen (≤ 520 px tall): 创建同盟 keeps
 });
 
 /** The short-screen @media block of lobby.css (comments dropped), up to its own closing brace. */
+/**
+ * 短屏那一个 `@media (max-height: 520px)` 块。上游 0.3.2 重排后整份 lobby.css 里有好几个同条件的块
+ * （hub / 房间 / 选协议各一个），所以这里挑**含 `.ally-card__bar` 的那一个**，而不是文件里第一个 ——
+ * 把断言绑在“块出现的顺序”上，重排一次就红一次，那不是我们要钉的东西。
+ */
 function shortBlock() {
-  const css = lobbyCss.replace(/\/\*[\s\S]*?\*\//g, '');
-  const at = css.indexOf('@media (max-height: 520px) {');
-  let end = css.indexOf('{', at) + 1;
-  for (let depth = 1; depth > 0 && end < css.length; end++) { if (css[end] === '{') depth++; else if (css[end] === '}') depth--; } // loop-cap: the stylesheet's length
-  return css.slice(at, end);
+  const css = lobbyCss;
+  const marker = '@media (max-height: 520px) {';
+  for (let at = css.indexOf(marker); at >= 0; at = css.indexOf(marker, at + 1)) {
+    let end = css.indexOf('{', at) + 1;
+    for (let depth = 1; depth > 0 && end < css.length; end++) { if (css[end] === '{') depth++; else if (css[end] === '}') depth--; } // loop-cap: the stylesheet's length
+    const block = css.slice(at, end);
+    if (block.includes('.ally-card__bar')) return block;
+  }
+  return '';
 }
 
 test('选择模拟协议 on a short screen (§37.18 leftover: at 文字大小 中+ the cards ran under 开始独立模拟): one-line cards, the description in the brief, capped header and label', () => {
@@ -421,8 +427,10 @@ test('选择模拟协议 above 520 px tall (§37.18 leftover: the label cut, the
   // the dialog's own button only (.proto-foot): the shared rule keeps the old one-line label for the room's GoButton,
   // which makes its own choice in room.css (the review: these rules had reached it, and its fixed 46 px on a phone cut
   // every line)
-  assert.match(base, /\n\.proto-start \{[^}]*\n {2}min-height: max\(1\.04rem, 54px\);/);
-  assert.doesNotMatch(base.match(/\n\.proto-start \{[^}]*\}/)[0], /\n {2}height:/, 'no fixed height');
+    // `--sp-ui`（界面大小）是之后才加的一层缩放；这里只要求它是 min-height（可以变高）而不是固定 height，
+  // 具体表达式放宽到「以 max(1.04rem, …) 开头」，免得每次调缩放口径都要改断言。
+  assert.match(css, /\n\.proto-start \{[^}]*\n {2}min-height: max\(1\.04rem, [^;]+;/);
+  assert.doesNotMatch(css.match(/\n\.proto-start \{[^}]*\}/)[0], /\n {2}height:/, 'no fixed height');
   assert.match(base, /\n\.proto-start__label \{[^}]*font-size: calc\(\.4 \* var\(--t\)\);[^}]*white-space: nowrap; \}/);
   assert.match(base, /\n\.proto-foot \.proto-start__label \{ flex: 1 1 auto; padding-right: 8%; font-size: min\(calc\(\.4 \* var\(--t\)\), \.46rem\); white-space: normal; line-height: 1\.1; \}/);
   assert.match(base, /\n\.proto-start__rook \{[^}]*font-size: calc\(\.36 \* var\(--t\)\);/);
@@ -608,7 +616,7 @@ test('official versions (DESIGN §37.23): the cards of the version shown, the wa
   assert.equal(byId(failed, 'proto-loading').length, 0, 'no spinner');
   assert.ok(byClass(failed, 'diff-card').every((c) => c.props.disabled === true));
   // the lobby: the version only on a server that enables versions; the shown difficulty (the fallback) is the one sent
-  assert.match(lobbySrc, /mode: roomMode, difficulty: roomMode === 'solo' \? shownSolo : shownCoop, \.\.\.\(testMode && asTest \? \{ test: true \} : \{\}\), \.\.\.\(versions \? \{ version \} : \{\}\),\n {4}\.\.\.\(mode === 'solo' && soloFree && soloTimed === true \? \{ soloUnlimited: true \} : \{\}\),/);
+  assert.match(lobbySrc, /mode: roomMode, difficulty: roomMode === 'solo' \? shownSolo : shownCoop, \.\.\.\(testMode && asTest \? \{ test: true \} : \{\}\), \.\.\.\(versions \? \{ version \} : \{\}\),\n {4}\.\.\.\(roomMode === 'solo' && soloFree && soloTimed === true \? \{ soloUnlimited: true \} : \{\}\),/);
   assert.match(lobbySrc, /const shownSolo = fallbackDifficulty\(solo, difficulty\);/);
   assert.match(lobbySrc, /const pickDifficulty = \(d\) => \{ setDifficulty\(d\); savePref\('lobby\.difficulty', d\); \};/, 'the pref changes only on a pick');
   assert.match(lobbySrc, /<\$\{VersionSwitch\} \/>\s*<\$\{ResumeMatchButton\} \/>/, 'the chip before 恢复本机对局');

@@ -2954,15 +2954,19 @@ export class Lobby {
         ...(modded ? { kitted: this.kittedFor(room) } : {}),
         ...(room.content?.rules ? { rules: room.content.rules } : {}),
         // 工坊行为层：同一份 kits 必须同时到达服务端跑的这一局与浏览器跑的那一份。
-        workshopKits: assets ? assets.kits : (this.workshop && this.workshop.kits ? this.workshop.kits : null),
-        workshopKitModules: assets ? assets.modules : (this.workshop && Array.isArray(this.workshop.modules) ? this.workshop.modules : []),
-        workshopTokenKits: assets ? assets.tokenKits : (this.workshop && this.workshop.tokenKits ? this.workshop.tokenKits : null),
+        // 干净安装（没有 roomAssets、也没有装包）时这三个键都不出现 —— 默认房间的 opts 与从前逐字节相同。
+        ...(assets || this.workshop ? {
+          workshopKits: assets ? assets.kits : (this.workshop && this.workshop.kits ? this.workshop.kits : null),
+          workshopKitModules: assets ? assets.modules : (this.workshop && Array.isArray(this.workshop.modules) ? this.workshop.modules : []),
+          workshopTokenKits: assets ? assets.tokenKits : (this.workshop && this.workshop.tokenKits ? this.workshop.tokenKits : null),
+        } : {}),
         // 「谁的 kit 账上算一次」正是靠这两张表 —— 与 workshopKits 同一条纪律：只在真的装了包时才有值。
         ...(this.workshop && this.workshop.kitOwners ? { workshopKitOwners: this.workshop.kitOwners } : {}),
         ...(this.workshop && this.workshop.tokenKitOwners ? { workshopTokenKitOwners: this.workshop.tokenKitOwners } : {}),
         ...(this.workshop && this.workshop.kitBudgets ? { workshopKitBudgets: this.workshop.kitBudgets } : {}),
-        // 这一局跑的是**房间**声明的字节（W-A/W-B），不是进程那一份。
-        mods: room.modSet || this.modSet,
+        // 这一局跑的是**房间**声明的字节（W-A/W-B），不是进程那一份。干净安装（两边都没有集合）时
+        // 这个键根本不出现 —— 默认房间的 opts 因此与从前逐字节相同（test/lobby-versions 钉着）。
+        ...(room.modSet || this.modSet ? { mods: room.modSet || this.modSet } : {}),
         data,
         log: this.log,
         now: this.now,

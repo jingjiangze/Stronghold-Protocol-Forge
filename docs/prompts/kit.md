@@ -117,6 +117,11 @@ skill: {
 | `attack` | `{ attacker, targets, isSkill }` | 一次攻击打向这些目标（命中之前） |
 | `hit` | `{ source, target, dmg, credit }`（`dmg` 可改） | **伤害结算前**：改 `dmg.atkScale` / `dmg.cancel` / `dmg.element` 就在这里 |
 | `damaged` | `{ source, target, amount, type, dmg, credit }` | 目标**真的掉了血之后**（附伤、反伤、回技力都用它） |
+| `damageApplied` | `{ source, credit, target, dmg, kind, amount, hpRemoved }` | 一次伤害**结算完**（上游 0.3.2 新增的阶段事件；
+  只在 `kind === 'damage'` 且 amount > 0 时发，和 `damaged` 的区别是它不做「零伤害也报」那件事） |
+| `damageBeforeApply` | 同上，结算前 | 上游 0.3.2 的阶段事件：在护盾/减伤吸收**之前**看一眼这次伤害 |
+| `damageCalculateTarget` | 同上 | 上游 0.3.2 的阶段事件：目标侧数值参与计算的那一步 |
+| `elementApplied` | `{ source, target, amount, dmg }` | 元素损伤**落地之后**（0.3.2 新增；与 `elementHit` 成对） |
 | `fatal` | `{ unit, source, credit, dmg, amount, prevented }`（可改 `prevented`） | 致命一击即将生效：`ctx.prevented = true` 就是「不死」 |
 | `dodge` | `{ source, target, dmg }` | 一次攻击被闪避 |
 | `kill` | `{ killer, victim }` | 击杀（`killer` 可能是 token） |

@@ -165,6 +165,8 @@ export async function startServer(opts = {}) {
   // 无损插件的客户端覆盖：声明了 code.client 的已加载插件，其 client/** 顶替同路径页面资源。
   // 只允许 **loaded** 的插件覆盖：被 owner gate 拒掉的 trusted/script 插件也不能改页面（与 server 侧装载一致）。
   const clientOverlay = new Map();
+  /** code.clientEntry 汇总（插件自己的浏览器入口模块；按插件 id 排序，见 /api/client-entries）。 */
+  const clientEntries = [];
   try {
     const loadedPlugins = new Set((typeof packs.plugins === 'function' ? packs.plugins() : [])
       .filter((p) => p && p.status === 'loaded')
@@ -180,6 +182,18 @@ export async function startServer(opts = {}) {
     order.sort((x, y) => (Number(x.m.loadOrder) || 0) - (Number(y.m.loadOrder) || 0) || x.id.localeCompare(y.id));
     for (const { id, m } of order) {
       const c = m.code;
+      // code.clientEntry：插件自己的浏览器入口模块（与 code.client 的「顶替宿主文件」不同，这些是插件新增的
+      // 页面脚本，宿主 main.js 从 /api/client-entries 读到后动态 import）。路径必须落在 client/ 内、且文件存在。
+      if (c && Array.isArray(c.clientEntry)) {
+        for (const rel of c.clientEntry) {
+          if (typeof rel !== 'string' || !rel || rel.includes('..') || rel.startsWith('/')) continue;
+          const abs = path.join(pluginsDir, id, 'client', ...rel.split('/'));
+          if (!fs.existsSync(abs)) continue;
+          clientEntries.push({ id, rel, url: '/' + rel, mtimeMs: fs.statSync(abs).mtimeMs });
+          // 入口文件本身也要能取到（它不在 code.client 里，宿主不顶替任何文件，只是新增一个 URL）。
+          if (!clientOverlay.has(rel)) clientOverlay.set(rel, { body: fs.readFileSync(abs), type: MIME[path.extname(rel)] || 'application/octet-stream' });
+        }
+      }
       if (!c || !Array.isArray(c.client)) continue;
       for (const rel of c.client) {
         const abs = path.join(pluginsDir, id, 'client', ...rel.split('/'));
@@ -246,7 +260,7 @@ export async function startServer(opts = {}) {
   buildTag();
 
   const traffic = createTrafficCounter();
-  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health, modHealth: () => modMount.healthz() }, log, trustProxy: network.opts.trustProxy, studio, mods, dynamicRoutes: modMount.routes(), trustedRuntime }));
+  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health, modHealth: () => modMount.healthz() }, log, trustProxy: network.opts.trustProxy, studio, mods, dynamicRoutes: modMount.routes(), clientEntries, trustedRuntime }));
   server.on('clientError', answerClientError);
   const wss = attachWebSocket(server, { network, log, traffic, lanes: packLaneTable() });
 

@@ -80,6 +80,12 @@ plugin.json (server.modules)
   `api.matchOptions(room)`（合并进 Match opts）、`api.onRoom(event, fn)`（`created` / `joined` / `left` /
   `disposed` / `resync` / `started`）。任何钩子抛错只记日志。协议键须在 `shared/protocol.js` 的 `C2S`/`S2C`
   里有定义（服务端与客户端的校验器读同一张表）——`api.protocol()` 是给「表里还没有的键」补登记，不是绕过校验。
+* `code.clientEntry`（**插件自己的浏览器入口**，`server/index.js` 的 `clientEntries` + `/api/client-entries`）：
+  `code.client` 是「顶替宿主的同名文件」，`code.clientEntry` 是「插件新增一个页面模块」。服务端把每个已加载插件声明的
+  入口（相对 `client/` 的路径，拒绝 `..` 与绝对路径）汇总成 `GET /api/client-entries → { entries: [{ id, url }] }`
+  （`Cache-Control: public, max-age=30`，不序列化磁盘路径）；宿主 `public/js/main.js` 在 `boot()` 末尾 fetch 它并
+  **动态 `import()`**，模块导出 `mount()`（或 `default`）时把返回值当卸载函数（`pagehide` 时调用）。导入失败只 `warn`，
+  所以插件没装/没启用时基座照常启动。
 * `script` / `trusted` 插件：那两条是**插件系统**的沙箱/信任面（SES、lock pin、玩家同意），与本面并行；
   本面面向的是**包（mod）**的服务端逻辑，按 `combat: true` 与房间包集合门控。
 * `routes`（顶层静态路由，`pack.json.routes`）尚未在管理器中启用；本面提供的是**动态**端点（`host.route`）。

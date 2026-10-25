@@ -90,7 +90,7 @@ const wantsTraffic = (query) => /(?:^|&)traffic(?:=(?:1|true|yes))?(?:&|$)/i.tes
  *   plugin studio (server/studio/index.js), or none
  * @returns {(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => void}
  */
-export function createRequestHandler({ serveStatic, health, log, trustProxy = 'auto', studio = null, mods = null, csp = null, trustedRuntime = null, dynamicRoutes = null }) {
+export function createRequestHandler({ serveStatic, health, log, trustProxy = 'auto', studio = null, mods = null, csp = null, trustedRuntime = null, dynamicRoutes = null, clientEntries = null }) {
   const scoreBucket = { at: 0, last: 0 };   // 评分上报的每 IP（本进程全局）限速
   async function handleRequest(req, res) {
     const url = req.url || '/';
@@ -118,6 +118,19 @@ export function createRequestHandler({ serveStatic, health, log, trustProxy = 'a
       let body = '';
       req.on('data', (d) => { body += d; if (body.length > 64 * 1024) req.destroy(); });
       req.on('end', () => { try { JSON.parse(body); } catch { /* 坏包只丢弃 */ } res.writeHead(200, cors); res.end('{"ok":true}'); });
+      return;
+    }
+    // 插件自己的浏览器入口（code.clientEntry）：宿主 main.js 读取后动态 import。
+    // 没有插件声明时是一个空数组（缓存 30 s，插件的装载/卸载不需要重启进程）。
+    if (parts.rawPath === '/api/client-entries') {
+      const list = (Array.isArray(clientEntries) ? clientEntries : []).map((e) => ({ id: e.id, url: e.url }));
+      const body = Buffer.from(JSON.stringify({ entries: list }), 'utf8');
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'public, max-age=30',
+        'Content-Length': body.length,
+      });
+      res.end(req.method === 'HEAD' ? undefined : body);
       return;
     }
     // 包声明的只读动态端点（uses 含 "route"）：命中就答 JSON，不落到静态文件。

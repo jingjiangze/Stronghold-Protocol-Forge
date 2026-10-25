@@ -44,14 +44,14 @@ because a room containing a B pack is no longer simulated in the player's tab (�
 What already exists, and must not be rebuilt: the two event buses (`server/sim/battle/hooks.js:17` `on`, `:57` `emit`;
 `server/match/effectsMeta.js:48-52` the 19 meta hooks), the kit injection point `Battle opts.kits`
 (`server/sim/content/index.js:112-114`), the pack loader and its file-system discipline
-(`server/workshop.js:27-100`), the static kit checks (`shared/kitAuthoring.js:182` `validateKit`), and the 8-layer
+(`server/workshop.js:27-100`), the static kit checks (`shared/kitAuthoring.js:213` `validateKit`), and the 8-layer
 author-side validator (`tools/workshop-validate.mjs:11-14`). The middle layer is the **seam** between them: who a pack
 is, who wins when two of them want the same id, and what has to be true before its code is allowed to run.
 
 ### 28.2 Identity (gap 1)
 
 Today a pack has an `id` (the directory name, `shared/workshop.js:377-379`) and free-text metadata
-(`shared/workshop.js:700-703`), and the BattleSpec carries only `SPEC_VERSION = 1` (`server/sim/spec.js:46`, written at
+(`shared/workshop.js`), and the BattleSpec carries only `SPEC_VERSION = 1` (`server/sim/spec.js:47`, written at
 `:61`) plus a list of kit **URLs** (`server/sim/spec.js:79-81`; produced by `server/workshop.js:491`). There is nowhere
 in the wire, in the data or in the match for "which content is this room running".
 
@@ -360,7 +360,7 @@ right (it is a memory and wire budget) so the design keeps it and adds what the 
 when the detail log is truncated. The counters are what reaches the author (§28.7).
 
 **Time budget.** There is no timeout that can interrupt a handler: a tick is one synchronous call
-(`server/sim/battle/lifecycle.js:70`), so a loop in a pack hangs a battle in the browser and, for a server-run field,
+(`server/sim/battle/lifecycle.js`), so a loop in a pack hangs a battle in the browser and, for a server-run field,
 a scheduler callback. The design does not pretend to add preemption (that is a runtime change, not a middle-layer one).
 What it does is make the budget visible and enforceable at load: a pack's verification run (§28.6) measures the wall
 clock of the fixed scenario list with and without the pack, and a `combat: false` pack whose cost exceeds a declared
@@ -486,8 +486,8 @@ per row:
 |---|---|
 | a hook name nothing emits never fires and nothing reports it (`server/sim/battle/hooks.js:17-25`, `:57-59`) | the static check already suggests a near miss (`HOOK_UNKNOWN_EVENT`, `shared/kitAuthoring.js:235-237`), but it is text analysis. Add a **runtime** report: `on` keeps the registration in `this._hooks[name]` (`server/sim/battle/hooks.js:20`), so at `battleEnd` the bus can name every pack-owned hook that was registered and never emitted. A typo then costs one battle instead of one bug report. |
 | non-determinism is a warning (`shared/kitAuthoring.js:222-227`) | an error for layer B (§28.4), and the refusal quotes the construct *and* its source line, so it stops being "a reason that looks nothing like 'you used Math.random'" (`shared/kitAuthoring.js:13-17`). |
-| a kit that returns no `skill` leaves the operator with no skill (`docs/WORKSHOP.md:2571`) | the loader knows both facts — a kit was injected *and* `skillSource` says where the skill came from (`server/sim/content/index.js:214`, `:219`). A pack kit with no skill becomes a validation error the editor shows before saving, not a live surprise. |
-| a `chess.assets.spine` that points at an uninstalled model draws a flat portrait and logs nothing (`shared/workshop.js:3385-3417`) | already solved by `report.looks` (logged at `server/data.js:97`) — generalise it: every field that degrades silently gets a `looks`-style check, and the editor surface must show it, not only the server log. |
+| a kit that returns no `skill` leaves the operator with no skill (`docs/WORKSHOP.md:2571`) | the loader knows both facts — a kit was injected *and* `skillSource` says where the skill came from (`server/sim/content/index.js`, `:219`). A pack kit with no skill becomes a validation error the editor shows before saving, not a live surprise. |
+| a `chess.assets.spine` that points at an uninstalled model draws a flat portrait and logs nothing (`shared/workshop.js`) | already solved by `report.looks` (logged at `server/data.js`) — generalise it: every field that degrades silently gets a `looks`-style check, and the editor surface must show it, not only the server log. |
 | the editor deliberately does not import author files (`editor/server.mjs:428-431`) | **do not change this.** An HTTP endpoint that executes author code is a code-execution surface. Instead expose the verifier of §28.6 as an explicit action that runs in the **playtest subprocess** (`server/index.js:72-76` `SP_WORKSHOP`), which is already a separate process. |
 | runtime errors land in a 100-entry array reachable only through `m.simErrorLog` (`server/match/Match.js:127-129`, `server/sim/battle/hooks.js:167-185`) | per-owner counters (§28.4), plus the room's mod digest on every error line, so a player's bug report carries the identity of the content it came from. |
 
@@ -684,7 +684,7 @@ reach the same content".
 - **No sandbox for layer B.** The ruling is "the server executes it", not "untrusted code executes safely". A pack with
   a `while(true)` is refused by the load-time budget check (§28.4), not contained.
 - **No hot reload.** The pack set is fixed for the process; a digest that can change mid-match is worse than a restart.
-- **No code signing, no author identity.** `pack.json`'s `author` stays metadata (`shared/workshop.js:700-703`); the
+- **No code signing, no author identity.** `pack.json`'s `author` stays metadata (`shared/workshop.js`); the
   hash proves *which* bytes, not *whose*.
 - **No WASM kernel decision.** That is the performance benchmark's call, and it is a different layer: a faster kernel is
   a `combat: false` change and would be verified by §28.6 like any other.
@@ -2470,7 +2470,7 @@ export function mount(ctx) {
 不造读数**。一个能算逐单位 DPS 的读面至少要有三件事，缺一条就不该做：
 
 1. **数据源**：**§28.38 已落地**，而且不是这里当初设想的那两条路（把 `on('ev')` 转出去、或由 runner 自己再累计
-   一份）—— 查下来**伤害早就在模拟里算好了**（`server/sim/damage.js` 每次命中写 `source.stats.dmg` 与
+   一份）—— 查下来**伤害早就在模拟里算好了**（`server/sim/attack/helpers.js` 每次命中写 `source.stats.dmg` 与
    `battle._perPlayer[ownerId].damageDealt`），所以那一格只是 runner 里的一个**只读读者**：碰的文件确实还是
    `public/js/battle/runner.js` 与 `public/js/main.js`，但**没有第二份累计**，`step()` / `drainEvents()` / `emit`
    一行都不动。
@@ -2763,7 +2763,7 @@ JSON 可序列化值**的回调。
 上**（`m.result` 报的是服务端按 `_perPlayer` 累出来的数）—— 那正是「面板可以画错、但不能算错」要消灭的东西。
 所以这一格只能由引擎给，而且给的是**同一本账**。
 
-**这一格不是新账，是一个读者。** 伤害早在模拟里逐次命中就记好了：`server/sim/damage.js:424` 写
+**这一格不是新账，是一个读者。** 伤害早在模拟里逐次命中就记好了：`server/sim/attack/health.js:98` 写
 `source.stats.dmg`，`:371` 写 `battle._perPlayer[ownerId].damageDealt`，`:352` 写 `bossDamage`（单位那本账在
 `server/sim/units.js:97` 初始化）。`battleRunner.damage()`（`public/js/battle/runner.js`）只做一件事：**把这些
 已经在那儿的数字按面板看得懂的形状抄出来**。
@@ -2903,7 +2903,7 @@ JSON 可序列化值**的回调。
    只哈希 `[id, hash]` 对（`shared/modIdentity.js:196`），所以带它**不改任何摘要** —— 这一点必须钉住：改摘要等于让
    每个已发布的包在同一条房间里被判成「另一个包」。
 2. `modSetOf` 只按 `isModEntry`（id / hash / layer / combat / api）**过滤**、不剥别的键，所以房间集合
-   （`server/lobby.js:1476` 的 `room.modSet || this.modSet`）把声明原样带到 `Match`。
+   （`server/lobby.js:2930` 的 `room.modSet || this.modSet`）把声明原样带到 `Match`。
 3. `Match` 用 `mergeVariantDecls(mods.packs)` 合成轴表（`server/match/Match.js`），交给 `GameData`
    （`opts.variants`），`GameData.deployCap` 读它。
 

@@ -72,6 +72,14 @@ plugin.json (server.modules)
 
 * `code`（无损插件，`contentSet.js` 的多代码根）：`code.match` 是**整包替换对局**；`server.modules.matchClass`
   是**包装对局类**。两者可共存，`code.match` 优先（替换基类后仍可被包装）。
+* `code.lobby`（**房间级插件面**，`server/plugins/lobbyModules.js`）：`class: trusted` 且 `code.lobby` 指向一个
+  导出 `setup(api)` 的相对路径时，服务端在第一个连接进来之前挂上房间钩子——
+  `api.protocol(spec)` 只能**新增** C2S 键（引擎协议表权威，已存在的键不覆盖）、`api.on(type, fn)` 处理一条 C2S
+  （与 `handleMessage` 同形，走 `default` 分支委托）、`api.roomInit(room)`（建房/补挂时给房间加默认字段）、
+  `api.roomState(room)`（返回对象平铺进 `room.state`；返回空则 `room.state` 逐字节不变）、
+  `api.matchOptions(room)`（合并进 Match opts）、`api.onRoom(event, fn)`（`created` / `joined` / `left` /
+  `disposed` / `resync` / `started`）。任何钩子抛错只记日志。协议键须在 `shared/protocol.js` 的 `C2S`/`S2C`
+  里有定义（服务端与客户端的校验器读同一张表）——`api.protocol()` 是给「表里还没有的键」补登记，不是绕过校验。
 * `script` / `trusted` 插件：那两条是**插件系统**的沙箱/信任面（SES、lock pin、玩家同意），与本面并行；
   本面面向的是**包（mod）**的服务端逻辑，按 `combat: true` 与房间包集合门控。
 * `routes`（顶层静态路由，`pack.json.routes`）尚未在管理器中启用；本面提供的是**动态**端点（`host.route`）。

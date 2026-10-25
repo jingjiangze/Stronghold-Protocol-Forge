@@ -97,7 +97,7 @@ const noop = () => {};
  *   data/assets.json), the bytes it serves, a short hash of its composition, its folder, the client entry, the slots it
  *   asked for, and each served file's SHA-256 (the catalogue's frameFiles — relative paths only)
  * @typedef {{ id: string, type: string, class: string, status: 'loaded' | 'planned' | 'unsupported', source: 'i18n' | 'packs' | 'plugins',
- *   layout: 'file' | 'folder', where: string, supported: boolean, manifest: PluginManifest, files: Record<string, PackFile>,
+ *   layout: 'file' | 'folder', where: string, dir?: string, supported: boolean, manifest: PluginManifest, files: Record<string, PackFile>,
  *   strings?: number, bytes?: number, count?: number, visual?: PluginVisual, ui?: PluginUi,
  *   content?: ReturnType<typeof readContentData>['content'] }} Plugin
  *   One entry of the registry. type: the manifest 1 type (lang, assets, data …); status: what this version does with
@@ -550,7 +550,7 @@ export function readPluginFolder(dir, { app = APP_VERSION, api = PLUGIN_API, whe
   if (manifest.class === 'lang') for (const [role, rel] of Object.entries(manifest.files)) served[role] = { rel, abs: path.join(dir, ...rel.split('/')), url: fileUrl(id, rel) };
   /** @type {Plugin} */
   const plugin = {
-    id, type: manifest.type, class: manifest.class, status, source: 'plugins', layout: 'folder', where: at,
+    id, type: manifest.type, class: manifest.class, status, source: 'plugins', layout: 'folder', where: at, dir,
     supported: status === 'loaded' && manifest.class === 'lang', manifest, files: served, bytes: check.bytes, count: check.count,
   };
   if ((manifest.class === 'cosmetic' || manifest.class === 'ui' || (['content','script','trusted'].includes(manifest.class) && manifest.parts.assets)) && status === 'loaded') {

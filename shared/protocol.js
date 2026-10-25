@@ -35,6 +35,19 @@ const isScalar = (v) => isStr(v, 64) || isNum(v) || isBool(v);
 
 /** Size limits of a b.result payload (the whole frame also obeys the 64 KB inbound limit). */
 export const RESULT_LIMITS = Object.freeze({ players: 4, leaked: 400, unitsEnd: 64, unitStats: 160, layerGains: 40, mods: 16, unspawned: 400 });
+
+// ---- room chat (code.lobby 插件面随附；房间聊天的权威实现是 plugins/room-chat) ----------------------------------
+// 房间聊天：一段文本 / 一个官方表情 id（data/emotes.json）/ 一个社区贴纸文件名，三者至少一个。服务端再判一次边界；
+// 消息只活在房间内存里（环形缓冲，房间没了就没了），重连时补发 `room.chat.history` 给这一个会话。
+export const CHAT_LIMITS = Object.freeze({
+  text: 200,           // 清洗后的长度（Unicode 码点）
+  inbound: 1024,       // 入站原文上限（清洗前就拒，别让 64 KB 帧把日志刷爆）
+  history: 80,         // 每个房间保留并补发的条数
+  perSec: 2, burst: 6, // 每会话令牌桶（chat 与 history 共用）
+});
+const chatEmoteId = (v) => typeof v === 'string' && v.length <= 64 && /^[A-Za-z0-9_]+$/.test(v);
+const chatStickerFile = (v) => typeof v === 'string' && v.length <= 80 && /^[A-Za-z0-9._-]+$/.test(v);
+
 const BIG = 1e13;
 const isStat = (v) => v === undefined || isNum(v, 0, BIG);
 const isModVal = (v) => v === null || isNum(v, -BIG, BIG) || isStr(v, 64) || isBool(v);
@@ -510,12 +523,18 @@ export const C2S = {
   // 2V2: the host moves a seat between the two teams before the match (the team follows the seat, teamOfSeat)
   'room.swapSeats': { a: (v) => isInt(v, 0, MAX_SEATS_VERSUS - 1), b: (v) => isInt(v, 0, MAX_SEATS_VERSUS - 1) },
   'room.join': { $optional: ['testAck'], testAck: (v) => v === true, code: (v) => isStr(v, ROOM_CODE_LEN + 2) && /^[A-Za-z0-9]+$/.test(v) },
+  // 房间聊天（plugins/room-chat 经 code.lobby 注册处理；表在引擎，插件只挂处理器）：文本/表情/贴纸至少一个，
+  // 权威边界（清洗长度、令牌桶、环形缓冲）在插件里，这里只拦 64 KB 帧和明显畸形载荷。
+  'room.chat': { text: optional((v) => isStr(v, CHAT_LIMITS.inbound)), emote: optional(chatEmoteId), sticker: optional(chatStickerFile) },
+  'room.chat.history': { code: (v) => isStr(v, ROOM_CODE_LEN + 2) && /^[A-Za-z0-9]+$/.test(v) },
   // 包通道（§1.9.6）：pack 是包 id，channel 由包声明；data 有界（引擎不解释载荷）。
   'pack.msg': { pack: (v) => typeof v === 'string' && /^[a-z0-9][a-z0-9-]{1,31}$/.test(v), channel: (v) => typeof v === 'string' && /^[a-z][a-z0-9_-]{0,63}$/.test(v), data: (v) => v === undefined || packMsgBytes(v) <= PACK_MSG_LIMITS.bytes, $optional: ['data'] },
   'room.leave': {},
   'room.list': {},
   // host, before the match: the room's public/private switch (the mota client's 私密房间 checkbox).
   'room.setPrivate': { private: (v) => typeof v === 'boolean' },
+  // host, before the match: 随机地图 on/off (plugins/room-chat's 随机地图 switch; room.state.randomStage).
+  'room.setRandomStage': { randomStage: isBool },
   'room.ready': { ready: isBool },
   'room.setDifficulty': { difficulty: (v) => DIFFICULTIES.includes(v) },
   // the co-op room option 「AI 队友最后选择」 (GitHub #338; host, before the match): the strategy and 机变 drafts order every
@@ -675,6 +694,9 @@ export const C2S = {
 export const S2C = [
   'welcome', 'ok', 'error', 'pong',
   'room.state', 'room.closed',
+  // 房间聊天（plugins/room-chat 经 code.lobby 广播）：room.chat 一条消息（from/name/seat/at + text|emote|sticker）；
+  // room.chat.history 只发给请求者/刚进房的人（{ code, messages }）。
+  'room.chat', 'room.chat.history',
   'm.public', 'm.private', 'm.field', 'm.toast', 'm.ticker', 'm.emote', 'm.result',
   // m.layer { playerId, bondId, add } — own live prep layer gain; ephemeral, never replayed on resync.
   'm.layer',

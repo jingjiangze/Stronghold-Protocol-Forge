@@ -287,6 +287,8 @@ export class Room {
     this.private = false;
     /** @type {string | null} */
     this.hostId = null;
+    /** code.lobby 的扩展对象（server/plugins/lobbyModules.js；没有插件时为 null）。 */
+    this.ext = null;
     /** @type {(Seat | null)[]} */
     // versus: teamSize × TEAMS seats (4 for 2V2, 8 for 4V4); solo / co-op: the official 1–4
     this.seats = new Array(mode === 'versus' ? this.teamSize * TEAMS : MAX_SEATS).fill(null);
@@ -354,6 +356,8 @@ export class Room {
       // 私密房：只在 true 时出现，普通 room.state 逐字节不变（mota 客户端的「私密房间」勾选框读这一格）。
       ...(this.private ? { private: true } : {}),
       hostId: this.hostId,
+      // code.lobby 的 roomState()：只在插件返回非空时多出字段（普通 room.state 逐字节不变）
+      ...(this.ext?.state?.(this) || {}),
       mode: this.mode,
       difficulty: this.difficulty,
       aiPicksLast: this.aiPicksLast,
@@ -578,6 +582,7 @@ export class Lobby {
     if (changed) this.broadcastState(room);
     else this.sendState(room, session);
     this.resync(session, !resumed);
+    this.ext?.emit?.('resync', room, session);
   }
 
   /**
@@ -679,9 +684,16 @@ export class Lobby {
       case 'room.contentReady': return this.contentReady(session, msg, ctx);
       case 'room.consent': return this.consent(session,msg);
       case 'pack.msg': return this.packMsg(session, msg);
-      default:
+      default: {
         if (typeof msg.t === 'string' && msg.t.startsWith('g.')) return this.routeGameNow(session, msg);
+        // lobby 级插件（code.lobby 的 on(type, fn)）：只处理它注册过的类型；异常按 INTERNAL 回，不拖垮连接。
+        const h = this.ext?.handlers?.get(msg.t);
+        if (h) {
+          try { return h(session, msg, ctx, this); }
+          catch (e) { this.log.error(`[lobby] plugin handler ${String(msg.t).slice(0, 40)} failed`, e); return fail(ERR.INTERNAL); }
+        }
         return fail(ERR.BAD_MSG, `unhandled type ${String(msg.t).slice(0, 32)}`);
+      }
     }
   }
 
@@ -778,6 +790,8 @@ export class Lobby {
       else { room.content = r.content; this.holdContent(r.content); }
     }
     room.ownerKey = key;
+    room.ext = this.ext;
+    this.ext?.init?.(room);   // 插件默认字段（chat 缓冲、房间级开关…）在广播之前就位
     room.seats[0] = this.humanSeat(0, session);
     room.hostId = session.playerId;
     this.rooms.set(code, room);
@@ -786,6 +800,7 @@ export class Lobby {
     session.pendingResult = null;
     this.log.info(`[lobby] ${code} created (${mode}/${difficulty}${room.test ? ', test' : ''}) by ${session.name}`);
     this.broadcastState(room);
+    this.ext?.emit?.('created', room);
     return OK;
   }
 
@@ -809,6 +824,7 @@ export class Lobby {
     session.pendingResult = null;
     if (!room.hostId) room.hostId = session.playerId;
     this.broadcastState(room);
+    this.ext?.emit?.('joined', room, session);
     return OK;
   }
 
@@ -1452,6 +1468,8 @@ export class Lobby {
         modeId: room.content?.modeId || modeIdFor(room.mode, room.difficulty),
         // 「AI 队友最后选择」 (GitHub #338): fixed for the match
         aiPicksLast: room.mode !== 'solo' && room.aiPicksLast === true,
+        // lobby 级插件给的 match opts（code.lobby 的 matchOptions）
+        ...(this.ext?.options?.(room) || {}),
         // versus: players per team (2 = 2V2, 4 = 4V4) — PlayerState.team and the views derive from it
         ...(room.mode === 'versus' ? { teamSize: room.teamSize } : {}),
         seats,
@@ -1492,6 +1510,7 @@ export class Lobby {
       this.log.info(`[lobby] ${room.code} match #${room.matchCount} starting (${room.mode}/${room.difficulty}, ${seats.length} seats, seed ${seed}${room.test ? ', test' : ''}${modded ? `, content ${room.content.cs.slice(0, 8)}${match.hosted ? ' in its match host' : ''}` : ''})`);
       this.broadcastState(room);
       match.start();
+      this.ext?.emit?.('started', room);
     } catch (e) {
       this.log.error(`[lobby] ${room.code} match failed to start`, e);
       if (room.matchCtx === ctx) { room.match = null; room.matchCtx = null; room.matchKey = null; }
@@ -1913,10 +1932,22 @@ export class Lobby {
       if (session.connected) sendSession(session, { t: 'room.closed', reason });
       else session.notice = reason;
     }
+    this.ext?.emit?.('disposed', room);
     if (ctx) this.disposeMatchCtx(ctx);
     // the room's visual set and content set are no longer held by it (server/plugins/visualSet.js, contentSets.js)
     this.releaseContent(room.content);
     this.log.info(`[lobby] ${room.code} disposed (${reason})`);
+  }
+
+  /**
+   * code.lobby 的扩展对象（server/plugins/lobbyModules.js）：插件钩子的唯一入口。
+   * 传 null 撤掉；换新对象时对已有房间补跑 init（房间级默认字段不能在切插件后丢）。
+   * @param {*} ext
+   */
+  setExtensions(ext) {
+    this.ext = ext || null;
+    for (const room of this.rooms.values()) room.ext = this.ext;
+    if (this.ext) for (const room of this.rooms.values()) { try { this.ext.init(room); } catch { /* logged upstream */ } }
   }
 
   genCode() {

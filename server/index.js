@@ -67,6 +67,7 @@ import { createManifestViews } from './http/assetViews.js';
 import { answerClientError } from './http/common.js';
 import { lanUrls, displayHost, isProcessEntry, runMain } from './http/boot.js';
 import { shadowEntry, spawnShadow, OVERLAY_DIR } from './plugins/engineOverlay.js';
+import { mountLobbyPlugins } from './plugins/lobbyModules.js';
 
 // The public API of this module (tests and tools import it from here); the code lives in ./http/.
 export {
@@ -159,6 +160,8 @@ export async function startServer(opts = {}) {
   const hosts = createMatchHosts({ contents, log, options: { transport, maxWorkers: Math.max(1, policy.get().maxSets), ...(opts.matchHost || {}) } });
   const { registry, lobby, network } = createSessionStack(matchWrappers.length ? { ...opts, MatchClass: MatchClassForLobby } : opts, { data, log, content, plugins: roomSets, hosts });
   lobby.packChannels = packChannels;
+  // lobby 级插件面（2026-10-23）：loaded + trusted + 声明 code.lobby 的插件在这里挂上房间级钩子。
+  const disposeLobbyPlugins = await mountLobbyPlugins(lobby, packs, { log });
   // 无损插件的客户端覆盖：声明了 code.client 的已加载插件，其 client/** 顶替同路径页面资源。
   // 只允许 **loaded** 的插件覆盖：被 owner gate 拒掉的 trusted/script 插件也不能改页面（与 server 侧装载一致）。
   const clientOverlay = new Map();
@@ -311,6 +314,7 @@ export async function startServer(opts = {}) {
       try { lobby.shutdown('shutdown'); } catch (e) { log.error('[shutdown] lobby', e); }
       try { modMount.shutdown(); } catch (e) { log.error('[shutdown] pack modules', e); }
       try { hosts.close(); } catch (e) { log.error('[shutdown] match hosts', e); }
+      try { await disposeLobbyPlugins?.(); } catch (e) { log.error('[shutdown] lobby plugins', e); }
       network.close();
       assetIndex?.close();
       studio?.close();

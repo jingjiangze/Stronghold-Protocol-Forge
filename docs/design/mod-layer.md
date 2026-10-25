@@ -414,7 +414,7 @@ while writing this section.
    every server-side line number, so the fix belonged to that port rather than to a second branch editing the same file
    (owner's coordination of 2026-10-09). The upgraded guard below therefore **reported these three**, each with the line
    the member really lived on, and turned green by itself once the cited line followed the member (`:113` → `:149`) — no
-   test had to be touched for that. A fourth instance of the same defect, `docs/prompts/kit.md:460`, has no dotted member
+   test had to be touched for that. A fourth instance of the same defect, `docs/prompts/kit.md:464`, has no dotted member
    next to it and is not
    judged by the narrow rule below; it needs the same one-line fix and is recorded here so it is not lost.
 
@@ -2763,7 +2763,7 @@ JSON 可序列化值**的回调。
 上**（`m.result` 报的是服务端按 `_perPlayer` 累出来的数）—— 那正是「面板可以画错、但不能算错」要消灭的东西。
 所以这一格只能由引擎给，而且给的是**同一本账**。
 
-**这一格不是新账，是一个读者。** 伤害早在模拟里逐次命中就记好了：`server/sim/attack/health.js:98` 写
+**这一格不是新账，是一个读者。** 伤害早在模拟里逐次命中就记好了：`server/sim/attack/health.js:102` 写
 `source.stats.dmg`，`:371` 写 `battle._perPlayer[ownerId].damageDealt`，`:352` 写 `bossDamage`（单位那本账在
 `server/sim/units.js:97` 初始化）。`battleRunner.damage()`（`public/js/battle/runner.js`）只做一件事：**把这些
 已经在那儿的数字按面板看得懂的形状抄出来**。

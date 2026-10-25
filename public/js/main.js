@@ -456,6 +456,29 @@ async function boot() {
   } catch (err) {
     console.warn('[app] build guard failed to start', err);
   }
+  // 插件自己的浏览器入口（code.clientEntry → /api/client-entries）：**动态导入**，插件没装/没启用时这里只是
+  // catch 掉，基座照常启动（不把宿主和插件绑死）。一个入口导出了 mount()/dispose() 时按挂载/卸载处理，
+  // 否则只求 import 的副作用（自注册）。
+  void (async () => {
+    try {
+      const res = await fetch('/api/client-entries', { cache: 'no-store' });
+      if (!res.ok) return;
+      const body = await res.json();
+      const list = Array.isArray(body?.entries) ? body.entries : [];
+      const disposers = [];
+      for (const e of list) {
+        if (!e || typeof e.url !== 'string' || !e.url.startsWith('/')) continue;
+        try {
+          const mod = await import(e.url);
+          const d = typeof mod?.mount === 'function' ? await mod.mount() : (typeof mod?.default === 'function' ? await mod.default() : null);
+          if (typeof d === 'function') disposers.push(d);
+        } catch (err) {
+          console.warn(`[plugins] client entry ${e.url} failed`, err);
+        }
+      }
+      if (disposers.length) globalThis.addEventListener?.('pagehide', () => { for (const d of disposers) { try { d(); } catch { /* ignore */ } } }, { once: true });
+    } catch { /* 没有这个面（纯静态托管）：忽略 */ }
+  })();
 }
 
 boot().catch((err) => {

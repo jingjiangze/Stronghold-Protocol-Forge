@@ -1,31 +1,34 @@
 {
   "version": 1,
-  "hash": "08607a5f3b78",
+  "hash": "9c789bfca9b9",
   "generator": "tools/fetch-assets.mjs",
   "stats": {
-    "files": 14018,
-    "bytes": 688870746,
-    "chars": 210,
-    "charsWithBack": 207,
-    "enemies": 252,
+    "files": 16956,
+    "bytes": 774822744,
+    "chars": 229,
+    "charsWithBack": 225,
+    "enemies": 258,
     "enemiesWithSpine": 251,
     "tokens": 58,
     "tokensWithSpine": 13,
-    "spineModels": 673,
+    "spineModels": 710,
     "bonds": 23,
     "items": 59,
-    "bands": 40,
-    "skills": 525,
+    "bands": 41,
+    "skills": 557,
     "modules": 131,
     "ui": 639,
-    "sfxUnits": 484,
+    "sfxUnits": 509,
     "voiceChars": 192,
+    "voiceJpChars": 192,
+    "voiceEnChars": 182,
+    "voiceKrChars": 182,
+    "voiceNativeChars": 44,
     "voiceLangs": {
       "cn": 192,
       "en": 182,
       "kr": 182
-    },
-    "voiceJpChars": 192
+    }
   },
   "chars": {
     "char_003_kalts": {
@@ -37665,6 +37668,2815 @@
           }
         }
       }
+    },
+    "char_109_fmout": {
+      "avatar": "/assets/char/avatar/char_109_fmout.png",
+      "avatarE2": "/assets/char/avatar/char_109_fmout_2.png",
+      "portrait": "/assets/char/portrait/char_109_fmout_1.png",
+      "portraitE2": "/assets/char/portrait/char_109_fmout_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_109_fmout/front/char_109_fmout.skel",
+          "atlas": "/assets/spine/op/char_109_fmout/front/char_109_fmout.atlas",
+          "textures": [
+            "/assets/spine/op/char_109_fmout/front/char_109_fmout.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1,
+            "Default": 0,
+            "Die": 0.9,
+            "Idle": 1.6,
+            "Start": 1.1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.567
+            ]
+          },
+          "bounds": {
+            "x": -255.455,
+            "y": -1.892,
+            "width": 440.203,
+            "height": 399
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_109_fmout/back/char_109_fmout.skel",
+          "atlas": "/assets/spine/op/char_109_fmout/back/char_109_fmout.atlas",
+          "textures": [
+            "/assets/spine/op/char_109_fmout/back/char_109_fmout.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1,
+            "Default": 0,
+            "Idle": 1.6,
+            "Start": 1.1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.567
+            ]
+          },
+          "bounds": {
+            "x": -255.455,
+            "y": -1.392,
+            "width": 440.203,
+            "height": 399.006
+          }
+        }
+      }
+    },
+    "char_133_mm": {
+      "avatar": "/assets/char/avatar/char_133_mm.png",
+      "avatarE2": "/assets/char/avatar/char_133_mm_2.png",
+      "portrait": "/assets/char/portrait/char_133_mm_1.png",
+      "portraitE2": "/assets/char/portrait/char_133_mm_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_133_mm/front/char_133_mm.skel",
+          "atlas": "/assets/spine/op/char_133_mm/front/char_133_mm.atlas",
+          "textures": [
+            "/assets/spine/op/char_133_mm/front/char_133_mm.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": "Attack_Start",
+              "loop": "Attack_Loop",
+              "end": "Attack_End"
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill_Loop",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill_Loop",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill_Loop",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack_End": 0.333,
+            "Attack_Loop": 1,
+            "Attack_Start": 0.333,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 2,
+            "Skill_Loop": 1.5,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack_Loop": [
+              0.033
+            ],
+            "Skill_Loop": [
+              0.033
+            ]
+          },
+          "bounds": {
+            "x": -129.214,
+            "y": -2.504,
+            "width": 280.504,
+            "height": 427.498
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_133_mm/back/char_133_mm.skel",
+          "atlas": "/assets/spine/op/char_133_mm/back/char_133_mm.atlas",
+          "textures": [
+            "/assets/spine/op/char_133_mm/back/char_133_mm.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": "Attack_Start",
+              "loop": "Attack_Loop",
+              "end": "Attack_End"
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill_Loop",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill_Loop",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill_Loop",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack_End": 0.333,
+            "Attack_Loop": 1,
+            "Attack_Start": 0.333,
+            "Default": 0,
+            "Idle": 1,
+            "Skill_Loop": 1.5,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack_Loop": [
+              0.033
+            ],
+            "Skill_Loop": [
+              0.033
+            ]
+          },
+          "bounds": {
+            "x": 213.181,
+            "y": -2.004,
+            "width": 281.003,
+            "height": 428
+          }
+        }
+      }
+    },
+    "char_135_halo": {
+      "avatar": "/assets/char/avatar/char_135_halo.png",
+      "avatarE2": "/assets/char/avatar/char_135_halo_2.png",
+      "portrait": "/assets/char/portrait/char_135_halo_1.png",
+      "portraitE2": "/assets/char/portrait/char_135_halo_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_135_halo/front/char_135_halo.skel",
+          "atlas": "/assets/spine/op/char_135_halo/front/char_135_halo.atlas",
+          "textures": [
+            "/assets/spine/op/char_135_halo/front/char_135_halo.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill_1",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill_1",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": "Skill_2_Begin",
+                "loop": "Skill_2_Loop",
+                "end": "Skill_2_End",
+                "index": 1,
+                "idle": "Skill_2_Idle"
+              }
+            }
+          },
+          "animations": {
+            "Attack": 2.3,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 2,
+            "Skill_1": 2.3,
+            "Skill_2_Begin": 1.5,
+            "Skill_2_End": 0.5,
+            "Skill_2_Idle": 2,
+            "Skill_2_Loop": 2.3,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.733
+            ],
+            "Skill_1": [
+              0.733
+            ],
+            "Skill_2_Loop": [
+              0.733
+            ]
+          },
+          "bounds": {
+            "x": -180.082,
+            "y": -3.244,
+            "width": 361.981,
+            "height": 415.5
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_135_halo/back/char_135_halo.skel",
+          "atlas": "/assets/spine/op/char_135_halo/back/char_135_halo.atlas",
+          "textures": [
+            "/assets/spine/op/char_135_halo/back/char_135_halo.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill_1",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill_1",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": "Skill_2_Begin",
+                "loop": "Skill_2_Loop",
+                "end": "Skill_2_End",
+                "index": 1,
+                "idle": "Skill_2_Idle"
+              }
+            }
+          },
+          "animations": {
+            "Attack": 2.3,
+            "Default": 0,
+            "Idle": 2,
+            "Skill_1": 2.3,
+            "Skill_2_Begin": 1.5,
+            "Skill_2_End": 0.5,
+            "Skill_2_Idle": 2,
+            "Skill_2_Loop": 2.3,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.733
+            ],
+            "Skill_1": [
+              0.733
+            ],
+            "Skill_2_Loop": [
+              0.733
+            ]
+          },
+          "bounds": {
+            "x": -180.082,
+            "y": -3.244,
+            "width": 361.981,
+            "height": 415.5
+          }
+        }
+      }
+    },
+    "char_198_blackd": {
+      "avatar": "/assets/char/avatar/char_198_blackd.png",
+      "avatarE2": "/assets/char/avatar/char_198_blackd_2.png",
+      "portrait": "/assets/char/portrait/char_198_blackd_1.png",
+      "portraitE2": "/assets/char/portrait/char_198_blackd_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_198_blackd/front/char_198_blackd.skel",
+          "atlas": "/assets/spine/op/char_198_blackd/front/char_198_blackd.atlas",
+          "textures": [
+            "/assets/spine/op/char_198_blackd/front/char_198_blackd.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.5,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 2,
+            "Start": 0.733
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.633
+            ]
+          },
+          "bounds": {
+            "x": -245.285,
+            "y": -2.104,
+            "width": 429.796,
+            "height": 407.761
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_198_blackd/back/char_198_blackd.skel",
+          "atlas": "/assets/spine/op/char_198_blackd/back/char_198_blackd.atlas",
+          "textures": [
+            "/assets/spine/op/char_198_blackd/back/char_198_blackd.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.5,
+            "Default": 0,
+            "Idle": 2,
+            "Start": 0.733
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.633
+            ]
+          },
+          "bounds": {
+            "x": -262.307,
+            "y": -6.213,
+            "width": 410.994,
+            "height": 406.411
+          }
+        }
+      }
+    },
+    "char_215_mantic": {
+      "avatar": "/assets/char/avatar/char_215_mantic.png",
+      "avatarE2": "/assets/char/avatar/char_215_mantic_2.png",
+      "portrait": "/assets/char/portrait/char_215_mantic_1.png",
+      "portraitE2": "/assets/char/portrait/char_215_mantic_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_215_mantic/front/char_215_mantic.skel",
+          "atlas": "/assets/spine/op/char_215_mantic/front/char_215_mantic.atlas",
+          "textures": [
+            "/assets/spine/op/char_215_mantic/front/char_215_mantic.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.333,
+            "Default": 0,
+            "Die": 1.033,
+            "Idle": 2,
+            "Skill": 1.933,
+            "Start": 0.833
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.633
+            ],
+            "Skill": [
+              1.167
+            ]
+          },
+          "bounds": {
+            "x": -155.566,
+            "y": -9.58,
+            "width": 364.138,
+            "height": 443.049
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_215_mantic/back/char_215_mantic.skel",
+          "atlas": "/assets/spine/op/char_215_mantic/back/char_215_mantic.atlas",
+          "textures": [
+            "/assets/spine/op/char_215_mantic/back/char_215_mantic.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.333,
+            "Default": 0,
+            "Idle": 2,
+            "Start": 0.833
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.633
+            ]
+          },
+          "bounds": {
+            "x": -155.22,
+            "y": -0.909,
+            "width": 378.649,
+            "height": 433.843
+          }
+        }
+      }
+    },
+    "char_218_cuttle": {
+      "avatar": "/assets/char/avatar/char_218_cuttle.png",
+      "avatarE2": "/assets/char/avatar/char_218_cuttle_2.png",
+      "portrait": "/assets/char/portrait/char_218_cuttle_1.png",
+      "portraitE2": "/assets/char/portrait/char_218_cuttle_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_218_cuttle/front/char_218_cuttle.skel",
+          "atlas": "/assets/spine/op/char_218_cuttle/front/char_218_cuttle.atlas",
+          "textures": [
+            "/assets/spine/op/char_218_cuttle/front/char_218_cuttle.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": "Skill2_Begin",
+                "loop": "Skill2_Loop",
+                "end": "Skill2_End",
+                "index": 1,
+                "idle": "Skill2_Idle"
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.667,
+            "Default": 0,
+            "Die": 0.933,
+            "Idle": 5.333,
+            "Skill2_Begin": 0.667,
+            "Skill2_End": 0.667,
+            "Skill2_Idle": 2.667,
+            "Skill2_Loop": 1.667,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.7
+            ],
+            "Skill2_Loop": [
+              0.7
+            ]
+          },
+          "bounds": {
+            "x": -138.627,
+            "y": -1.294,
+            "width": 403,
+            "height": 559.681
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_218_cuttle/back/char_218_cuttle.skel",
+          "atlas": "/assets/spine/op/char_218_cuttle/back/char_218_cuttle.atlas",
+          "textures": [
+            "/assets/spine/op/char_218_cuttle/back/char_218_cuttle.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": "Skill2_Begin",
+                "loop": "Skill2_Loop",
+                "end": "Skill2_End",
+                "index": 1,
+                "idle": "Skill2_Idle"
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.667,
+            "Default": 0,
+            "Idle": 5.333,
+            "Skill2_Begin": 0.667,
+            "Skill2_End": 0.667,
+            "Skill2_Idle": 2.667,
+            "Skill2_Loop": 1.667,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.7
+            ],
+            "Skill2_Loop": [
+              0.7
+            ]
+          },
+          "bounds": {
+            "x": -137.415,
+            "y": -0.991,
+            "width": 402,
+            "height": 371.393
+          }
+        }
+      }
+    },
+    "char_230_savage": {
+      "avatar": "/assets/char/avatar/char_230_savage.png",
+      "avatarE2": "/assets/char/avatar/char_230_savage_2.png",
+      "portrait": "/assets/char/portrait/char_230_savage_1.png",
+      "portraitE2": "/assets/char/portrait/char_230_savage_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_230_savage/front/char_230_savage.skel",
+          "atlas": "/assets/spine/op/char_230_savage/front/char_230_savage.atlas",
+          "textures": [
+            "/assets/spine/op/char_230_savage/front/char_230_savage.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.167,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 2,
+            "Skill": 1.167,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.4
+            ],
+            "Skill": [
+              0.6
+            ]
+          },
+          "bounds": {
+            "x": -152.247,
+            "y": -26.48,
+            "width": 417.266,
+            "height": 480.525
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_230_savage/back/char_230_savage.skel",
+          "atlas": "/assets/spine/op/char_230_savage/back/char_230_savage.atlas",
+          "textures": [
+            "/assets/spine/op/char_230_savage/back/char_230_savage.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.167,
+            "Default": 0,
+            "Idle": 1,
+            "Skill": 1.167,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.4
+            ],
+            "Skill": [
+              0.6
+            ]
+          },
+          "bounds": {
+            "x": -156.763,
+            "y": -13.942,
+            "width": 421.613,
+            "height": 468.958
+          }
+        }
+      }
+    },
+    "char_243_waaifu": {
+      "avatar": "/assets/char/avatar/char_243_waaifu.png",
+      "avatarE2": "/assets/char/avatar/char_243_waaifu_2.png",
+      "portrait": "/assets/char/portrait/char_243_waaifu_1.png",
+      "portraitE2": "/assets/char/portrait/char_243_waaifu_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_243_waaifu/front/char_243_waaifu.skel",
+          "atlas": "/assets/spine/op/char_243_waaifu/front/char_243_waaifu.atlas",
+          "textures": [
+            "/assets/spine/op/char_243_waaifu/front/char_243_waaifu.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 1,
+            "Start": 1,
+            "Start_2": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.467
+            ],
+            "Start_2": [
+              0.467
+            ]
+          },
+          "bounds": {
+            "x": -350.13,
+            "y": -1.768,
+            "width": 452.127,
+            "height": 411.044
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_243_waaifu/back/char_243_waaifu.skel",
+          "atlas": "/assets/spine/op/char_243_waaifu/back/char_243_waaifu.atlas",
+          "textures": [
+            "/assets/spine/op/char_243_waaifu/back/char_243_waaifu.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1,
+            "Default": 0,
+            "Idle": 1,
+            "Start": 1,
+            "Start_2": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.467
+            ],
+            "Start_2": [
+              0.467
+            ]
+          },
+          "bounds": {
+            "x": -350.13,
+            "y": -1.768,
+            "width": 452.127,
+            "height": 411.044
+          }
+        }
+      }
+    },
+    "char_271_spikes": {
+      "avatar": "/assets/char/avatar/char_271_spikes.png",
+      "avatarE2": "/assets/char/avatar/char_271_spikes_2.png",
+      "portrait": "/assets/char/portrait/char_271_spikes_1.png",
+      "portraitE2": "/assets/char/portrait/char_271_spikes_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_271_spikes/front/char_271_spikes.skel",
+          "atlas": "/assets/spine/op/char_271_spikes/front/char_271_spikes.atlas",
+          "textures": [
+            "/assets/spine/op/char_271_spikes/front/char_271_spikes.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Combat",
+              "end": null,
+              "via": "combat"
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill_01",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill_01",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill_02",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack_01": 1.333,
+            "Combat": 1.333,
+            "Default": 0,
+            "Die": 0.8,
+            "Idle": 4,
+            "Skill_01": 1.333,
+            "Skill_02": 1.333,
+            "Start": 0.833
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack_01": [
+              0.567
+            ],
+            "Combat": [
+              0.567
+            ],
+            "Skill_01": [
+              0.567,
+              0.833
+            ],
+            "Skill_02": [
+              0.567
+            ]
+          },
+          "bounds": {
+            "x": -428.506,
+            "y": -9.439,
+            "width": 575.527,
+            "height": 412.318
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_271_spikes/back/char_271_spikes.skel",
+          "atlas": "/assets/spine/op/char_271_spikes/back/char_271_spikes.atlas",
+          "textures": [
+            "/assets/spine/op/char_271_spikes/back/char_271_spikes.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Combat",
+              "end": null,
+              "via": "combat"
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill_01",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill_01",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill_02",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack_01": 1.333,
+            "Combat": 1.333,
+            "Default": 0,
+            "Die": 0.8,
+            "Idle": 4,
+            "Skill_01": 1.333,
+            "Skill_02": 1.333,
+            "Start": 0.833
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack_01": [
+              0.567
+            ],
+            "Combat": [
+              0.567
+            ],
+            "Skill_01": [
+              0.567,
+              0.833
+            ],
+            "Skill_02": [
+              0.567
+            ]
+          },
+          "bounds": {
+            "x": -428.507,
+            "y": -9.439,
+            "width": 535.232,
+            "height": 412.318
+          }
+        }
+      }
+    },
+    "char_304_zebra": {
+      "avatar": "/assets/char/avatar/char_304_zebra.png",
+      "avatarE2": "/assets/char/avatar/char_304_zebra_2.png",
+      "portrait": "/assets/char/portrait/char_304_zebra_1.png",
+      "portraitE2": "/assets/char/portrait/char_304_zebra_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_304_zebra/front/char_304_zebra.skel",
+          "atlas": "/assets/spine/op/char_304_zebra/front/char_304_zebra.atlas",
+          "textures": [
+            "/assets/spine/op/char_304_zebra/front/char_304_zebra.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": "Skill_1_Begin",
+              "loop": "Skill_1_Loop",
+              "end": "Skill_1_End",
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": "Skill_1_Begin",
+                "loop": "Skill_1_Loop",
+                "end": "Skill_1_End",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 2.667,
+            "Skill": 1,
+            "Skill_1_Begin": 0.4,
+            "Skill_1_End": 0.167,
+            "Skill_1_Loop": 1,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.433
+            ],
+            "Skill": [
+              0.233
+            ]
+          },
+          "bounds": {
+            "x": -160.107,
+            "y": -42.235,
+            "width": 340.763,
+            "height": 459.744
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_304_zebra/back/char_304_zebra.skel",
+          "atlas": "/assets/spine/op/char_304_zebra/back/char_304_zebra.atlas",
+          "textures": [
+            "/assets/spine/op/char_304_zebra/back/char_304_zebra.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": "Skill_1_Begin",
+              "loop": "Skill_1_Loop",
+              "end": "Skill_1_End",
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": "Skill_1_Begin",
+                "loop": "Skill_1_Loop",
+                "end": "Skill_1_End",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1,
+            "Default": 0,
+            "Idle": 2.667,
+            "Skill": 1,
+            "Skill_1_Begin": 0.4,
+            "Skill_1_End": 0.167,
+            "Skill_1_Loop": 1,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.433
+            ],
+            "Skill": [
+              0.233
+            ]
+          },
+          "bounds": {
+            "x": -165.098,
+            "y": -42.235,
+            "width": 345.994,
+            "height": 460.525
+          }
+        }
+      }
+    },
+    "char_345_folnic": {
+      "avatar": "/assets/char/avatar/char_345_folnic.png",
+      "avatarE2": "/assets/char/avatar/char_345_folnic_2.png",
+      "portrait": "/assets/char/portrait/char_345_folnic_1.png",
+      "portraitE2": "/assets/char/portrait/char_345_folnic_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_345_folnic/front/char_345_folnic.skel",
+          "atlas": "/assets/spine/op/char_345_folnic/front/char_345_folnic.atlas",
+          "textures": [
+            "/assets/spine/op/char_345_folnic/front/char_345_folnic.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 0.833,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 2,
+            "Skill": 1.233,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.233
+            ],
+            "Skill": [
+              0.433
+            ]
+          },
+          "bounds": {
+            "x": -180.464,
+            "y": -2.202,
+            "width": 357.495,
+            "height": 366.304
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_345_folnic/back/char_345_folnic.skel",
+          "atlas": "/assets/spine/op/char_345_folnic/back/char_345_folnic.atlas",
+          "textures": [
+            "/assets/spine/op/char_345_folnic/back/char_345_folnic.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 0.833,
+            "Default": 0,
+            "Idle": 2,
+            "Skill": 1.233,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.233
+            ],
+            "Skill": [
+              0.433
+            ]
+          },
+          "bounds": {
+            "x": 150.892,
+            "y": -2.205,
+            "width": 337.644,
+            "height": 365.81
+          }
+        }
+      }
+    },
+    "char_348_ceylon": {
+      "avatar": "/assets/char/avatar/char_348_ceylon.png",
+      "avatarE2": "/assets/char/avatar/char_348_ceylon_2.png",
+      "portrait": "/assets/char/portrait/char_348_ceylon_1.png",
+      "portraitE2": "/assets/char/portrait/char_348_ceylon_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_348_ceylon/front/char_348_ceylon.skel",
+          "atlas": "/assets/spine/op/char_348_ceylon/front/char_348_ceylon.atlas",
+          "textures": [
+            "/assets/spine/op/char_348_ceylon/front/char_348_ceylon.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.433,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 2.667,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.5
+            ]
+          },
+          "bounds": {
+            "x": -179.635,
+            "y": -74.915,
+            "width": 453.704,
+            "height": 466.85
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_348_ceylon/back/char_348_ceylon.skel",
+          "atlas": "/assets/spine/op/char_348_ceylon/back/char_348_ceylon.atlas",
+          "textures": [
+            "/assets/spine/op/char_348_ceylon/back/char_348_ceylon.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.433,
+            "Default": 0,
+            "Idle": 1.333,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.5
+            ]
+          },
+          "bounds": {
+            "x": -195.256,
+            "y": -74.919,
+            "width": 469.326,
+            "height": 471.98
+          }
+        }
+      }
+    },
+    "char_355_ethan": {
+      "avatar": "/assets/char/avatar/char_355_ethan.png",
+      "avatarE2": "/assets/char/avatar/char_355_ethan_2.png",
+      "portrait": "/assets/char/portrait/char_355_ethan_1.png",
+      "portraitE2": "/assets/char/portrait/char_355_ethan_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_355_ethan/front/char_355_ethan.skel",
+          "atlas": "/assets/spine/op/char_355_ethan/front/char_355_ethan.atlas",
+          "textures": [
+            "/assets/spine/op/char_355_ethan/front/char_355_ethan.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 3.5,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 3,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack"
+          ],
+          "hits": {
+            "Attack": [
+              0.633
+            ]
+          },
+          "bounds": {
+            "x": -231.996,
+            "y": -3.202,
+            "width": 459.208,
+            "height": 383.042
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_355_ethan/back/char_355_ethan.skel",
+          "atlas": "/assets/spine/op/char_355_ethan/back/char_355_ethan.atlas",
+          "textures": [
+            "/assets/spine/op/char_355_ethan/back/char_355_ethan.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null,
+              "via": "attack",
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Attack",
+                "end": null,
+                "via": "attack",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 3.5,
+            "Default": 0,
+            "Idle": 1,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack"
+          ],
+          "hits": {
+            "Attack": [
+              0.633
+            ]
+          },
+          "bounds": {
+            "x": -158.063,
+            "y": -4.136,
+            "width": 443.971,
+            "height": 383.876
+          }
+        }
+      }
+    },
+    "char_4004_pudd": {
+      "avatar": "/assets/char/avatar/char_4004_pudd.png",
+      "avatarE2": "/assets/char/avatar/char_4004_pudd_2.png",
+      "portrait": "/assets/char/portrait/char_4004_pudd_1.png",
+      "portraitE2": "/assets/char/portrait/char_4004_pudd_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_4004_pudd/front/char_4004_pudd.skel",
+          "atlas": "/assets/spine/op/char_4004_pudd/front/char_4004_pudd.atlas",
+          "textures": [
+            "/assets/spine/op/char_4004_pudd/front/char_4004_pudd.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.333,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 6.667,
+            "Skill": 1.333,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.4
+            ],
+            "Skill": [
+              0.4
+            ]
+          },
+          "bounds": {
+            "x": -121.348,
+            "y": -5.073,
+            "width": 730.002,
+            "height": 468
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_4004_pudd/back/char_4004_pudd.skel",
+          "atlas": "/assets/spine/op/char_4004_pudd/back/char_4004_pudd.atlas",
+          "textures": [
+            "/assets/spine/op/char_4004_pudd/back/char_4004_pudd.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.333,
+            "Default": 0,
+            "Idle": 6.667,
+            "Skill": 1.333,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.4
+            ],
+            "Skill": [
+              0.4
+            ]
+          },
+          "bounds": {
+            "x": -115.107,
+            "y": -5.073,
+            "width": 624.944,
+            "height": 468
+          }
+        }
+      }
+    },
+    "char_4045_heidi": {
+      "avatar": "/assets/char/avatar/char_4045_heidi.png",
+      "avatarE2": "/assets/char/avatar/char_4045_heidi_2.png",
+      "portrait": "/assets/char/portrait/char_4045_heidi_1.png",
+      "portraitE2": "/assets/char/portrait/char_4045_heidi_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_4045_heidi/front/char_4045_heidi.skel",
+          "atlas": "/assets/spine/op/char_4045_heidi/front/char_4045_heidi.atlas",
+          "textures": [
+            "/assets/spine/op/char_4045_heidi/front/char_4045_heidi.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Skill_1_Loop",
+              "end": null,
+              "via": "skill"
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": "Skill_1_Begin",
+              "loop": "Skill_1_Loop",
+              "end": "Skill_1_End",
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": "Skill_1_Begin",
+                "loop": "Skill_1_Loop",
+                "end": "Skill_1_End",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": "Skill_2_Begin",
+                "loop": "Skill_2_Loop",
+                "end": "Skill_2_End",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Default": 0,
+            "Die": 1,
+            "Idle": 10.9,
+            "Skill_1_Begin": 0.833,
+            "Skill_1_End": 0.833,
+            "Skill_1_Loop": 6,
+            "Skill_2_Begin": 1.267,
+            "Skill_2_End": 1.667,
+            "Skill_2_Loop": 3.333,
+            "Start": 1
+          },
+          "events": [
+            "OnStart"
+          ],
+          "hits": {},
+          "bounds": {
+            "x": -619.144,
+            "y": -1.944,
+            "width": 1403.717,
+            "height": 532.575
+          }
+        }
+      }
+    },
+    "char_4119_wanqin": {
+      "avatar": "/assets/char/avatar/char_4119_wanqin.png",
+      "avatarE2": "/assets/char/avatar/char_4119_wanqin_2.png",
+      "portrait": "/assets/char/portrait/char_4119_wanqin_1.png",
+      "portraitE2": "/assets/char/portrait/char_4119_wanqin_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_4119_wanqin/front/char_4119_wanqin.skel",
+          "atlas": "/assets/spine/op/char_4119_wanqin/front/char_4119_wanqin.atlas",
+          "textures": [
+            "/assets/spine/op/char_4119_wanqin/front/char_4119_wanqin.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": "Skill_Begin",
+              "loop": "Skill_Loop",
+              "end": "Skill_End",
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": "Skill_Begin",
+                "loop": "Skill_Loop",
+                "end": "Skill_End",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": "Skill_Begin",
+                "loop": "Skill_Loop",
+                "end": "Skill_End",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.233,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 2.667,
+            "Skill_Begin": 0.6,
+            "Skill_End": 0.3,
+            "Skill_Loop": 1,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.667
+            ]
+          },
+          "bounds": {
+            "x": -1872.842,
+            "y": -277.433,
+            "width": 1982.561,
+            "height": 793.071
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_4119_wanqin/back/char_4119_wanqin.skel",
+          "atlas": "/assets/spine/op/char_4119_wanqin/back/char_4119_wanqin.atlas",
+          "textures": [
+            "/assets/spine/op/char_4119_wanqin/back/char_4119_wanqin.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": "Skill_Begin",
+              "loop": "Skill_Loop",
+              "end": "Skill_End",
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": "Skill_Begin",
+                "loop": "Skill_Loop",
+                "end": "Skill_End",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": "Skill_Begin",
+                "loop": "Skill_Loop",
+                "end": "Skill_End",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.233,
+            "Default": 0,
+            "Idle": 2.667,
+            "Skill_Begin": 0.6,
+            "Skill_End": 0.3,
+            "Skill_Loop": 1,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.667
+            ]
+          },
+          "bounds": {
+            "x": -1872.842,
+            "y": -277.433,
+            "width": 1982.561,
+            "height": 793.071
+          }
+        }
+      }
+    },
+    "char_422_aurora": {
+      "avatar": "/assets/char/avatar/char_422_aurora.png",
+      "avatarE2": "/assets/char/avatar/char_422_aurora_2.png",
+      "portrait": "/assets/char/portrait/char_422_aurora_1.png",
+      "portraitE2": "/assets/char/portrait/char_422_aurora_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_422_aurora/front/char_422_aurora.skel",
+          "atlas": "/assets/spine/op/char_422_aurora/front/char_422_aurora.atlas",
+          "textures": [
+            "/assets/spine/op/char_422_aurora/front/char_422_aurora.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": "Skill_Begin",
+              "loop": "Skill_Loop",
+              "end": "Skill_End",
+              "index": 0,
+              "idle": "Skill_Idle"
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": "Skill_Begin",
+                "loop": "Skill_Loop",
+                "end": "Skill_End",
+                "index": 0,
+                "idle": "Skill_Idle"
+              },
+              "1": {
+                "begin": "Skill_2_Begin",
+                "loop": "Skill_2_Loop",
+                "end": "Skill_2_End",
+                "index": 1,
+                "idle": "Skill_2_Idle"
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.667,
+            "Default": 0,
+            "Die": 0.933,
+            "Idle": 6.333,
+            "Skill_2_Begin": 0.667,
+            "Skill_2_End": 0.5,
+            "Skill_2_Idle": 1.333,
+            "Skill_2_Loop": 2,
+            "Skill_Begin": 0.5,
+            "Skill_End": 0.5,
+            "Skill_Idle": 1.333,
+            "Skill_Loop": 1.667,
+            "Start": 1.133
+          },
+          "events": [
+            "OnAttack",
+            "OnPlayAudio",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.733
+            ],
+            "Skill_2_Loop": [
+              0.3
+            ],
+            "Skill_Loop": [
+              0.467
+            ]
+          },
+          "bounds": {
+            "x": -322.46,
+            "y": -5.096,
+            "width": 429.803,
+            "height": 373.49
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_422_aurora/back/char_422_aurora.skel",
+          "atlas": "/assets/spine/op/char_422_aurora/back/char_422_aurora.atlas",
+          "textures": [
+            "/assets/spine/op/char_422_aurora/back/char_422_aurora.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": "Skill_Begin",
+              "loop": "Skill_Loop",
+              "end": "Skill_End",
+              "index": 0,
+              "idle": "Skill_Idle"
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": "Skill_Begin",
+                "loop": "Skill_Loop",
+                "end": "Skill_End",
+                "index": 0,
+                "idle": "Skill_Idle"
+              },
+              "1": {
+                "begin": "Skill_2_Begin",
+                "loop": "Skill_2_Loop",
+                "end": "Skill_2_End",
+                "index": 1,
+                "idle": "Skill_2_Idle"
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.667,
+            "Default": 0,
+            "Idle": 6.333,
+            "Skill_2_Begin": 0.667,
+            "Skill_2_End": 0.5,
+            "Skill_2_Idle": 1.333,
+            "Skill_2_Loop": 2,
+            "Skill_Begin": 0.5,
+            "Skill_End": 0.5,
+            "Skill_Idle": 1.333,
+            "Skill_Loop": 1.667,
+            "Start": 1.133
+          },
+          "events": [
+            "OnAttack",
+            "OnPlayAudio",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.733
+            ],
+            "Skill_2_Loop": [
+              0.3
+            ],
+            "Skill_Loop": [
+              0.467
+            ]
+          },
+          "bounds": {
+            "x": -322.46,
+            "y": -4.016,
+            "width": 432.006,
+            "height": 372.152
+          }
+        }
+      }
+    },
+    "char_449_glider": {
+      "avatar": "/assets/char/avatar/char_449_glider.png",
+      "avatarE2": "/assets/char/avatar/char_449_glider_2.png",
+      "portrait": "/assets/char/portrait/char_449_glider_1.png",
+      "portraitE2": "/assets/char/portrait/char_449_glider_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_449_glider/front/char_449_glider.skel",
+          "atlas": "/assets/spine/op/char_449_glider/front/char_449_glider.atlas",
+          "textures": [
+            "/assets/spine/op/char_449_glider/front/char_449_glider.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": "skill_2_Begin",
+                "loop": "skill_2_Loop",
+                "end": "skill_2_End",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.667,
+            "Default": 0,
+            "Die": 1.167,
+            "Idle": 4,
+            "Skill": 1.333,
+            "Start": 1,
+            "skill_2_Begin": 0.667,
+            "skill_2_End": 0.333,
+            "skill_2_Loop": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStrat"
+          ],
+          "hits": {
+            "Attack": [
+              0.9
+            ],
+            "Skill": [
+              0.667
+            ],
+            "skill_2_Loop": [
+              0.333
+            ]
+          },
+          "bounds": {
+            "x": -135.497,
+            "y": -3.566,
+            "width": 349.652,
+            "height": 428.567
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_449_glider/back/char_449_glider.skel",
+          "atlas": "/assets/spine/op/char_449_glider/back/char_449_glider.atlas",
+          "textures": [
+            "/assets/spine/op/char_449_glider/back/char_449_glider.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": null,
+              "loop": "Skill",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": "skill_2_Begin",
+                "loop": "skill_2_Loop",
+                "end": "skill_2_End",
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.667,
+            "Default": 0,
+            "Idle": 4,
+            "Skill": 1.333,
+            "Start": 1,
+            "skill_2_Begin": 0.667,
+            "skill_2_End": 0.333,
+            "skill_2_Loop": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStrat"
+          ],
+          "hits": {
+            "Attack": [
+              0.9
+            ],
+            "Skill": [
+              0.667
+            ],
+            "skill_2_Loop": [
+              0.333
+            ]
+          },
+          "bounds": {
+            "x": -135.497,
+            "y": -3.566,
+            "width": 349.652,
+            "height": 428.567
+          }
+        }
+      }
+    },
+    "char_473_mberry": {
+      "avatar": "/assets/char/avatar/char_473_mberry.png",
+      "avatarE2": "/assets/char/avatar/char_473_mberry_2.png",
+      "portrait": "/assets/char/portrait/char_473_mberry_1.png",
+      "portraitE2": "/assets/char/portrait/char_473_mberry_2.png",
+      "spine": {
+        "front": {
+          "skel": "/assets/spine/op/char_473_mberry/front/char_473_mberry.skel",
+          "atlas": "/assets/spine/op/char_473_mberry/front/char_473_mberry.atlas",
+          "textures": [
+            "/assets/spine/op/char_473_mberry/front/char_473_mberry.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": "Skill1_Start",
+              "loop": "Skill1_Loop",
+              "end": "Skill1_End",
+              "index": 0,
+              "idle": null
+            },
+            "die": "Die",
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": "Skill1_Start",
+                "loop": "Skill1_Loop",
+                "end": "Skill1_End",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.167,
+            "Default": 0,
+            "Die": 1,
+            "Idle": 2.667,
+            "Skill": 1.167,
+            "Skill1_End": 0.433,
+            "Skill1_Loop": 1,
+            "Skill1_Start": 0.333,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.567
+            ],
+            "Skill": [
+              0.567
+            ]
+          },
+          "bounds": {
+            "x": -255.116,
+            "y": -3.091,
+            "width": 472.389,
+            "height": 444.685
+          }
+        },
+        "back": {
+          "skel": "/assets/spine/op/char_473_mberry/back/char_473_mberry.skel",
+          "atlas": "/assets/spine/op/char_473_mberry/back/char_473_mberry.atlas",
+          "textures": [
+            "/assets/spine/op/char_473_mberry/back/char_473_mberry.png"
+          ],
+          "pma": false,
+          "anims": {
+            "idle": "Idle",
+            "deploy": "Start",
+            "attack": {
+              "begin": null,
+              "loop": "Attack",
+              "end": null
+            },
+            "attackDown": null,
+            "skill": {
+              "begin": "Skill1_Start",
+              "loop": "Skill1_Loop",
+              "end": "Skill1_End",
+              "index": 0,
+              "idle": null
+            },
+            "die": null,
+            "move": null,
+            "stun": null,
+            "skills": {
+              "0": {
+                "begin": "Skill1_Start",
+                "loop": "Skill1_Loop",
+                "end": "Skill1_End",
+                "index": 0,
+                "idle": null
+              },
+              "1": {
+                "begin": null,
+                "loop": "Skill",
+                "end": null,
+                "index": 1,
+                "idle": null
+              }
+            }
+          },
+          "animations": {
+            "Attack": 1.167,
+            "Default": 0,
+            "Idle": 2.667,
+            "Skill": 1.167,
+            "Skill1_End": 0.433,
+            "Skill1_Loop": 1,
+            "Skill1_Start": 0.333,
+            "Start": 1
+          },
+          "events": [
+            "OnAttack",
+            "OnStart"
+          ],
+          "hits": {
+            "Attack": [
+              0.567
+            ],
+            "Skill": [
+              0.567
+            ]
+          },
+          "bounds": {
+            "x": 617.054,
+            "y": -3.721,
+            "width": 472.388,
+            "height": 445.313
+          }
+        }
+      }
     }
   },
   "enemies": {
@@ -46834,7 +49646,7 @@
         "textures": [
           "enemy_1305_mhslim.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Idle",
@@ -46949,7 +49761,7 @@
         "textures": [
           "enemy_1305_mhslim_2.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Idle",
@@ -49042,7 +51854,7 @@
           "attackDown": null,
           "skill": {
             "begin": null,
-            "loop": "Skill_1",
+            "loop": "Skill_2",
             "end": null,
             "index": 0,
             "idle": null
@@ -49057,14 +51869,14 @@
           "skills": {
             "0": {
               "begin": null,
-              "loop": "Skill_1",
+              "loop": "Skill_2",
               "end": null,
               "index": 0,
               "idle": null
             },
             "1": {
               "begin": null,
-              "loop": "Skill_2",
+              "loop": "Skill_1",
               "end": null,
               "index": 1,
               "idle": null
@@ -49360,7 +52172,25 @@
             "loop": "C1_Move",
             "end": null
           },
-          "stun": null
+          "stun": null,
+          "skills": {
+            "0": {
+              "begin": null,
+              "loop": "C1_Skill",
+              "end": null,
+              "index": 0,
+              "idle": null,
+              "strike": true
+            },
+            "1": {
+              "begin": null,
+              "loop": "C2_Skill",
+              "end": null,
+              "index": 1,
+              "idle": null,
+              "strike": true
+            }
+          }
         },
         "animations": {
           "C1_Attack": 1.5,
@@ -49423,7 +52253,7 @@
           "attackDown": null,
           "skill": {
             "begin": null,
-            "loop": "Skill_01",
+            "loop": "Skill_01_02",
             "end": null,
             "index": 0,
             "idle": null
@@ -49438,7 +52268,7 @@
           "skills": {
             "0": {
               "begin": null,
-              "loop": "Skill_01",
+              "loop": "Skill_01_02",
               "end": null,
               "index": 0,
               "idle": null
@@ -49448,6 +52278,13 @@
               "loop": "Skill_02_Loop",
               "end": "Skill_02_End",
               "index": 1,
+              "idle": null
+            },
+            "2": {
+              "begin": "Skill_02_Begin",
+              "loop": "Skill_02_Loop",
+              "end": "Skill_02_End",
+              "index": 2,
               "idle": null
             }
           }
@@ -49515,7 +52352,7 @@
           "attackDown": null,
           "skill": {
             "begin": null,
-            "loop": "Skill_01",
+            "loop": "Skill_02",
             "end": null,
             "index": 0,
             "idle": null
@@ -49526,14 +52363,14 @@
           "skills": {
             "0": {
               "begin": null,
-              "loop": "Skill_01",
+              "loop": "Skill_02",
               "end": null,
               "index": 0,
               "idle": null
             },
             "1": {
               "begin": null,
-              "loop": "Skill_02",
+              "loop": "Skill_01",
               "end": null,
               "index": 1,
               "idle": null
@@ -49547,9 +52384,51 @@
             },
             "3": {
               "begin": null,
-              "loop": "Skill_04",
+              "loop": "Skill_02",
               "end": null,
               "index": 3,
+              "idle": null
+            },
+            "4": {
+              "begin": null,
+              "loop": "Skill_01",
+              "end": null,
+              "index": 4,
+              "idle": null
+            },
+            "5": {
+              "begin": null,
+              "loop": "Skill_03",
+              "end": null,
+              "index": 5,
+              "idle": null
+            },
+            "6": {
+              "begin": null,
+              "loop": "Skill_02",
+              "end": null,
+              "index": 6,
+              "idle": null
+            },
+            "7": {
+              "begin": null,
+              "loop": "Skill_01",
+              "end": null,
+              "index": 7,
+              "idle": null
+            },
+            "8": {
+              "begin": null,
+              "loop": "Skill_03",
+              "end": null,
+              "index": 8,
+              "idle": null
+            },
+            "9": {
+              "begin": null,
+              "loop": "Skill_04",
+              "end": null,
+              "index": 9,
               "idle": null
             }
           }
@@ -49625,7 +52504,39 @@
             "loop": "A_Move",
             "end": null
           },
-          "stun": null
+          "stun": null,
+          "skills": {
+            "0": {
+              "begin": null,
+              "loop": "A_Skill2",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "1": {
+              "begin": null,
+              "loop": "A_Attack",
+              "end": null,
+              "index": 1,
+              "idle": null,
+              "via": "attack"
+            },
+            "2": {
+              "begin": null,
+              "loop": "B_Skill2",
+              "end": null,
+              "index": 2,
+              "idle": null
+            },
+            "3": {
+              "begin": null,
+              "loop": "B_Attack",
+              "end": null,
+              "index": 3,
+              "idle": null,
+              "via": "attack"
+            }
+          }
         },
         "animations": {
           "A_Attack": 1.6,
@@ -51681,14 +54592,14 @@
             },
             "1": {
               "begin": null,
-              "loop": "Skill_2",
+              "loop": "Skill_3",
               "end": null,
               "index": 1,
               "idle": null
             },
             "2": {
               "begin": null,
-              "loop": "Skill_3",
+              "loop": "Revive",
               "end": null,
               "index": 2,
               "idle": null
@@ -51766,14 +54677,14 @@
             },
             "1": {
               "begin": null,
-              "loop": "Skill_2",
+              "loop": "Skill_3",
               "end": null,
               "index": 1,
               "idle": null
             },
             "2": {
               "begin": null,
-              "loop": "Skill_3",
+              "loop": "Revive",
               "end": null,
               "index": 2,
               "idle": null
@@ -51832,7 +54743,7 @@
           "attackDown": null,
           "skill": {
             "begin": null,
-            "loop": "Skill",
+            "loop": "Launch_Begin",
             "end": null,
             "index": 0,
             "idle": null
@@ -51847,6 +54758,22 @@
             "begin": "Dizzy_Begin",
             "loop": "Dizzy_Loop",
             "end": "Dizzy_End"
+          },
+          "skills": {
+            "0": {
+              "begin": null,
+              "loop": "Launch_Begin",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "1": {
+              "begin": null,
+              "loop": "Back_End",
+              "end": null,
+              "index": 1,
+              "idle": null
+            }
           }
         },
         "animations": {
@@ -51902,7 +54829,7 @@
           "attackDown": null,
           "skill": {
             "begin": null,
-            "loop": "Skill",
+            "loop": "Launch_Begin",
             "end": null,
             "index": 0,
             "idle": null
@@ -51917,6 +54844,22 @@
             "begin": "Dizzy_Begin",
             "loop": "Dizzy_Loop",
             "end": "Dizzy_End"
+          },
+          "skills": {
+            "0": {
+              "begin": null,
+              "loop": "Launch_Begin",
+              "end": null,
+              "index": 0,
+              "idle": null
+            },
+            "1": {
+              "begin": null,
+              "loop": "Back_End",
+              "end": null,
+              "index": 1,
+              "idle": null
+            }
           }
         },
         "animations": {
@@ -52184,7 +55127,17 @@
             "loop": "Move",
             "end": null
           },
-          "stun": null
+          "stun": null,
+          "skills": {
+            "0": {
+              "begin": null,
+              "loop": "Skill_b",
+              "end": null,
+              "index": 0,
+              "idle": null,
+              "strike": true
+            }
+          }
         },
         "animations": {
           "Attack": 2.433,
@@ -52242,7 +55195,17 @@
             "loop": "Move",
             "end": null
           },
-          "stun": null
+          "stun": null,
+          "skills": {
+            "0": {
+              "begin": null,
+              "loop": "Skill_c",
+              "end": null,
+              "index": 0,
+              "idle": null,
+              "strike": true
+            }
+          }
         },
         "animations": {
           "Attack": 2.433,
@@ -52549,9 +55512,23 @@
             },
             "2": {
               "begin": null,
-              "loop": "Skill_3",
+              "loop": "Skill_2",
               "end": null,
               "index": 2,
+              "idle": null
+            },
+            "3": {
+              "begin": null,
+              "loop": "Skill_1",
+              "end": null,
+              "index": 3,
+              "idle": null
+            },
+            "4": {
+              "begin": null,
+              "loop": "Skill_3",
+              "end": null,
+              "index": 4,
               "idle": null
             }
           }
@@ -52666,6 +55643,361 @@
           "height": 1063
         }
       }
+    },
+    "enemy_1201_sfzhi": {
+      "icon": "/assets/enemy/icon/enemy_1201_sfzhi.png",
+      "spineLocal": {
+        "group": "spine/enemy/enemy_1201_sfzhi",
+        "skel": "enemy_1201_sfzhi.skel",
+        "atlas": "enemy_1201_sfzhi.atlas",
+        "textures": [
+          "enemy_1201_sfzhi.png"
+        ],
+        "pma": false,
+        "anims": {
+          "idle": "Idle",
+          "deploy": "Idle",
+          "attack": {
+            "begin": null,
+            "loop": "Attack",
+            "end": null
+          },
+          "attackDown": null,
+          "skill": {
+            "begin": null,
+            "loop": "Attack",
+            "end": null,
+            "via": "attack",
+            "index": 0,
+            "idle": null
+          },
+          "die": "Die",
+          "move": {
+            "begin": null,
+            "loop": "Move",
+            "end": null
+          },
+          "stun": null
+        },
+        "animations": {
+          "Attack": 1.367,
+          "Default": 0,
+          "Die": 1.067,
+          "Idle": 1.333,
+          "Move": 1.333
+        },
+        "events": [
+          "OnAttack"
+        ],
+        "hits": {
+          "Attack": [
+            0.5
+          ]
+        },
+        "bounds": {
+          "x": -283.5,
+          "y": -2.561,
+          "width": 577.5,
+          "height": 511.504
+        }
+      }
+    },
+    "enemy_1249_lysdb": {
+      "icon": "/assets/enemy/icon/enemy_1249_lysdb.png",
+      "spineLocal": {
+        "group": "spine/enemy/enemy_1249_lysdb",
+        "skel": "enemy_1249_lysdb.skel",
+        "atlas": "enemy_1249_lysdb.atlas",
+        "textures": [
+          "enemy_1249_lysdb.png"
+        ],
+        "pma": false,
+        "anims": {
+          "idle": "Idle",
+          "deploy": "Idle",
+          "attack": {
+            "begin": null,
+            "loop": "Attack",
+            "end": null
+          },
+          "attackDown": null,
+          "skill": {
+            "begin": null,
+            "loop": "Attack",
+            "end": null,
+            "via": "attack",
+            "index": 0,
+            "idle": null
+          },
+          "die": "Die",
+          "move": {
+            "begin": null,
+            "loop": "Move",
+            "end": null
+          },
+          "stun": null
+        },
+        "animations": {
+          "Attack": 0.733,
+          "Default": 0,
+          "Die": 0.7,
+          "Idle": 1.333,
+          "Move": 1.067
+        },
+        "events": [
+          "OnAttack"
+        ],
+        "hits": {
+          "Attack": [
+            0.333
+          ]
+        },
+        "bounds": {
+          "x": -158.365,
+          "y": -2.443,
+          "width": 284.16,
+          "height": 404.5
+        }
+      }
+    },
+    "enemy_1254_lypa": {
+      "icon": "/assets/enemy/icon/enemy_1254_lypa.png",
+      "spineLocal": {
+        "group": "spine/enemy/enemy_1254_lypa",
+        "skel": "enemy_1254_lypa.skel",
+        "atlas": "enemy_1254_lypa.atlas",
+        "textures": [
+          "enemy_1254_lypa.png"
+        ],
+        "pma": false,
+        "anims": {
+          "idle": "Idle",
+          "deploy": "Idle",
+          "attack": {
+            "begin": null,
+            "loop": "Attack_A",
+            "end": null,
+            "via": "attackAny"
+          },
+          "attackDown": null,
+          "skill": {
+            "begin": null,
+            "loop": "Attack_A",
+            "end": null,
+            "via": "attack",
+            "index": 0,
+            "idle": null
+          },
+          "die": "Die",
+          "move": {
+            "begin": null,
+            "loop": "Move",
+            "end": null
+          },
+          "stun": null
+        },
+        "animations": {
+          "Attack_A": 0.667,
+          "Attack_B": 0.667,
+          "Default": 0,
+          "Die": 1.167,
+          "Idle": 2,
+          "Move": 1.333
+        },
+        "events": [
+          "OnAttack"
+        ],
+        "hits": {
+          "Attack_A": [
+            0.167
+          ],
+          "Attack_B": [
+            0.167
+          ]
+        },
+        "bounds": {
+          "x": -161.659,
+          "y": -2.595,
+          "width": 291.5,
+          "height": 464.244
+        }
+      }
+    },
+    "enemy_1275_dwlock": {
+      "icon": "/assets/enemy/icon/enemy_1275_dwlock.png",
+      "spineLocal": {
+        "group": "spine/enemy/enemy_1275_dwlock",
+        "skel": "enemy_1275_dwlock.skel",
+        "atlas": "enemy_1275_dwlock.atlas",
+        "textures": [
+          "enemy_1275_dwlock.png"
+        ],
+        "pma": false,
+        "anims": {
+          "idle": "Idle",
+          "deploy": "Idle",
+          "attack": {
+            "begin": null,
+            "loop": "Attack",
+            "end": null
+          },
+          "attackDown": null,
+          "skill": {
+            "begin": "Skill_Begin",
+            "loop": "Skill_Loop",
+            "end": "Skill_End",
+            "index": 0,
+            "idle": null
+          },
+          "die": "Die",
+          "move": {
+            "begin": null,
+            "loop": "Move",
+            "end": null
+          },
+          "stun": null
+        },
+        "animations": {
+          "Attack": 1.333,
+          "Default": 0,
+          "Die": 1,
+          "Idle": 2.667,
+          "Move": 2,
+          "Skill_Begin": 0.667,
+          "Skill_End": 1.167,
+          "Skill_Loop": 1
+        },
+        "events": [
+          "OnAttack"
+        ],
+        "hits": {
+          "Attack": [
+            0.767
+          ]
+        },
+        "bounds": {
+          "x": -218.505,
+          "y": -1.315,
+          "width": 444.933,
+          "height": 503.495
+        }
+      }
+    },
+    "enemy_1373_ltnhor_2": {
+      "icon": "/assets/enemy/icon/enemy_1373_ltnhor_2.png",
+      "spineLocal": {
+        "group": "spine/enemy/enemy_1373_ltnhor_2",
+        "skel": "enemy_1373_ltnhor_2.skel",
+        "atlas": "enemy_1373_ltnhor_2.atlas",
+        "textures": [
+          "enemy_1373_ltnhor_2.png"
+        ],
+        "pma": false,
+        "anims": {
+          "idle": "Idle",
+          "deploy": "Idle",
+          "attack": {
+            "begin": null,
+            "loop": "Attack",
+            "end": null
+          },
+          "attackDown": null,
+          "skill": {
+            "begin": null,
+            "loop": "Attack",
+            "end": null,
+            "via": "attack",
+            "index": 0,
+            "idle": null
+          },
+          "die": "Die",
+          "move": {
+            "begin": null,
+            "loop": "Move",
+            "end": null
+          },
+          "stun": null
+        },
+        "animations": {
+          "Attack": 1.767,
+          "Default": 0,
+          "Die": 1,
+          "Idle": 1.5,
+          "Move": 2.333
+        },
+        "events": [
+          "OnAttack"
+        ],
+        "hits": {
+          "Attack": [
+            0.667
+          ]
+        },
+        "bounds": {
+          "x": -130.637,
+          "y": -0.758,
+          "width": 267.5,
+          "height": 387.811
+        }
+      }
+    },
+    "enemy_1376_ltndru": {
+      "icon": "/assets/enemy/icon/enemy_1376_ltndru.png",
+      "spineLocal": {
+        "group": "spine/enemy/enemy_1376_ltndru",
+        "skel": "enemy_1376_ltndru.skel",
+        "atlas": "enemy_1376_ltndru.atlas",
+        "textures": [
+          "enemy_1376_ltndru.png"
+        ],
+        "pma": false,
+        "anims": {
+          "idle": "Idle",
+          "deploy": "Idle",
+          "attack": {
+            "begin": null,
+            "loop": "Attack",
+            "end": null
+          },
+          "attackDown": null,
+          "skill": {
+            "begin": null,
+            "loop": "Attack",
+            "end": null,
+            "via": "attack",
+            "index": 0,
+            "idle": null
+          },
+          "die": "Die",
+          "move": {
+            "begin": null,
+            "loop": "Move",
+            "end": null
+          },
+          "stun": null
+        },
+        "animations": {
+          "Attack": 1.5,
+          "Default": 0,
+          "Die": 1,
+          "Idle": 2.667,
+          "Move": 2
+        },
+        "events": [
+          "OnAttack"
+        ],
+        "hits": {
+          "Attack": [
+            0.667
+          ]
+        },
+        "bounds": {
+          "x": -197.807,
+          "y": -8.293,
+          "width": 410.5,
+          "height": 406
+        }
+      }
     }
   },
   "tokens": {
@@ -52724,7 +56056,7 @@
         "textures": [
           "token_10002_kalts_mon3tr.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -52786,7 +56118,7 @@
         "textures": [
           "token_10003_cgbird_bird.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -52833,7 +56165,7 @@
         "textures": [
           "token_10005_mgllan_drone1.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -52884,7 +56216,7 @@
         "textures": [
           "token_10005_mgllan_drone2.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -52939,7 +56271,7 @@
         "textures": [
           "token_10005_mgllan_drone3.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -53046,7 +56378,7 @@
         "textures": [
           "token_10007_phatom_twin.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -53103,7 +56435,7 @@
         "textures": [
           "token_10008_cqbw_box.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -53158,7 +56490,7 @@
         "textures": [
           "token_10009_weedy_cannon.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -53497,7 +56829,7 @@
         "textures": [
           "token_10020_ling_soul1.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -53557,7 +56889,7 @@
         "textures": [
           "token_10020_ling_soul2.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -53620,7 +56952,7 @@
         "textures": [
           "token_10020_ling_soul3.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -53748,7 +57080,7 @@
         "textures": [
           "token_10024_ebnhlz_rcube.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -53803,7 +57135,7 @@
         "textures": [
           "token_10025_doroth_recttp.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -53858,7 +57190,7 @@
         "textures": [
           "token_10026_bgsnow_subbow.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -53923,7 +57255,7 @@
         "textures": [
           "token_10027_ironmn_pile1.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -53973,7 +57305,7 @@
         "textures": [
           "token_10027_ironmn_pile2.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -54023,7 +57355,7 @@
         "textures": [
           "token_10027_ironmn_pile3.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -54140,7 +57472,7 @@
         "textures": [
           "token_10029_slent2_protrb.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -54328,7 +57660,7 @@
         "textures": [
           "token_10031_swire2_gdtrap.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -54383,7 +57715,7 @@
         "textures": [
           "token_10032_jesca2_jckshd.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -54431,7 +57763,7 @@
         "textures": [
           "token_10034_ray_sndbst.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -54475,7 +57807,7 @@
         "textures": [
           "token_10035_wisdel_wward.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -54584,7 +57916,7 @@
         "textures": [
           "token_10041_cathy_catsld.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -54634,7 +57966,7 @@
         "textures": [
           "token_10043_necras_skeltn.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -54713,7 +58045,7 @@
         "textures": [
           "token_10050_monstr_prosts.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -54765,7 +58097,7 @@
         "textures": [
           "token_10051_radian_tower1.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "C_Skill1_Idle",
           "deploy": "C_Skill1_Start",
@@ -54815,7 +58147,7 @@
         "textures": [
           "token_10052_radian_tower2.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -54873,7 +58205,7 @@
         "textures": [
           "token_10053_radian_tower3.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -54934,7 +58266,7 @@
         "textures": [
           "token_10054_phatm2_encdool.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Loop",
           "deploy": "Start",
@@ -55034,7 +58366,7 @@
         "textures": [
           "token_10057_svash2_eagle.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Default",
           "deploy": "Default",
@@ -55080,7 +58412,7 @@
         "textures": [
           "token_10057_svash2_eagle.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Default",
           "deploy": "Default",
@@ -55126,7 +58458,7 @@
         "textures": [
           "token_10057_svash2_eagle.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Default",
           "deploy": "Default",
@@ -55174,7 +58506,7 @@
         "textures": [
           "token_10059_nasti_nstdef.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -55222,7 +58554,7 @@
         "textures": [
           "token_10060_nasti_nstchr.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle_1",
           "deploy": "Start",
@@ -55277,7 +58609,7 @@
         "textures": [
           "token_10061_nasti_nstbld.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle_1",
           "deploy": "Start",
@@ -55326,7 +58658,7 @@
         "textures": [
           "token_10064_wang_stone1.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -55376,7 +58708,7 @@
         "textures": [
           "token_10066_closur_ourbase.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -55421,7 +58753,7 @@
         "textures": [
           "token_10068_kalts2_mtship.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Default",
           "deploy": "Default",
@@ -55471,7 +58803,7 @@
         "textures": [
           "token_10069_mcnist_mcgraf.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -55531,7 +58863,7 @@
         "textures": [
           "token_10070_aphris_pc.png"
         ],
-        "pma": true,
+        "pma": false,
         "anims": {
           "idle": "Idle",
           "deploy": "Start",
@@ -55696,7 +59028,8 @@
     "band_mlynar": "/assets/band/band_mlynar.png",
     "band_chiave": "/assets/band/band_chiave.png",
     "band_narant": "/assets/band/band_narant.png",
-    "band_amedic": "/assets/band/band_amedic.png"
+    "band_amedic": "/assets/band/band_amedic.png",
+    "band_zumama": "/assets/band/band_zumama.png"
   },
   "skills": {
     "skchr_kalts_1": "/assets/skill/skchr_kalts_1.png",
@@ -56223,7 +59556,39 @@
     "skchr_acspec_3": "/assets/skill/skchr_acspec_3.png",
     "skchr_acspec_1": "/assets/skill/skchr_acspec_1.png",
     "skchr_pithst_1": "/assets/skill/skchr_pithst_1.png",
-    "skchr_sharp2_1": "/assets/skill/skchr_sharp2_1.png"
+    "skchr_sharp2_1": "/assets/skill/skchr_sharp2_1.png",
+    "skchr_fmout_2": "/assets/skill/skchr_fmout_2.png",
+    "skchr_mm_1": "/assets/skill/skchr_mm_1.png",
+    "skchr_mm_2": "/assets/skill/skchr_mm_2.png",
+    "skchr_halo_1": "/assets/skill/skchr_halo_1.png",
+    "skchr_halo_2": "/assets/skill/skchr_halo_2.png",
+    "skchr_blackd_2": "/assets/skill/skchr_blackd_2.png",
+    "skchr_mantic_1": "/assets/skill/skchr_mantic_1.png",
+    "skchr_mantic_2": "/assets/skill/skchr_mantic_2.png",
+    "skchr_cuttle_2": "/assets/skill/skchr_cuttle_2.png",
+    "skchr_savage_2": "/assets/skill/skchr_savage_2.png",
+    "skchr_waaifu_1": "/assets/skill/skchr_waaifu_1.png",
+    "skchr_waaifu_2": "/assets/skill/skchr_waaifu_2.png",
+    "skchr_spikes_1": "/assets/skill/skchr_spikes_1.png",
+    "skchr_spikes_2": "/assets/skill/skchr_spikes_2.png",
+    "skchr_zebra_1": "/assets/skill/skchr_zebra_1.png",
+    "skchr_zebra_2": "/assets/skill/skchr_zebra_2.png",
+    "skchr_folnic_1": "/assets/skill/skchr_folnic_1.png",
+    "skchr_folnic_2": "/assets/skill/skchr_folnic_2.png",
+    "skchr_ceylon_1": "/assets/skill/skchr_ceylon_1.png",
+    "skchr_ceylon_2": "/assets/skill/skchr_ceylon_2.png",
+    "skchr_ethan_1": "/assets/skill/skchr_ethan_1.png",
+    "skchr_ethan_2": "/assets/skill/skchr_ethan_2.png",
+    "skchr_pudd_2": "/assets/skill/skchr_pudd_2.png",
+    "skchr_heidi_1": "/assets/skill/skchr_heidi_1.png",
+    "skchr_heidi_2": "/assets/skill/skchr_heidi_2.png",
+    "skchr_wanqin_2": "/assets/skill/skchr_wanqin_2.png",
+    "skchr_aurora_1": "/assets/skill/skchr_aurora_1.png",
+    "skchr_aurora_2": "/assets/skill/skchr_aurora_2.png",
+    "skchr_glider_1": "/assets/skill/skchr_glider_1.png",
+    "skchr_glider_2": "/assets/skill/skchr_glider_2.png",
+    "skchr_mberry_1": "/assets/skill/skchr_mberry_1.png",
+    "skchr_mberry_2": "/assets/skill/skchr_mberry_2.png"
   },
   "skillsById": {
     "skchr_kalts_1": "skchr_kalts_1",
@@ -56754,7 +60119,40 @@
     "skchr_acspec_3": "skchr_acspec_3",
     "skchr_acspec_1": "skchr_acspec_1",
     "skchr_pithst_1": "skchr_pithst_1",
-    "skchr_sharp2_1": "skchr_sharp2_1"
+    "skchr_sharp2_1": "skchr_sharp2_1",
+    "skchr_fmout_2": "skchr_fmout_2",
+    "skchr_mm_1": "skchr_mm_1",
+    "skchr_mm_2": "skchr_mm_2",
+    "skchr_halo_1": "skchr_halo_1",
+    "skchr_halo_2": "skchr_halo_2",
+    "skchr_blackd_2": "skchr_blackd_2",
+    "skchr_mantic_1": "skchr_mantic_1",
+    "skchr_mantic_2": "skchr_mantic_2",
+    "skchr_cuttle_2": "skchr_cuttle_2",
+    "skchr_savage_1": "skcom_powerstrike[2]",
+    "skchr_savage_2": "skchr_savage_2",
+    "skchr_waaifu_1": "skchr_waaifu_1",
+    "skchr_waaifu_2": "skchr_waaifu_2",
+    "skchr_spikes_1": "skchr_spikes_1",
+    "skchr_spikes_2": "skchr_spikes_2",
+    "skchr_zebra_1": "skchr_zebra_1",
+    "skchr_zebra_2": "skchr_zebra_2",
+    "skchr_folnic_1": "skchr_folnic_1",
+    "skchr_folnic_2": "skchr_folnic_2",
+    "skchr_ceylon_1": "skchr_ceylon_1",
+    "skchr_ceylon_2": "skchr_ceylon_2",
+    "skchr_ethan_1": "skchr_ethan_1",
+    "skchr_ethan_2": "skchr_ethan_2",
+    "skchr_pudd_2": "skchr_pudd_2",
+    "skchr_heidi_1": "skchr_heidi_1",
+    "skchr_heidi_2": "skchr_heidi_2",
+    "skchr_wanqin_2": "skchr_wanqin_2",
+    "skchr_aurora_1": "skchr_aurora_1",
+    "skchr_aurora_2": "skchr_aurora_2",
+    "skchr_glider_1": "skchr_glider_1",
+    "skchr_glider_2": "skchr_glider_2",
+    "skchr_mberry_1": "skchr_mberry_1",
+    "skchr_mberry_2": "skchr_mberry_2"
   },
   "modules": {
     "WAH-Y": "/assets/module/wah-y.png",
@@ -73888,9 +77286,11 @@
             "1": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
           },
           "attacks": {
+            "0": "/assets/audio/sfx/player/p_atk/p_atk_krossbow_n.mp3",
             "1": "/assets/audio/sfx/player/p_atk/p_atk_krossbow_h.mp3"
           },
           "attackPools": {
+            "0": "battle.ON_ABILITY_ON.char_1021_kroos2.attack.1",
             "1": "battle.ON_ABILITY_ON.char_1021_kroos2.attack.2"
           }
         },
@@ -74067,10 +77467,12 @@
           },
           "attacks": {
             "0": "/assets/audio/sfx/player/p_atk/p_atk_pistolup_d.mp3",
+            "1": "/assets/audio/sfx/player/p_atk/p_atk_carbine_n.mp3",
             "2": "/assets/audio/sfx/player/p_atk/p_atk_pistolcarbin_s.mp3"
           },
           "attackPools": {
             "0": "battle.ON_ABILITY_ON.char_1034_jesca2.attack.1",
+            "1": "battle.ON_ABILITY_START.char_1034_jesca2.attack.2",
             "2": "battle.ON_ABILITY_START.char_1034_jesca2.attack.3.2"
           }
         },
@@ -74431,6 +77833,17 @@
           "attack": "/assets/audio/sfx/player/p_atk/p_atk_pistol_n.mp3",
           "pools": {
             "attack": "battle.ON_ABILITY_ON.char_107_liskam.attack"
+          },
+          "attacks": {
+            "1": "/assets/audio/sfx/player/p_atk/p_atk_lightning_n.mp3"
+          },
+          "attackMix": {
+            "1": {
+              "vol": 0.8
+            }
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_START.char_107_liskam.attack.1"
           }
         },
         "char_108_silent": {
@@ -74519,6 +77932,18 @@
           "skills": {
             "0": "/assets/audio/sfx/player/p_skill/p_skill_soulwolf.mp3",
             "1": "/assets/audio/sfx/player/p_skill/p_skill_soulwolf.mp3"
+          },
+          "attacks": {
+            "1": "/assets/audio/sfx/player/p_atk/p_atk_katanawave_n.mp3"
+          },
+          "hits": {
+            "1": "/assets/audio/sfx/player/p_imp/p_imp_katanawave_n.mp3"
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_ON.char_140_whitew.attack.1"
+          },
+          "hitPools": {
+            "1": "battle.ON_ABILITY_HIT.char_140_whitew.combat.1"
           }
         },
         "char_143_ghost": {
@@ -74540,11 +77965,11 @@
           }
         },
         "char_1502_crosly": {
-          "attack": "/assets/audio/sfx/player/p_atk/p_atk_asndgrbm.mp3",
-          "hit": "/assets/audio/sfx/player/p_imp/p_imp_asndgrsmk.mp3",
+          "attack": "/assets/audio/sfx/player/p_atk/p_atk_asndgr_n.mp3",
+          "hit": "/assets/audio/sfx/player/p_imp/p_imp_asndgr_n.mp3",
           "pools": {
-            "attack": "battle.ON_ABILITY_START.char_1502_crosly.attack.4",
-            "hit": "battle.ON_ABILITY_HIT.char_1502_crosly.attack.3"
+            "attack": "battle.ON_ABILITY_START.char_1502_crosly.attack.0.1",
+            "hit": "battle.ON_ABILITY_HIT.char_1502_crosly.attack.0.1"
           },
           "skill": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
           "skills": {
@@ -74556,13 +77981,15 @@
             "0": "/assets/audio/sfx/player/p_atk/p_atk_asndgr_d.mp3"
           },
           "hits": {
-            "0": "/assets/audio/sfx/player/p_imp/p_imp_asndgr_d.mp3"
+            "0": "/assets/audio/sfx/player/p_imp/p_imp_asndgr_d.mp3",
+            "2": "/assets/audio/sfx/player/p_imp/p_imp_asndgrsmk.mp3"
           },
           "attackPools": {
             "0": "battle.ON_ABILITY_START.char_1502_crosly.attack.1.1"
           },
           "hitPools": {
-            "0": "battle.ON_ABILITY_HIT.char_1502_crosly.attack.1.1"
+            "0": "battle.ON_ABILITY_HIT.char_1502_crosly.attack.1.1",
+            "2": "battle.ON_ABILITY_HIT.char_1502_crosly.attack.3"
           }
         },
         "char_150_snakek": {
@@ -74588,6 +78015,14 @@
           "hit": "/assets/audio/sfx/player/p_imp/p_imp_spear_n.mp3",
           "pools": {
             "hit": "battle.ON_ABILITY_HIT.char_172_svrash.combat"
+          },
+          "hits": {
+            "1": "/assets/audio/sfx/player/p_imp/p_imp_sword_n.mp3",
+            "2": "/assets/audio/sfx/player/p_imp/p_imp_sword_n.mp3"
+          },
+          "hitPools": {
+            "1": "battle.ON_ABILITY_HIT.char_172_svrash.attack.1",
+            "2": "battle.ON_ABILITY_HIT.char_172_svrash.attack.2"
           }
         },
         "char_173_slchan": {
@@ -74649,13 +78084,15 @@
             "2": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
           },
           "attacks": {
-            "1": "/assets/audio/sfx/player/p_atk/p_atk_falchion_s.mp3"
+            "1": "/assets/audio/sfx/player/p_atk/p_atk_falchion_s.mp3",
+            "2": "/assets/audio/sfx/player/p_skill/p_skill_huirenzhan.mp3"
           },
           "hits": {
             "1": "/assets/audio/sfx/player/p_imp/p_imp_falchion_s.mp3"
           },
           "attackPools": {
-            "1": "battle.ON_ABILITY_ON.char_188_helage.attack.1"
+            "1": "battle.ON_ABILITY_ON.char_188_helage.attack.1",
+            "2": "battle.ON_ABILITY_ON.char_188_helage.attack.2"
           },
           "hitPools": {
             "1": "battle.ON_ABILITY_HIT.char_188_helage.attack.1"
@@ -74852,18 +78289,22 @@
             "2": "/assets/audio/sfx/player/p_skill/p_skill_frbytrtn_s3.mp3"
           },
           "attacks": {
+            "0": "/assets/audio/sfx/player/p_atk/p_atk_frbytrtn_p.mp3",
             "1": "/assets/audio/sfx/player/p_atk/p_atk_frbytrtn_d.mp3",
             "2": "/assets/audio/sfx/player/p_atk/p_atk_frbytrtn_d.mp3"
           },
           "hits": {
+            "0": "/assets/audio/sfx/player/p_imp/p_imp_frbytrtn_p.mp3",
             "1": "/assets/audio/sfx/player/p_imp/p_imp_frbytrtn_d.mp3",
             "2": "/assets/audio/sfx/player/p_imp/p_imp_frbytrtn_d.mp3"
           },
           "attackPools": {
+            "0": "battle.ON_ABILITY_START.char_2026_yu.attack.1",
             "1": "battle.ON_ABILITY_START.char_2026_yu.attack.2",
             "2": "battle.ON_ABILITY_START.char_2026_yu.attack.3"
           },
           "hitPools": {
+            "0": "battle.ON_ABILITY_HIT.char_2026_yu.attack.1",
             "1": "battle.ON_ABILITY_HIT.char_2026_yu.attack.2",
             "2": "battle.ON_ABILITY_HIT.char_2026_yu.attack.3"
           },
@@ -74879,7 +78320,7 @@
           "die": "/assets/audio/sfx/battle/b_char/b_char_dead.mp3",
           "born": "/assets/audio/sfx/battle/b_char/b_char_stwctpbn.mp3",
           "pools": {
-            "attack": "battle.ON_ABILITY_START.char_2027_wang.attack.1",
+            "attack": "battle.ON_ABILITY_ON.char_2027_wang.attack.0",
             "hit": "battle.ON_PROJECTILE_HIT.projectile_chr_wang"
           }
         },
@@ -74994,6 +78435,12 @@
           "skills": {
             "1": "/assets/audio/sfx/player/p_skill/p_skill_shphrtclspicc.mp3",
             "2": "/assets/audio/sfx/player/p_skill/p_skill_thrill_loop.mp3"
+          },
+          "attacks": {
+            "1": "/assets/audio/sfx/player/p_atk/p_atk_shphrt_s_1.mp3"
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_ON.char_245_cello.attack.1"
           }
         },
         "char_248_mgllan": {
@@ -75056,6 +78503,18 @@
             "0": "/assets/audio/sfx/player/p_skill/p_skill_nightshade.mp3",
             "1": "/assets/audio/sfx/player/p_skill/p_skill_nightraid.mp3",
             "2": "/assets/audio/sfx/player/p_skill/p_skill_gorgeousshow.mp3"
+          },
+          "attacks": {
+            "1": "/assets/audio/sfx/player/p_atk/p_atk_machete_fire.mp3"
+          },
+          "hits": {
+            "1": "/assets/audio/sfx/player/p_imp/p_imp_machete_fire.mp3"
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_ON.char_250_phatom.attack.1"
+          },
+          "hitPools": {
+            "1": "battle.ON_ABILITY_HIT.char_250_phatom.attack.1"
           }
         },
         "char_253_greyy": {
@@ -75141,6 +78600,12 @@
           "attack": "/assets/audio/sfx/player/p_atk/p_atk_shotgun_n.mp3",
           "pools": {
             "attack": "battle.ON_ABILITY_ON.char_279_excu.attack"
+          },
+          "attacks": {
+            "1": "/assets/audio/sfx/player/p_atk/p_atk_shotgun_double.mp3"
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_START.char_279_excu.attack.2"
           }
         },
         "char_290_vigna": {
@@ -75306,8 +78771,14 @@
             "1": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
             "2": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
           },
+          "attacks": {
+            "2": "/assets/audio/sfx/player/p_atk/p_atk_archet_s_cast.mp3"
+          },
           "hits": {
             "2": "/assets/audio/sfx/player/p_atk/p_atk_archet_s.mp3"
+          },
+          "attackPools": {
+            "2": "battle.ON_ABILITY_START.char_332_archet.attack.1"
           },
           "hitPools": {
             "2": "battle.ON_ABILITY_HIT.char_332_archet.attack.1"
@@ -75324,6 +78795,12 @@
           "skills": {
             "0": "/assets/audio/sfx/battle/b_char/b_char_healboost.mp3",
             "1": "/assets/audio/sfx/battle/b_char/b_char_tactboost.mp3"
+          },
+          "hits": {
+            "1": "/assets/audio/sfx/player/p_imp/p_imp_darksword_n.mp3"
+          },
+          "hitPools": {
+            "1": "battle.ON_ABILITY_HIT.char_337_utage.attack.2"
           }
         },
         "char_340_shwaz": {
@@ -75437,6 +78914,12 @@
           "skills": {
             "1": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
             "2": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
+          },
+          "hits": {
+            "2": "/assets/audio/sfx/player/p_imp/p_imp_ninjasword_h_1.mp3"
+          },
+          "hitPools": {
+            "2": "battle.ON_ABILITY_HIT.char_362_saga.attack.1"
           }
         },
         "char_373_lionhd": {
@@ -75989,7 +79472,23 @@
             "attack": "battle.ON_ABILITY_START.char_4087_ines.attack",
             "hit": "battle.ON_ABILITY_HIT.char_4087_ines.combat"
           },
-          "skill": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
+          "skill": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
+          "attacks": {
+            "1": "/assets/audio/sfx/player/p_atk/p_atk_insasn_h_2.mp3",
+            "2": "/assets/audio/sfx/player/p_atk/p_atk_insasn_s_2.mp3"
+          },
+          "hits": {
+            "1": "/assets/audio/sfx/player/p_imp/p_imp_insasn_h_1.mp3",
+            "2": "/assets/audio/sfx/player/p_imp/p_imp_insasn_s_1.mp3"
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_START.char_4087_ines.attack.1",
+            "2": "battle.ON_ABILITY_START.char_4087_ines.attack.2"
+          },
+          "hitPools": {
+            "1": "battle.ON_ABILITY_HIT.char_4087_ines.combat.1",
+            "2": "battle.ON_ABILITY_HIT.char_4087_ines.combat.2"
+          }
         },
         "char_4088_hodrer": {
           "attack": "/assets/audio/sfx/player/p_atk/p_atk_hdvysword_n.mp3",
@@ -76087,10 +79586,10 @@
           }
         },
         "char_4117_ray": {
-          "attack": "/assets/audio/sfx/player/p_atk/p_atk_sndshotgun_sreload.mp3",
+          "attack": "/assets/audio/sfx/player/p_atk/p_atk_sndshotgun_nreload.mp3",
           "hit": "/assets/audio/sfx/player/p_imp/p_imp_sndshotgun_n.mp3",
           "pools": {
-            "attack": "battle.ON_ABILITY_START.char_4117_ray.attack.3",
+            "attack": "battle.ON_ABILITY_START.char_4117_ray.attack.0.3",
             "hit": "battle.ON_PROJECTILE_HIT.projectile_chr_ray"
           },
           "skills": {
@@ -76391,10 +79890,12 @@
             "2": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
           },
           "hits": {
-            "1": "/assets/audio/sfx/player/p_imp/p_imp_snakeknife_h.mp3"
+            "1": "/assets/audio/sfx/player/p_imp/p_imp_snakeknife_h.mp3",
+            "2": "/assets/audio/sfx/player/p_atk/p_atk_robotsaw_n.mp3"
           },
           "hitPools": {
-            "1": "battle.ON_ABILITY_HIT.char_416_zumama.attack.1"
+            "1": "battle.ON_ABILITY_HIT.char_416_zumama.attack.1",
+            "2": "battle.ON_ABILITY_HIT.char_416_zumama.attack.2"
           }
         },
         "char_4179_monstr": {
@@ -76855,6 +80356,12 @@
             "0": "/assets/audio/sfx/player/p_atk/p_atk_vwgun_d.mp3",
             "1": "/assets/audio/sfx/player/p_atk/p_atk_vwgun_d_1.mp3",
             "2": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
+          },
+          "attacks": {
+            "2": "/assets/audio/sfx/player/p_atk/p_atk_vwgun_h_1.mp3"
+          },
+          "attackPools": {
+            "2": "battle.ON_ABILITY_START.char_427_vigil.attack.1"
           }
         },
         "char_430_fartth": {
@@ -76883,7 +80390,7 @@
           "attack": "/assets/audio/sfx/player/p_atk/p_atk_heavygun_n_cast.mp3",
           "hit": "/assets/audio/sfx/player/p_imp/p_imp_heavygun_n.mp3",
           "pools": {
-            "attack": "battle.ON_ABILITY_START.char_431_ashlok.attack.1",
+            "attack": "battle.ON_ABILITY_START.char_431_ashlok.attack.0.2",
             "hit": "battle.ON_PROJECTILE_HIT.projectile_chr_ashlok"
           },
           "attacks": {
@@ -76964,6 +80471,12 @@
             "0": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
             "1": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
             "2": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
+          },
+          "attacks": {
+            "2": "/assets/audio/sfx/player/p_atk/p_atk_prlfrhlrdrls.mp3"
+          },
+          "attackPools": {
+            "2": "battle.ON_ABILITY_ON.char_450_necras.attack.1"
           }
         },
         "char_469_indigo": {
@@ -77330,8 +80843,14 @@
           "attacks": {
             "0": "/assets/audio/sfx/player/p_atk/p_atk_prfsvlr_d.mp3"
           },
+          "hits": {
+            "0": "/assets/audio/sfx/player/p_imp/p_imp_prfsvlr_n.mp3"
+          },
           "attackPools": {
             "0": "battle.ON_ABILITY_ON.char_617_sharp2.attack.1"
+          },
+          "hitPools": {
+            "0": "battle.ON_ABILITY_HIT.char_617_sharp2.combat.1"
           }
         },
         "token_10000_silent_healrb": {
@@ -79184,6 +82703,224 @@
           "pools": {
             "attack": "battle.ON_ABILITY_START.enemy_2054_smdeer.attack"
           }
+        },
+        "char_109_fmout": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_START.char_109_fmout.attack"
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_ON.char_109_fmout.attack.1"
+          }
+        },
+        "char_133_mm": {
+          "attack": "/assets/audio/sfx/player/p_atk/p_atk_pistol_n.mp3",
+          "pools": {
+            "attack": "battle.ON_ABILITY_ON.char_133_mm.attack"
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_ON.char_133_mm.attack.1"
+          }
+        },
+        "char_135_halo": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_START.char_135_halo.attack",
+            "hit": "battle.ON_PROJECTILE_HIT.projectile_chr_halo"
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_START.char_135_halo.attack.1"
+          }
+        },
+        "char_198_blackd": {
+          "attack": "/assets/audio/sfx/player/p_atk/p_atk_circlesword_n.mp3",
+          "hit": "/assets/audio/sfx/player/p_imp/p_imp_circlesword_n.mp3",
+          "pools": {
+            "attack": "battle.ON_ABILITY_START.char_198_blackd.attack",
+            "hit": "battle.ON_ABILITY_HIT.char_198_blackd.attack"
+          }
+        },
+        "char_215_mantic": {
+          "attack": "/assets/audio/sfx/player/p_imp/p_imp_prick_n.mp3",
+          "pools": {
+            "attack": "battle.ON_ABILITY_ON.char_215_mantic.attack"
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_ON.char_215_mantic.attack.2"
+          }
+        },
+        "char_218_cuttle": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_ON.char_218_cuttle.attack",
+            "hit": "battle.ON_PROJECTILE_HIT.projectile_chr_cuttle"
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_ON.char_218_cuttle.attack.1"
+          }
+        },
+        "char_230_savage": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_START.char_230_savage.attack"
+          },
+          "skills": {
+            "1": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
+          }
+        },
+        "char_243_waaifu": {
+          "hit": "/assets/audio/sfx/player/p_atk/p_atk_punch_n.mp3",
+          "pools": {
+            "hit": "battle.ON_ABILITY_HIT.char_243_waaifu.attack"
+          },
+          "skill": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
+          "skills": {
+            "0": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
+            "1": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
+          }
+        },
+        "char_271_spikes": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_START.char_271_spikes.combat",
+            "hit": "battle.ON_ABILITY_HIT.char_271_spikes.combat"
+          },
+          "skill": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
+          "skills": {
+            "0": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
+            "1": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
+          },
+          "attackPools": {
+            "0": "battle.ON_ABILITY_ON.char_271_spikes.attack.1",
+            "1": "battle.ON_ABILITY_START.char_271_spikes.combat.2"
+          },
+          "hitPools": {
+            "1": "battle.ON_ABILITY_HIT.char_271_spikes.attack.2"
+          }
+        },
+        "char_304_zebra": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_START.char_304_zebra.attack",
+            "hit": "battle.ON_ABILITY_HIT.char_304_zebra.attack"
+          },
+          "skill": "/assets/audio/sfx/player/p_atk/p_atk_heal_n.mp3",
+          "skills": {
+            "0": "/assets/audio/sfx/player/p_atk/p_atk_heal_n.mp3",
+            "1": "/assets/audio/sfx/battle/b_char/b_char_defboost.mp3"
+          }
+        },
+        "char_345_folnic": {
+          "attack": "/assets/audio/sfx/player/p_atk/p_atk_healpistol_n.mp3",
+          "pools": {
+            "attack": "battle.ON_ABILITY_ON.char_345_folnic.attack"
+          },
+          "skill": "/assets/audio/sfx/battle/b_char/b_char_healboost.mp3",
+          "skills": {
+            "0": "/assets/audio/sfx/battle/b_char/b_char_healboost.mp3",
+            "1": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_ON.char_345_folnic.attack.1"
+          }
+        },
+        "char_348_ceylon": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_ON.char_348_ceylon.attack"
+          }
+        },
+        "char_355_ethan": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_ON.char_355_ethan.attack",
+            "hit": "battle.ON_ABILITY_HIT.char_355_ethan.attack"
+          },
+          "skill": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
+          "skills": {
+            "0": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3",
+            "1": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_ON.char_355_ethan.attack.2"
+          },
+          "hitPools": {
+            "1": "battle.ON_ABILITY_HIT.char_355_ethan.attack.2"
+          }
+        },
+        "char_4004_pudd": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_ON.char_4004_pudd.attack"
+          },
+          "hitPools": {
+            "1": "battle.ON_ABILITY_HIT.char_4004_pudd.attack.1"
+          }
+        },
+        "char_4045_heidi": {
+          "skill": "/assets/audio/sfx/battle/b_char/b_char_tactboost.mp3",
+          "skills": {
+            "0": "/assets/audio/sfx/battle/b_char/b_char_tactboost.mp3",
+            "1": "/assets/audio/sfx/battle/b_char/b_char_tactboost.mp3"
+          }
+        },
+        "char_4119_wanqin": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_START.char_4119_wanqin.attack",
+            "hit": "battle.ON_ABILITY_HIT.char_4119_wanqin.attack"
+          }
+        },
+        "char_422_aurora": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_ON.char_422_aurora.attack"
+          },
+          "skill": "/assets/audio/sfx/battle/b_char/b_char_defboost.mp3",
+          "skills": {
+            "0": "/assets/audio/sfx/battle/b_char/b_char_defboost.mp3",
+            "1": "/assets/audio/sfx/battle/b_char/b_char_atkboost.mp3"
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_ON.char_422_aurora.attack.2"
+          },
+          "hitPools": {
+            "0": "battle.ON_ABILITY_HIT.char_422_aurora.attack.1"
+          }
+        },
+        "char_449_glider": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_ON.char_449_glider.attack"
+          },
+          "attackPools": {
+            "1": "battle.ON_ABILITY_START.char_449_glider.attack.1"
+          }
+        },
+        "char_473_mberry": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_ON.char_473_mberry.attack",
+            "hit": "battle.ON_PROJECTILE_HIT.projectile_chr_mberry"
+          }
+        },
+        "enemy_1201_sfzhi": {
+          "die": "/assets/audio/sfx/enemy/e_imp/e_imp_spiritdie.mp3"
+        },
+        "enemy_1249_lysdb": {
+          "hit": "/assets/audio/sfx/enemy/e_imp/e_imp_mace_h.mp3",
+          "pools": {
+            "hit": "battle.ON_ABILITY_HIT.enemy_1249_lysdb.combat"
+          }
+        },
+        "enemy_1254_lypa": {
+          "hit": "/assets/audio/sfx/enemy/e_imp/e_imp_bigaxe_h.mp3",
+          "pools": {
+            "hit": "battle.ON_ABILITY_HIT.enemy_1254_lypa.combat.1"
+          }
+        },
+        "enemy_1275_dwlock": {
+          "attack": "/assets/audio/sfx/enemy/e_atk/e_atk_staffrot.mp3",
+          "pools": {
+            "attack": "battle.ON_ABILITY_START.enemy_1275_dwlock.attack"
+          }
+        },
+        "enemy_1373_ltnhor_2": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_ON.enemy_1373_ltnhor_2.attack.0"
+          }
+        },
+        "enemy_1376_ltndru": {
+          "pools": {
+            "attack": "battle.ON_ABILITY_ON.enemy_1376_ltndru.attack.0"
+          }
         }
       },
       "pools": {
@@ -79637,6 +83374,17 @@
             }
           }
         },
+        "battle.ON_ABILITY_ON.char_1021_kroos2.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_krossbow_n.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1,
+              "delay": 0
+            }
+          }
+        },
         "battle.ON_ABILITY_START.char_1023_ghost2.attack": {
           "maxSoundAllowed": 2,
           "popOldest": true,
@@ -80005,6 +83753,17 @@
           "popOldest": true,
           "sounds": {
             "player/p_atk/p_atk_pistolup_d.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_START.char_1034_jesca2.attack.2": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_carbine_n.mp3": {
               "minPitch": 0.8,
               "maxPitch": 1.2,
               "delay": 0
@@ -80758,6 +84517,17 @@
             }
           }
         },
+        "battle.ON_ABILITY_START.char_107_liskam.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_lightning_n.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1,
+              "delay": 0
+            }
+          }
+        },
         "battle.ON_ABILITY_ON.char_108_silent.attack": {
           "maxSoundAllowed": 2,
           "popOldest": true,
@@ -80912,6 +84682,28 @@
             }
           }
         },
+        "battle.ON_ABILITY_ON.char_140_whitew.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_katanawave_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_140_whitew.combat.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_katanawave_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
         "battle.ON_ABILITY_START.char_143_ghost.attack": {
           "maxSoundAllowed": 2,
           "popOldest": true,
@@ -80945,22 +84737,22 @@
             }
           }
         },
-        "battle.ON_ABILITY_START.char_1502_crosly.attack.4": {
+        "battle.ON_ABILITY_START.char_1502_crosly.attack.0.1": {
           "maxSoundAllowed": 2,
           "popOldest": true,
           "sounds": {
-            "player/p_atk/p_atk_asndgrbm.mp3": {
+            "player/p_atk/p_atk_asndgr_n.mp3": {
               "minPitch": 0.8,
               "maxPitch": 1.2,
               "delay": 0
             }
           }
         },
-        "battle.ON_ABILITY_HIT.char_1502_crosly.attack.3": {
+        "battle.ON_ABILITY_HIT.char_1502_crosly.attack.0.1": {
           "maxSoundAllowed": 2,
           "popOldest": true,
           "sounds": {
-            "player/p_imp/p_imp_asndgrsmk.mp3": {
+            "player/p_imp/p_imp_asndgr_n.mp3": {
               "minPitch": 0.8,
               "maxPitch": 1.2,
               "delay": 0
@@ -80983,6 +84775,17 @@
           "popOldest": true,
           "sounds": {
             "player/p_imp/p_imp_asndgr_d.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_1502_crosly.attack.3": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_asndgrsmk.mp3": {
               "minPitch": 0.8,
               "maxPitch": 1.2,
               "delay": 0
@@ -81027,6 +84830,28 @@
           "popOldest": true,
           "sounds": {
             "player/p_imp/p_imp_spear_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_172_svrash.attack.2": {
+          "maxSoundAllowed": 3,
+          "popOldest": false,
+          "sounds": {
+            "player/p_imp/p_imp_sword_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_172_svrash.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_sword_n.mp3": {
               "minPitch": 0.8,
               "maxPitch": 1.2,
               "delay": 0
@@ -81139,6 +84964,17 @@
             "player/p_imp/p_imp_falchion_s.mp3": {
               "minPitch": 1,
               "maxPitch": 1,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_188_helage.attack.2": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_skill/p_skill_huirenzhan.mp3": {
+              "minPitch": 1.1,
+              "maxPitch": 1.1,
               "delay": 0
             }
           }
@@ -81484,6 +85320,28 @@
             }
           }
         },
+        "battle.ON_ABILITY_START.char_2026_yu.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_frbytrtn_p.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_2026_yu.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_frbytrtn_p.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
         "battle.ON_ABILITY_START.char_2026_yu.attack.2": {
           "maxSoundAllowed": 2,
           "popOldest": true,
@@ -81506,7 +85364,7 @@
             }
           }
         },
-        "battle.ON_ABILITY_START.char_2027_wang.attack.1": {
+        "battle.ON_ABILITY_ON.char_2027_wang.attack.0": {
           "maxSoundAllowed": 2,
           "popOldest": true,
           "sounds": {
@@ -81724,6 +85582,27 @@
             }
           }
         },
+        "battle.ON_ABILITY_ON.char_245_cello.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_shphrt_s_1.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1,
+              "delay": 0
+            },
+            "player/p_atk/p_atk_shphrt_s_2.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1,
+              "delay": 0
+            },
+            "player/p_atk/p_atk_shphrt_s_3.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1,
+              "delay": 0
+            }
+          }
+        },
         "battle.ON_ABILITY_ON.char_248_mgllan.attack": {
           "maxSoundAllowed": 2,
           "popOldest": true,
@@ -81861,6 +85740,28 @@
           "popOldest": true,
           "sounds": {
             "player/p_imp/p_imp_knife_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_250_phatom.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_machete_fire.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_250_phatom.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_machete_fire.mp3": {
               "minPitch": 0.8,
               "maxPitch": 1.2,
               "delay": 0
@@ -82007,6 +85908,17 @@
               "minPitch": 0.8,
               "maxPitch": 1.2,
               "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_START.char_279_excu.attack.2": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_shotgun_double.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0.1
             }
           }
         },
@@ -82301,6 +86213,17 @@
             }
           }
         },
+        "battle.ON_ABILITY_START.char_332_archet.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_archet_s_cast.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1,
+              "delay": 0
+            }
+          }
+        },
         "battle.ON_ABILITY_HIT.char_332_archet.attack.1": {
           "maxSoundAllowed": 1,
           "popOldest": true,
@@ -82328,6 +86251,17 @@
           "popOldest": true,
           "sounds": {
             "player/p_imp/p_imp_sword_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_337_utage.attack.2": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_darksword_n.mp3": {
               "minPitch": 0.8,
               "maxPitch": 1.2,
               "delay": 0
@@ -82528,6 +86462,17 @@
             "player/p_imp/p_imp_ninjasword_n.mp3": {
               "minPitch": 0.8,
               "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_362_saga.attack.1": {
+          "maxSoundAllowed": 1,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_ninjasword_h_1.mp3": {
+              "minPitch": 0.9,
+              "maxPitch": 1.1,
               "delay": 0
             }
           }
@@ -83555,6 +87500,50 @@
             }
           }
         },
+        "battle.ON_ABILITY_START.char_4087_ines.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_insasn_h_2.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_4087_ines.combat.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_insasn_h_1.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_START.char_4087_ines.attack.2": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_insasn_s_2.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_4087_ines.combat.2": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_insasn_s_1.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
         "battle.ON_ABILITY_START.char_4088_hodrer.attack": {
           "maxSoundAllowed": 2,
           "popOldest": true,
@@ -83780,11 +87769,11 @@
             }
           }
         },
-        "battle.ON_ABILITY_START.char_4117_ray.attack.3": {
+        "battle.ON_ABILITY_START.char_4117_ray.attack.0.3": {
           "maxSoundAllowed": 2,
           "popOldest": true,
           "sounds": {
-            "player/p_atk/p_atk_sndshotgun_sreload.mp3": {
+            "player/p_atk/p_atk_sndshotgun_nreload.mp3": {
               "minPitch": 0.8,
               "maxPitch": 1.2,
               "delay": 0
@@ -84346,6 +88335,17 @@
           "popOldest": true,
           "sounds": {
             "player/p_imp/p_imp_snakeknife_h.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_416_zumama.attack.2": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_robotsaw_n.mp3": {
               "minPitch": 0.8,
               "maxPitch": 1.2,
               "delay": 0
@@ -85298,6 +89298,17 @@
             }
           }
         },
+        "battle.ON_ABILITY_START.char_427_vigil.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_vwgun_h_1.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
         "battle.ON_ABILITY_ON.char_430_fartth.attack": {
           "maxSoundAllowed": 2,
           "popOldest": true,
@@ -85342,7 +89353,7 @@
             }
           }
         },
-        "battle.ON_ABILITY_START.char_431_ashlok.attack.1": {
+        "battle.ON_ABILITY_START.char_431_ashlok.attack.0.2": {
           "maxSoundAllowed": 2,
           "popOldest": true,
           "sounds": {
@@ -85492,6 +89503,17 @@
             "player/p_imp/p_imp_prlfrhlrd_n.mp3": {
               "minPitch": 0.8,
               "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_450_necras.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_prlfrhlrdrls.mp3": {
+              "minPitch": 0.9,
+              "maxPitch": 1.1,
               "delay": 0
             }
           }
@@ -86128,6 +90150,17 @@
           "popOldest": true,
           "sounds": {
             "player/p_atk/p_atk_prfsvlr_d.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_617_sharp2.combat.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_prfsvlr_n.mp3": {
               "minPitch": 0.8,
               "maxPitch": 1.2,
               "delay": 0
@@ -89592,6 +93625,512 @@
           "popOldest": true,
           "sounds": {
             "enemy/e_imp/e_imp_slstrmnhg_n_u.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_START.char_109_fmout.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_anmag_n.mp3": {
+              "minPitch": 0.9,
+              "maxPitch": 1.1,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_109_fmout.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_aoe/p_aoe_nmag_h.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_133_mm.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_pistol_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_133_mm.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_stunpistol_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_START.char_135_halo.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_electricstick_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_PROJECTILE_HIT.projectile_chr_halo": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_electricstick_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_START.char_135_halo.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_electricstick_h.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_START.char_198_blackd.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_circlesword_n.mp3": {
+              "minPitch": 0.95,
+              "maxPitch": 1.15,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_198_blackd.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_circlesword_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_215_mantic.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_prick_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_215_mantic.attack.2": {
+          "maxSoundAllowed": 1,
+          "popOldest": false,
+          "sounds": {
+            "player/p_imp/p_imp_prick_h.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_218_cuttle.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_inkgun_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_PROJECTILE_HIT.projectile_chr_cuttle": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_inkgun_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_218_cuttle.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_inkgun_h.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_START.char_230_savage.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_axe_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_243_waaifu.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_punch_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_START.char_271_spikes.combat": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_magclose_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0.15
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_271_spikes.combat": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_magclose_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_271_spikes.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_magexplo_s.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_START.char_271_spikes.combat.2": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_magclose_h.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_271_spikes.attack.2": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_magfar_h.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_START.char_304_zebra.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_flail.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_304_zebra.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_flail.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_345_folnic.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_healpistol_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_345_folnic.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_milkcannon_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_348_ceylon.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_heal_water.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_355_ethan.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_yoyo_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0.05
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_355_ethan.attack": {
+          "maxSoundAllowed": 1,
+          "popOldest": false,
+          "sounds": {
+            "player/p_imp/p_imp_yoyo_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_355_ethan.attack.2": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_yoyo_h.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_355_ethan.attack.2": {
+          "maxSoundAllowed": 1,
+          "popOldest": false,
+          "sounds": {
+            "player/p_imp/p_imp_yoyo_h.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1.4,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_4004_pudd.attack": {
+          "maxSoundAllowed": 0,
+          "popOldest": false,
+          "sounds": {
+            "player/p_atk/p_atk_elecsealmag_n.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_4004_pudd.attack.1": {
+          "maxSoundAllowed": 0,
+          "popOldest": false,
+          "sounds": {
+            "player/p_atk/p_atk_elecsealmag_h.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_START.char_4119_wanqin.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_srvygnmp_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_4119_wanqin.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_srvygnmp_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_422_aurora.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_metalshield_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.char_422_aurora.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_metalshield_h.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_422_aurora.attack.2": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_metalshield_s.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_449_glider.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_berryheal_n.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_START.char_449_glider.attack.1": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_berryheal_s.mp3": {
+              "minPitch": 1,
+              "maxPitch": 1,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.char_473_mberry.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_atk/p_atk_batonsheal_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_PROJECTILE_HIT.projectile_chr_mberry": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "player/p_imp/p_imp_batonsheal_n.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.enemy_1249_lysdb.combat": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "enemy/e_imp/e_imp_mace_h.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_HIT.enemy_1254_lypa.combat.1": {
+          "maxSoundAllowed": 1,
+          "popOldest": true,
+          "sounds": {
+            "enemy/e_imp/e_imp_bigaxe_h.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_START.enemy_1275_dwlock.attack": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "enemy/e_atk/e_atk_staffrot.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.enemy_1373_ltnhor_2.attack.0": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "enemy/e_atk/e_atk_hrnply.mp3": {
+              "minPitch": 0.8,
+              "maxPitch": 1.2,
+              "delay": 0
+            }
+          }
+        },
+        "battle.ON_ABILITY_ON.enemy_1376_ltndru.attack.0": {
+          "maxSoundAllowed": 2,
+          "popOldest": true,
+          "sounds": {
+            "enemy/e_atk/e_atk_drmmgc.mp3": {
               "minPitch": 0.8,
               "maxPitch": 1.2,
               "delay": 0

@@ -4,7 +4,6 @@
 // Installed on Match.prototype by server/match/Match.js (a method container: never instantiated; `this` is the match).
 
 import { PHASE } from '../../../shared/constants.js';
-import { botPrepBeginSteps, botPrepEndSteps } from '../bot.js';
 import { testSlice } from '../testTrace.js';
 import { DELAYS } from './common.js';
 
@@ -54,8 +53,11 @@ export class MatchPrep {
    * @returns {number|null}
    */
   prepDeadlineSeconds() {
-    // SOLO only — NOT `soloUntimed`, which is also true for the lone-human co-op room this whole guard exists for.
-    if (this.isSolo) return null;
+    // 维护者口径（与 infra.js `soloUntimed` 的注释同一条）：**历史版本的 solo 走它自己的计时** ——
+    // `config.version.rules.soloTimed === true` 就是"这一期的 solo 有时限"，此时 prep 也要计时；
+    // 「不限时」打开、或该版本没有这个字段（今天的默认版本）时才是 null。
+    // 注意不能写成 `if (this.isSolo) return null` —— 那会把历史版本的 solo 计时一起关掉。
+    if (this.isSolo && this.soloUntimed) return null;
     const declared = this.gd.prepTime(this.round);
     if (declared != null) return declared;
     return this.prepFallbackGuard ? this.gd.timer('infoCheck') : null;
@@ -91,6 +93,7 @@ export class MatchPrep {
       try {
         do {
           r = gen.next();
+          if (!r || typeof r.done !== 'boolean') throw new TypeError('Bot prep hooks must return a synchronous iterator');
           if (sliceCtl) sliceCtl.note(1);
         } while (!r.done && !(sliceCtl ? sliceCtl.wall(now() - t0, this.botSliceMs) : (bounded && now() - t0 >= this.botSliceMs))); // loop-cap: generator and the bot time slice
       } catch (e) {
@@ -110,7 +113,7 @@ export class MatchPrep {
     };
     const end = (job) => {
       let gen = null;
-      try { gen = botPrepEndSteps(this, ps, job); } catch (e) { this.reportError(`bot ${ps.playerId}`, e); }
+      try { gen = this.bot.prepEnd(this, ps, job); } catch (e) { this.reportError(`bot ${ps.playerId}`, e); }
       if (!gen) { ready(); return; }
       drive(gen, '', ready);
     };
@@ -132,9 +135,12 @@ export class MatchPrep {
       if (bounded) this.later(0, slice);
       else slice();
     };
-    this.later(this.scaled(DELAYS.BOT_ACTION + i * DELAYS.BOT_STAGGER), () => {
+    const begin = () => {
       if (!valid()) return;
-      drive(botPrepBeginSteps(this, ps, { delegate: this.botRehearsalDelegate }), '', (job) => {
+      let gen;
+      try { gen = this.bot.prepBegin(this, ps, { delegate: this.botRehearsalDelegate, pooled: !!this.simPool }); }
+      catch (e) { this.reportError(`bot ${ps.playerId}`, e); end(null); return; }
+      drive(gen, '', (job) => {
         if (!job) { end(null); return; }
         // A job is finished when it has nothing left to simulate: the server's own run over the candidates, or — with a
         // delegated one — the host's pick, which MatchRehearsal accepts as soon as it arrives, possibly while the
@@ -156,6 +162,12 @@ export class MatchPrep {
         }
         runJob(job);
       });
+    };
+    this.later(this.scaled(DELAYS.BOT_ACTION + i * DELAYS.BOT_STAGGER), () => {
+      if (!valid()) return;
+      if (this.bot.decide?.(this, ps, { kind: 'prep', valid, complete: () => ps.ready,
+        fallback: () => this.later(0, begin) })) return;
+      begin();
     });
   }
 

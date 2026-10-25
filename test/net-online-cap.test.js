@@ -9,6 +9,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { startServer } from '../server/index.js';
+// 本仓库的线格式号是 2（上游是 1）；hello 里对不上的号一律 BAD_MSG。
+import { PROTOCOL_VERSION } from '../shared/constants.js';
 import { TestClient } from './helpers/wsClient.js';
 
 /** Start a server on a free port, run `fn({ url })`, and always close it. */
@@ -50,7 +52,7 @@ test('a full server refuses the next new player with SERVER_FULL, and leaves the
       await bob.close();
 
       // the player already inside keeps playing: a repeat hello on that socket is still answered
-      const again = await alice.request({ t: 'hello', name: 'Alice', version: 1 });
+      const again = await alice.request({ t: 'hello', name: 'Alice', version: PROTOCOL_VERSION });
       assert.equal(again.t, 'welcome');
     } finally {
       await alice.close();
@@ -99,7 +101,7 @@ test('at the cap a live token with noReplace is refused by the claim rule (SESSI
       });
       // the first socket was not detached: the old player keeps the seat
       assert.equal(alice.isOpen, true);
-      const again = await alice.request({ t: 'hello', name: 'Alice', version: 1 });
+      const again = await alice.request({ t: 'hello', name: 'Alice', version: PROTOCOL_VERSION });
       assert.equal(again.t, 'welcome');
     } finally {
       await second.close();

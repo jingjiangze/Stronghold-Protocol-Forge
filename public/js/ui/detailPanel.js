@@ -37,7 +37,7 @@
 import { BondTimers } from './bondTimers.js';
 import { useEffect } from '../../vendor/hooks.module.js';
 import { html, Icon, TierChip, MicroLabel, Button, confirmDialog, useTicker } from './components.js';
-import { Img, RichText, UnitThumb, BondGlyph, GIcon, diyToken } from './gameComponents.js';
+import { Img, RichText, UnitThumb, OperatorImage, BondGlyph, GIcon, diyToken } from './gameComponents.js';
 import { attackInterval, rangeGridBox, fmtNum, tileKey, chessLoadout, nextThreshold, bondTier, briefingBondTip, pieceBondIds, grantedBonds, morphPairings, slotPolicy, ownStandIn, standInOf, standInLoadout, standInLabel, standInTip, standInForText, ownDiyRecord, ownDiyPick, diyRecordFor, pickGetter, availableVoiceLangs, unitPick, unitCultivation } from './gameLogic.js';
 import { updateSettings, settingsStore, useSettings } from './settings.js';
 import { dubsInstalled } from '../voiceDubs.js';
@@ -418,6 +418,8 @@ function skillTextNote(sk) {
   return note ? html`<p class="dhint dhint--rule" data-skill-note=${sk.skillId}><${Icon} name="info" />${t(note)}</p>` : null;
 }
 
+// `ownerId` / `skin` 来自 resolveDetail（形参表末尾那两项）：详情页的大图也要按**这一颗棋子属于哪个座位**的
+// 皮肤画，否则同一个人在手牌、详情、结算三处会是三张不同的图。
 export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bonds, offBonds = null, loadout, onBond, live = null, hint = null, unitItems = null, standIn = null, diy = null, voiceSettings = null, cultOpts = null, morphMode = 'official', onUnequip = null, ownerId = null, skin = null }) {
   const m = data.get('assets');
   const hp = hpOf(live, snapHp);
@@ -460,7 +462,7 @@ export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bond
   blocks.head = html`
     <div key="head" class="dhead">
       <div class=${cx('dhead__art', golden && 'is-golden', `dhead__art--t${c.tier}`)}>
-        <${Img} src=${portraitUrlOf(m, body, { lookup: currentAppearanceLookup() })} fallback=${html`<${UnitThumb} kind="chess" id=${c.chessId} size="lg" rec=${si} />`} />
+        <${OperatorImage} m=${m} chess=${body} ownerId=${ownerId} skin=${skin} portrait avatarFallback fallback=${html`<${UnitThumb} kind="chess" id=${c.chessId} size="lg" rec=${si} ownerId=${ownerId} skin=${skin} />`} />
       </div>
       <div class="dhead__info">
         <div class="dhead__chips">

@@ -93,6 +93,18 @@ workshop/<packId>/
 | `skins` | **已实现，见 §1.17** | 干员时装（皮肤）与「换装」Tab | 写成 `skins: [{ id, charId, name, art?, voices? }]`（一套外观的**数据**）；**哪一套生效**由一个注册了的外观提供者决定（C 层面板导出的 `appearance(ctx)`），玩家可以用设置里的「工坊外观」整个关掉。只装数据包不会有画面变化 —— 那需要那个提供者。**不要**改成 `art.chars[<charId>]`：那给的是**唯一一套**素材，换不了装 |
 | `official` / `config` / `meta` / `shared` / `theme` / `serverModules` | `PACK_UNKNOWN_FIELD` | 官方口径文件 / 规则改写 / match 元注册表 / 共享层补丁 / 主题 / 服务端模块 | **刻意没有通道**（`config` 见下面那一段；其余是引擎特性或 wire 契约，按 `AGENTS.md`「Official first … the maintainer's decision only」）。**判断一字不变**；属于「**引擎先实现、包只声明**」那一类规则改动走 §1.22 的 `behaviour`（唯一入口）—— **不是**这六个键复活 |
 
+**已知的旧写法（2026-10-25 复验 0.20.0 时实地见到的，不是猜的）**：
+
+| 旧写法 | 现在的报错 | 今天该往哪儿写 |
+|---|---|---|
+| `pack.json` 顶层 `stripDiyOverlaps` | `PACK_UNKNOWN_FIELD` | 这个开关没有对应通道：自选编队的叠放由引擎自己按
+  棋子类型决定，包看不到也不该关。删掉这个键即可，其余字段照常生效。 |
+| `client.panels[].wraps: "briefing.bonds"` | `CLIENT_WRAP_UNKNOWN_COMPONENT` | 包裹点闭集在
+  `shared/modSurface.js CLIENT_WRAP_COMPONENTS`：`briefing.bonds` 不是本版本渲染的引擎组件。要在大厅侧栏 /
+  房间聊天这类位置挂东西，用 §1.9 的**挂载点**（`screen.lobby.aside` 等十六个），不要包组件。 |
+
+这两条来自本地草稿目录里几个旧包的实测；商店现有 30 个包在同一支引擎上 **30/30 装上、0 被拒**。
+
 `content` 只接受上表列出的文件，而且**不认识的条目点名整包拒绝**（`UNKNOWN_CONTENT_FILE`）—— 从前它是安静过滤掉的，
 作者看到的是「包合法、我写的那件事没发生」。**`config` 被刻意排除**：一个能改写经济、回合表或难度参数的包改的是
 规则而不是内容，那需要另一套审查机制，不在本功能范围内。**`behaviour`（§1.22）不是 `config` 换了个名字**：它只收

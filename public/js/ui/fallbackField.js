@@ -22,7 +22,8 @@
 import { render } from '../../vendor/preact.module.js';
 import { html, TierChip } from './components.js';
 import { GEO } from '../../../shared/constants.js';
-import { itemIconUrl, tokenAvatarUrl, enemyIconUrl } from './assetUrls.js';
+import { itemIconUrl, tokenAvatarUrl, enemyIconUrl, chessAvatarUrl } from './assetUrls.js';
+import { ownerSkin } from './skins.js';
 import { avatarUrlOf, currentAppearanceLookup } from './portraitChain.js';
 import { layoutOf, mapRectOf } from '../render/layout.js';
 import { penRect } from '../render/pen.js';
@@ -34,11 +35,22 @@ const DMG_TTL = 900;
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
 
 /** Avatar URL for a UnitInfo `avatar` asset id (chars / E2 / tokens / enemies). */
-export function unitArt(m, info, appearance = {}) {
+export function unitArt(m, info, opts = {}) {
   const id = info?.avatar || info?.defId;
   if (!m || !id) return null;
   if (info.side === 'enemy' || String(id).startsWith('enemy_')) return enemyIconUrl(m, id);
   if (String(id).startsWith('token_')) return tokenAvatarUrl(m, id);
+  // 皮肤看**这一颗棋子属于哪个座位**（`info.ownerId`），不是"我"的：补位 / 自选编队画出来的那一张
+  // 应当是座位上那位博士选的外观；`otherSkins: false`（设置里关掉别人的外观）时 ownerSkin 返回 null，
+  // 于是回落到原画 —— 这就是「别人的皮肤我看不看」那条开关的落点。
+  // 键用**正在画的那个 id**（补位画的是替身的 `avatar`，自选编队画的是填进去的干员）：
+  // 皮肤的图挂在 `chars[<id>].skins[<皮肤>]` 上，用 `standInFor` 去查会拿到另一个人那张图。
+  const skinKey = id;
+  const skin = ownerSkin(skinKey, { ...opts, ownerId: info.ownerId, skin: info.skin });
+  if (skin) {
+    const bySkin = chessAvatarUrl(m, { assets: { avatar: id }, charId: skinKey, isGolden: !!info.golden }, { skin });
+    if (bySkin) return bySkin;
+  }
   // 走统一解析链（0.2.4 起每一个头像 / 立绘消费点都接它）：同一颗棋子在结算页、手牌、补位板上是同一张图。
   return avatarUrlOf(m, { isGolden: !!info.golden, assets: { avatar: id } }, { lookup: currentAppearanceLookup() });
 }

@@ -1413,6 +1413,7 @@
   "原版模式（按难度）": "Original mode (by difficulty)",
   "改变玩法的插件会改变本房间的数据与规则；这样的对局为非官方对局，不计入统计总览。": "Gameplay plugins change this room's data and rules; such a match is unofficial and stays out of the statistics overview.",
   "本服务器没有可在房间中使用的插件": "This server has no plugins for rooms",
+  "本机缺少本房间声明的模组，补齐后才能开始": "This machine is missing the mods this room declares; complete them before starting.",
   "适配 {app}，本服务器是 {version}（改变玩法的插件不能启用）": "Made for {app}; this server runs {version} (a gameplay plugin cannot be switched on)",
   "非官方：本局使用了改变玩法的插件（{n} 个），不计入统计总览": "Unofficial: this match uses gameplay plugins ({n}) and stays out of the statistics overview",
   "本房间使用了改变玩法的插件（非官方）": "This room uses gameplay plugins (unofficial)",

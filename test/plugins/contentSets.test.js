@@ -19,7 +19,7 @@ const APP = '0.3.0-dev';
 const SIM = 'f'.repeat(64);
 
 /** A built set of one plugin `id` whose patched bonds file says `tag` (`broken`: its cs is not its manifest's). */
-function fakeBuilt(id, tag, { broken = false } = {}) {
+function fakeBuilt(id, tag, { broken = false, code = null } = {}) {
   const body = Buffer.from(JSON.stringify({ tag }));
   const plugins = [{ id, version: '1.0.0', files: { 'p.json': sha(Buffer.from(id)) } }];
   const cs = broken ? 'ab'.repeat(32) : contentHashOf({ app: APP, sim: SIM, data: { bonds: sha(body) }, plugins, settings: {} });
@@ -27,7 +27,7 @@ function fakeBuilt(id, tag, { broken = false } = {}) {
     data: { bonds: { url: `/cs/${cs.slice(0, 16)}/data/bonds.json`, sha256: sha(body), bytes: body.length } }, i18n: {} };
   const files = new Map([['data/bonds.json', { body, sha256: sha(body), bytes: body.length }],
     ['index.json', { body: Buffer.from(JSON.stringify(index)), sha256: sha(Buffer.from(JSON.stringify(index))), bytes: 1 }]]);
-  return { built: { cs, vanilla: false, plugins: [{ id, version: '1.0.0', hash: sha(Buffer.from(id)) }], data: { bonds: { tag } }, modes: [], index, warnings: [], kitted: null, problems: [] }, files };
+  return { built: { cs, vanilla: false, plugins: [{ id, version: '1.0.0', hash: sha(Buffer.from(id)) }], data: { bonds: { tag } }, modes: [], index, warnings: [], kitted: null, problems: [], ...(code ? { code } : {}) }, files };
 }
 
 const DEF = { x: { type: 'integer', min: 0, max: 9, default: 0 } };
@@ -39,16 +39,18 @@ function harness({ maxSets = 4 } = {}) {
   const filesBy = new WeakMap();
   const made = { a: () => fakeBuilt('a', `a:${plugins.a.content.hash}`), b: () => fakeBuilt('b', 'b'), t: () => fakeBuilt('t', 't'), bad: () => fakeBuilt('a', 'x', { broken: true }) };
   let next = null;
+  let code = null;
   const build = ({ ids }) => {
     calls.push(ids.map((x) => (typeof x === 'string' ? x : `${x.id}+${JSON.stringify(x.settings)}`)).join(','));
     const key = next || (typeof ids[0] === 'string' ? ids[0] : ids[0].id);
     const { built, files } = made[key]();
+    if (code) built.code = code;
     filesBy.set(built, files);
     return built;
   };
   const sets = createContentSets({ registry: { plugin: (id) => plugins[id] || null }, vanillaData: { config: { modes: {} } }, maxSets: () => maxSets,
     build, filesOf: (built) => filesBy.get(built) });
-  return { sets, plugins, calls, breakNext: (on) => { next = on ? 'bad' : null; } };
+  return { sets, plugins, calls, breakNext: (on) => { next = on ? 'bad' : null; }, setCode: (c) => { code = c; } };
 }
 
 test('the same plugins, in the same state, with the same settings, are not built again', () => {
@@ -114,3 +116,21 @@ test('a set whose manifest does not hash to its cs is never used; the limit; wha
   sets.release(a.cs);
   assert.equal(sets.inUse(), 0);
 });
+
+test('code.match reaches the set, and a kept set of the same cs is adopted again when it changes', () => {
+  const { sets, plugins, calls, setCode } = harness();
+  const oneMod = { roots: [{ id: 'a', root: '/p/a', match: 'server/one.js' }], match: 'server/one.js' };
+  setCode(oneMod);
+  const one = sets.resolve(['a']).set;
+  assert.deepEqual(one.code, oneMod, 'the plugin Match module is on the set (the match host imports it)');
+  assert.equal(sets.resolve(['a']).set, one, 'the same code: the kept set');
+  // the plugin's manifest changed (its code.match moved in plugin.json): same data, same cs, another Match module
+  plugins.a = { ...plugins.a, manifest: { ...plugins.a.manifest, code: { match: 'server/two.js' } } };
+  setCode({ roots: [{ id: 'a', root: '/p/a', match: 'server/two.js' }], match: 'server/two.js' });
+  const two = sets.resolve(['a']).set;
+  assert.equal(two.cs, one.cs, 'paths into the plugin directory are not content');
+  assert.notEqual(two, one, 'not the kept set: its code moved');
+  assert.equal(two.code.match, 'server/two.js');
+  assert.deepEqual(calls, ['a', 'a']);
+});
+

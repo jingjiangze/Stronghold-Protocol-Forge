@@ -83,6 +83,8 @@ export function createMatchHosts({ contents, log = noopLog, options = {} }) {
       const set = contents.get(cs);
       const files = set ? contents.dataBytes(cs) : null;
       if (!set || !files) throw new HostError(ERR.INTERNAL, `the content set ${csUrlPart(cs)} is not kept by this server`);
+      const top = Array.isArray(set.code?.roots) ? set.code.roots[set.code.roots.length - 1] : null;
+      if (top) log.info(`[plugins] match host ${this.tag} runs the plugin match ${top.id}/${top.match}`);
       const scripts = set.scripts || [];
       if (scripts.length) verifyScripts(scripts, set.hashInput);
       const sandbox = scriptExecution(scripts) === 'sandbox';
@@ -97,6 +99,8 @@ export function createMatchHosts({ contents, log = noopLog, options = {} }) {
       this.idleTimer = null;
       const init = {
         cs, hashInput: set.hashInput, files, bounds: set.bounds ?? null, scripts, sandbox,
+        // code.match（插件自带对局入口）：worker 里按它 import，取代 ../Match.js
+        ...(set.code ? { code: set.code } : {}),
         // PLUGIN API v2: the set's interaction windows (docs/PLUGINS.md §10b) — data only; the host injects them into
         // every match it runs (server/match/host/entry.js), so the engine owns the window and no plugin code runs here
         offers: Array.isArray(set.offers) ? set.offers : [],

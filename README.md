@@ -2,7 +2,7 @@
 
 《明日方舟》季节性自走棋塔防玩法「卫戍协议：盟约」的**非官方同人复刻**：浏览器即开即玩，单人或 1–4 人联机合作。
 
-![version](https://img.shields.io/badge/version-0.3.2-2ea44f)
+![version](https://img.shields.io/badge/version-0.20.0-2ea44f)
 ![license](https://img.shields.io/badge/code%20license-GPL--3.0--or--later-blue)
 ![node](https://img.shields.io/badge/node-22%20%7C%2024-339933)
 
@@ -374,7 +374,7 @@ npm run editor                                                                  
 
 - **独立模拟**（单人）与**同盟模拟**（1–4 人**合作**，没有 PvP；空位可以加 AI 队友）。
 - 服务器是一个 Node.js 程序，**战斗在各玩家的浏览器里模拟**（和官方一样），服务器只管经济与回合，一台低功耗小主机就能开服。
-- 当前版本 0.3.2：默认提供四个官方版本切换，补齐早期版本规则、干员技能与头像／模型／特效；重做战斗伤判结算并修复首领技能节奏，更新大厅、等待室、调配与开场界面，增加界面大小、观战者接替 AI 等设置，并补齐社区反馈、插件与开服稳定性修复，详见 [CHANGELOG.md](CHANGELOG.md)。仍有少数规则按推断实现，与官方不一致的地方欢迎在 Issue 里反馈。
+- 当前版本 0.20.0（上游 v0.3.2）：默认提供四个官方版本切换，补齐早期版本规则、干员技能与头像／模型／特效；重做战斗伤判结算并修复首领技能节奏，更新大厅、等待室、调配与开场界面，增加界面大小、观战者接替 AI 等设置，并补齐社区反馈、插件与开服稳定性修复，详见 [CHANGELOG.md](CHANGELOG.md)。仍有少数规则按推断实现，与官方不一致的地方欢迎在 Issue 里反馈。
 
 ### 功能一览
 
@@ -454,8 +454,8 @@ npm start          # 启动服务器：http://localhost:3000
 
 | 常量 | 今天是 | 读法 |
 |---|---|---|
-| `APP_VERSION` | `'0.19.1'`（`:34`） | 本仓库自己的版本，**必须是三段普通 semver**。资源 SW 的缓存名认它（`public/js/resources/common.js CACHE_NAME`），所以**抬它本身就是「换版即换缓存名」** |
-| `UPSTREAM_VERSION` | `'0.3.0'`（`:46`） | 上游那一半；与 `docs/history/` 的最新一节必须**一起动**（`test/docs-consistency.test.js` 的「UPSTREAM_VERSION matches the newest docs/history section」钉住了这条） |
+| `APP_VERSION` | `'0.20.0'`（`:34`） | 本仓库自己的版本，**必须是三段普通 semver**。资源 SW 的缓存名认它（`public/js/resources/common.js CACHE_NAME`），所以**抬它本身就是「换版即换缓存名」** |
+| `UPSTREAM_VERSION` | `'0.3.2'`（`:46`） | 上游那一半；与 `docs/history/` 的最新一节必须**一起动**（`test/docs-consistency.test.js` 的「UPSTREAM_VERSION matches the newest docs/history section」钉住了这条） |
 | `PROTOCOL_VERSION` | `2`（`:16`） | WebSocket 线上格式的版本，**不是**给包用的 |
 | `MOD_API_VERSION` | `1`（`:30`） | **包只需要认这一个**：`pack.json.api` 的 `">=1 <2"` 就是与它比对 |
 
@@ -690,7 +690,7 @@ work for direct profit.
 |---|---|
 | 上游项目 | **Stronghold-Protocol**（卫戍协议：盟约 · 非官方同人复刻） |
 | 上游地址 | <https://github.com/sganggs/Stronghold-Protocol> |
-| 本仓库当前的底座 | 上游 **v0.3.1** 的源码树（tag `v0.3.1` = commit `b3deebda`）。本版把底座从 v0.3.0（tag `v0.3.0` = commit `c24e17ee`）抬到 v0.3.1；此前把底座从 v0.2.6（tag `v0.2.6` = commit `488db49`）抬到 v0.3.0；0.14.0 曾把底座从 v0.2.2（commit `62eb113`）经 v0.2.3（commit `1db8e51`）抬到 v0.2.4；0.10.0 把底座从 v0.2.1（commit `c2a2ef7`）抬到 v0.2.2（含增量包没带上的开发侧改动）；0.8.2 把底座从 v0.2.0（commit `1303321`）抬到 v0.2.1；0.7.0 起按上游 tag 逐文件移植；此前的 0.1.x–0.6.x 基于上游 **v0.1.3** 的 Release 整合包（解压得到，不是 `git clone`）。 |
+| 本仓库当前的底座 | 上游 **v0.3.2** 的源码树（tag `upstream-v0.3.2` = commit `5def2977`，发布 2026-10-24，491 个提交 / 915 个文件）。上一版是 v0.3.1（tag `v0.3.1` = commit `b3deebda`）；0.20.0 这次把底座抬到 v0.3.2 —— 官方版本切换、伤害结算顺序、攻击类技能占回合等规则改动都跟着进来，本仓库自己的功能（聊天、座位上限、工坊模组集合、助战、野排）逐条保留 |
 | 改动时间 | 2026 年 10 月起，逐次提交见 `git log` 的提交日期 |
 | 许可 | 整体 **GPL-3.0-or-later**，全文见 [LICENSE](LICENSE)；上游的版权与许可声明原样保留（[NOTICE.md](NOTICE.md)、[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)） |
 

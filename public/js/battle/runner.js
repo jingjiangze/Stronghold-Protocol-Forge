@@ -403,8 +403,12 @@ export function createBattleRunner(deps) {
   let cur = null;              // entry on screen
   /** data face（W-D, `/data/` 或房间自己那一份）或内容集的 `cs:`（DESIGN §34.6）→ the sim loaded for it（两种 key 分开缓存，
    *  一条来自我们的数据面、一条来自上游的内容集；一页可能都遇到） */
-  // 上游 0.3.2：改成「一份 + 一个停放位」（`simP` 是当前内容集的模拟，`parked` 是上一个被停放的
-  // Worker）。我们的 `sims` Map 是按内容集缓存的旧形状，新版不需要它。
+  // 上游 0.3.2 的「一份 + 一个停放位」按**内容集**缓存；本仓库还要按**数据面**缓存（W-D：一页上可能同时
+  // 出现进程面与房间自己那一份）。两个键都要进缓存键，否则两个面会共用同一份 sim —— 那正是
+  // `modAlign.test.js`「sim 按数据面缓存，不混用两个面」钉住的事。`simP` / `simCs` 只保留「最近用过的」
+  // 这个镜像（统计与预热要用），真正判重看 `sims`。
+  const sims = new Map();
+  const simKey = (want, base) => `${want ?? ''}|${base}`;
   let simP = null;
   /** the content set simP was loaded for (null: the original content) */
   let simCs = null;
@@ -479,7 +483,9 @@ export function createBattleRunner(deps) {
     const vanilla = vanillaCs();
     const want = typeof cs === 'string' && vanilla != null && cs !== vanilla ? cs : null;
     if (parked && parked.cs !== want) releaseParked();
-    if (simP && simCs === want) return simP;
+    const key = simKey(want, base);
+    const hit = sims.get(key);
+    if (hit) { simP = hit; simCs = want; return hit; }
     simCs = want;
     const p = (want ? contentFor(want).then((content) => {
       if (!content || content.cs !== want) throw new Error(`the content set ${want.slice(0, 8)} is not loaded on this page`);
@@ -488,7 +494,8 @@ export function createBattleRunner(deps) {
       return deps.loadSim || content.version
         ? (perFace ? loadSim(base, content) : loadSim(content))
         : { content, cs: want, remote: true };
-    }) : (perFace ? loadSim(base, null) : loadSim(null))).catch((err) => { if (simP === p) { simP = null; simCs = null; } throw err; });
+    }) : (perFace ? loadSim(base, null) : loadSim(null))).catch((err) => { if (sims.get(key) === p) { sims.delete(key); if (simP === p) { simP = null; simCs = null; } } throw err; });
+    sims.set(key, p);
     simP = p;
     return p;
   }
@@ -1219,7 +1226,8 @@ export function createBattleRunner(deps) {
       // warm the simulation up as soon as a match runs (the first b.start then starts at once) — on the room's content set
       // when it plays one (DESIGN §32.6), or its official version's (§37.23)
       const roomCs = s && s.room && s.room.content && (s.room.content.vanilla === false || typeof s.room.version === 'string') ? s.room.content.cs : null;
-      if (phase && phase !== 'LOBBY' && (!simP || simCs !== (roomCs || null))) ensureSim(roomCs).catch(() => {});
+      const want = roomCs || null;
+      if (phase && phase !== 'LOBBY' && !sims.has(simKey(want, dataBaseFor(roomCs)))) ensureSim(roomCs).catch(() => {});
     }));
   }
   if (doc && typeof doc.addEventListener === 'function') {

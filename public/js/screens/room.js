@@ -1064,7 +1064,7 @@ export function RoomScreen() {
             ? html`<${GoButton} label=${t('观战中')} icon="eye" disabled=${true} />`
           : html`<${Tooltip} text=${!myReady && facts.myContent !== 'ready' ? (facts.versionRoom ? t('「{version}」的数据载入并通过校验后才能准备', { version: versionLabel(curVersion) }) : t('房间的插件内容载入并通过校验后才能准备')) : null}>
               <${GoButton} label=${myReady ? t('已就绪') : t('准备就绪')} ready=${myReady} loading=${busy === 'ready'}
-                disabled=${!online || !facts.mine || busy === 'ready' || (!myReady && facts.myContent !== 'ready')} onClick=${toggleReady} />
+                disabled=${!online || !facts.mine || busy === 'ready' || (!myReady && facts.myContent !== 'ready') || alignBlocked} onClick=${toggleReady} />
             <//>`}
       </div>
     </footer>

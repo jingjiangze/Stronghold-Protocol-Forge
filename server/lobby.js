@@ -2906,6 +2906,9 @@ export class Lobby {
         diy: own ? own.diy : null,
         // 干员皮肤 (docs/SKINS.md): the appearances the human wears, keyed by operator charId (bots always default)
         skins: own ? own.skins : null,
+        // 助战 (DESIGN §28.31): the support chess this seat ticked. It lives on the **seat** (`room.support` writes
+        // it), not in seatSettings —— 少了这一个键，Match 的 supportSupply 永远是空的（棋盘上就不再出现助战棋子）。
+        support: Array.isArray(s.support) ? s.support : null,
       };
     });
     // lastPublic / results: the latest m.public broadcast and the m.result frames (encoded), kept for the replay.
@@ -3298,6 +3301,9 @@ export class Lobby {
       // 干员皮肤 (docs/SKINS.md): the appearances this player wears, keyed by operator charId (PUBLIC: the match
       // publishes them to teammates)
       skins: session.skins || null,
+      // 助战 (DESIGN §28.31): 勾选的助战棋子。选择可以在**建房之前**就发生（`room.support` 在没房时只写 session），
+      // 所以座位创建时要把 session 上那一份带过来 —— 否则开局建构 Match 时 supportSupply 永远是空的。
+      support: Array.isArray(session.support) ? session.support : null,
       // 名片干员 (room.card): the operator on this player's seat card (PUBLIC: room.state seats[].card)
       card,
       // the content each was checked for (header "Gameplay plugins": filtered at the match start when it is another)

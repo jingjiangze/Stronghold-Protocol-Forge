@@ -8,6 +8,9 @@ import { addManifestEntries, presentationUnion, versionAssetData } from '../tool
 import { fxFixture } from './helpers/fxFixtures.js';
 
 const root = path.resolve(import.meta.dirname, '..');
+// 这两个用例要跑 `tools/local-extract` 的纯函数：Windows 上通常只有 `python`，没有 `python3`
+// （本仓库其它 python 用例用的是同一套探测）。
+const PY = ['python3', 'python'].find((bin) => spawnSync(bin, ['--version']).status === 0);
 const assets = JSON.parse(readFileSync(path.join(root, 'data/assets.json'), 'utf8'));
 
 test('every official version declares comparable pictures, models, clips, icons and scenes without installed art', () => {
@@ -55,7 +58,7 @@ test('fx discovery includes each season even when their chess ids collide', (t) 
     char_9001_current: { skills: [{ skillId: 'sk_shared[3]' }] },
     char_9002_earlier: { skills: [{ skillId: 'sk_shared[3]', overridePrefabKey: 'skchr_earlier_1' }] },
   });
-  const r = spawnSync('python3', ['-B', '-c', `import sys,json\nsys.path.insert(0,${JSON.stringify(path.join(root, 'tools/local-extract'))})\nimport fx\nprint(json.dumps(fx.game_data(${JSON.stringify(f.root)})))`], { encoding: 'utf8' });
+  const r = spawnSync(PY, ['-B', '-c', `import sys,json\nsys.path.insert(0,${JSON.stringify(path.join(root, 'tools/local-extract'))})\nimport fx\nprint(json.dumps(fx.game_data(${JSON.stringify(f.root)})))`], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stderr);
   const gd = JSON.parse(r.stdout);
   assert.deepEqual(gd.chars, ['char_9001_current', 'char_9002_earlier']);
@@ -104,6 +107,6 @@ assert json.loads((dest/'textures.json').read_text())['textures']['shared']==tex
 assert json.loads(manifest.read_text())['groups']['fx/tex']==groups['fx/tex']
 assert (dest/'untouched.bin').read_bytes()==b'keep'
 `;
-  const r = spawnSync('python3', ['-B', '-c', script], { encoding: 'utf8' });
+  const r = spawnSync(PY, ['-B', '-c', script], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stderr);
 });

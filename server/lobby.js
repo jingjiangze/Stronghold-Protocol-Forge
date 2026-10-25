@@ -2663,7 +2663,10 @@ export class Lobby {
     }
     // 房间自己声明的模组集合（W-B，DESIGN §28.10）：`room.modSet` 物化出来的那一份就是这间房的数据面；
     // 没声明集合 / 声明了全集 ⇒ `forRoom` 交回**进程面本体**（同一个对象，`===`），所以那些房逐字节不变。
-    const roomAssets = room && this.workshop && this.workshop.roomAssets ? this.workshop.roomAssets.forRoom(room.modSet) : null;
+    // 只有**真的声明了集合**的房间才走这条（`forRoom(null)` 交回的是进程面本体，truthy —— 拿它当判据会把
+    // 下面「官方版本」那一支永远挡掉，版本房于是拿到进程面的数据，spec 的 version 与数据对不上）。
+    const roomAssets = room && room.modSet && this.workshop && this.workshop.roomAssets
+      ? this.workshop.roomAssets.forRoom(room.modSet) : null;
     if (roomAssets) return roomAssets.data;
     const v = room ? room.version : this.defaultVersion();
     if (v !== DEFAULT_VERSION) {

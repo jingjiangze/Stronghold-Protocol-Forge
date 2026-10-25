@@ -103,7 +103,12 @@ const QUIET = Object.freeze({ warn() {}, error() {}, info() {}, log() {}, debug(
 // / `DataSource.rawEffect`), and the corpus is generated from THIS object, so it can never name a pack-only id.
 // This runs before CHESS / VISIBLE below are derived, so a pack record can never enter the corpus.
 resetData();
-const data = getData({ log: QUIET, workshopDir: null });
+// `--version <id>` 跑历史版本时，必须读**那个版本自己的**数据目录（data/versions/<slug>/）：
+// 默认目录是今天这一份，`config.version.id` 是空的 —— 拿它去建带 version 的 spec 就会被
+// createBattleFromSpec 的守卫拒掉（Battle version … does not match loaded data）。
+const VERSION_DATA_DIR = toolVersion === DEFAULT_VERSION
+  ? null : join(ROOT, 'data', 'versions', versionSlug(versionById(toolVersion)));
+const data = getData({ ...(VERSION_DATA_DIR ? { dir: VERSION_DATA_DIR } : {}), log: QUIET, workshopDir: null });
 const ds = new DataSource(data, null); // what Match and browsers use (no research fallback)
 const gdCache = new Map();
 const availableMode = (modeId) => data.config.modes[modeId] ? modeId : modeId.replace('_abyss', '_hard');

@@ -30,8 +30,10 @@ const HOW = 'an intended change of the default version must regenerate test/fixt
   + 'SP_UPDATE_GUARD=1 node --test test/versions-default-guard.test.js and give the reason in the commit';
 
 /** The gameplay data files of the default version (gameplayDataFiles: data/*.json without the presentation files). */
+// 本仓库的 `data/support.json`（助战目录）也是**会改变对局**的那一类，`server/plugins/identity.js` 的
+// gameplayDataFiles() 把它算进 cs —— 上游没有这个文件，所以这张表要与本仓库的实现对齐。
 const GAMEPLAY = ['backups', 'bands', 'bonds', 'bosses', 'chess', 'choices', 'config', 'effects', 'enemies', 'factions',
-  'garrisons', 'items', 'stages', 'tokens', 'tuning', 'waves'];
+  'garrisons', 'items', 'stages', 'support', 'tokens', 'tuning', 'waves'];
 
 const VERSION_ENV = ['SP_VERSIONS', 'SP_VERSION_DEFAULT', 'SP_MAX_VERSION_HOSTS'];
 const HEX64 = /^[0-9a-f]{64}$/;

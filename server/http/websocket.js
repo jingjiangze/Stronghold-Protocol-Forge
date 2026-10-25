@@ -180,6 +180,12 @@ export function createSessionStack(opts, { data, log, content = null, plugins = 
     records: opts.records || null,
     // 创意工坊 (docs/WORKSHOP.md): the behaviour layer of the installed packs travels with every match this lobby starts
     workshop: opts.workshop,
+    // 官方版本（DESIGN §37.22/§37.23）与模拟工作池：版本登记表、版本房的对局主机、这台服务器的池。
+    // 少了 versions，`dataFor()` 的版本分支永远拿不到数据 —— 版本房会拿进程面去打，
+    // spec 的 version 与数据对不上就是那条 RangeError。
+    versions,
+    versionHosts,
+    simPool,
   });
   // 包声明的**分发前钩子**（DESIGN §28.13, server/modDispatch.js）: assembled here, because it needs the framework's
   // own send helper and the Network it belongs to. `send` is late-bound to `network` on purpose — it must be

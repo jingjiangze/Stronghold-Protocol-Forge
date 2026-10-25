@@ -9,15 +9,22 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const css = (rel) => readFileSync(path.join(ROOT, rel), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-const block = (text, head) => {
-  const i = text.indexOf(head);
-  assert.ok(i >= 0, head);
-  let depth = 0;
-  for (let j = text.indexOf('{', i); j < text.length; j++) {
-    if (text[j] === '{') depth++;
-    else if (text[j] === '}' && --depth === 0) return text.slice(i, j + 1);
+// 取某条 `@media` 块。同一个条件在上游重排后可能有**好几块**（0.3.2 的 lobby.css 里
+// `max-aspect-ratio: 1/1` 就有 4 个），所以可以额外给 `must`：只返回**含这段文字**的那一块。
+// 把断言绑在"第几块"上，重排一次红一次，那不是要钉的东西。
+const block = (text, head, must = null) => {
+  for (let i = text.indexOf(head); i >= 0; i = text.indexOf(head, i + 1)) {
+    let depth = 0;
+    for (let j = text.indexOf("{", i); j < text.length; j++) {
+      if (text[j] === "{") depth++;
+      else if (text[j] === "}" && --depth === 0) {
+        const out = text.slice(i, j + 1);
+        if (!must || out.includes(must)) return out;
+        break;
+      }
+    }
   }
-  return text.slice(i);
+  assert.fail(must ? `${head} 里没有含 ${must} 的那一块` : head);
 };
 
 test('the 机变 overlay leaves the corner\'s buttons uncovered: they wrap within its 2.8rem column, a phone\'s overlay starts past them', () => {
@@ -36,7 +43,7 @@ test('选择模拟协议 in a portrait window keeps the .5rem the chosen card sl
   const lobby = css('public/css/screens/lobby.css');
   assert.match(lobby, /\.proto-list \{[^}]*padding: \.07rem \.06rem \.07rem \.5rem;/);
   assert.match(lobby, /\.pcard\.is-on \{ transform: translateX\(-\.44rem\);/);
-  const portrait = block(lobby, '@media (max-aspect-ratio: 1/1) {');
+  const portrait = block(lobby, '@media (max-aspect-ratio: 1/1) {', '.proto-foot { padding-left: .1rem; }');
   assert.doesNotMatch(portrait, /\.proto-list[^{]*\{[^}]*padding-left/);
   assert.match(portrait, /\.proto-foot \{ padding-left: \.1rem; \}/);
 });
@@ -51,7 +58,7 @@ test('short screens: the empty key field takes the placeholder\'s size; 同盟�
   assert.match(short, /\.hub-entry__long \{ display: none; \}\s*\.hub-entry__short \{ display: inline; \}/);
   const js = readFileSync(path.join(ROOT, 'public/js/screens/lobby.js'), 'utf8');
   assert.match(js, /pointShort: N_\('1–\{n\} 名博士'\)/);
-  assert.match(js, /<span class="hub-entry__long">\$\{t\(card\.points\[0\], card\.pointParams\)\}<\/span><span class="hub-entry__short">\$\{t\(card\.pointShort, card\.pointParams\)\}<\/span>/);
+  assert.match(js, /<span class="hub-entry__long">\$\{t\(card\.points\[0\], pointParams\)\}<\/span><span class="hub-entry__short">\$\{t\(card\.pointShort, pointParams\)\}<\/span>/);
   for (const lang of ['en', 'ja', 'ko', 'zh-TW']) {
     const pack = JSON.parse(readFileSync(path.join(ROOT, `public/i18n/${lang}.json`), 'utf8'));
     assert.match(pack['1–{n} 名博士'], /\{n\}/, lang);
@@ -112,7 +119,7 @@ test('the other event screens at a big 文字大小: 成就统计\'s banner, the
   const lo = css('public/css/screens/loadout.css');
   assert.match(lo, /\.lo-top__note \{ margin: 0; max-width: min\(8\.4rem, 100%\);/);
   assert.match(lo, /\.lo-bbar__tiers \{[^}]*padding-top: max\(\.24rem, calc\(17px \* var\(--sp-ui, 1\)\)\); \}/);
-  assert.match(block(lo, '@media (max-height: 520px) {\n  .lo-deck'), /\.lo-diy__frame \{ width: 46%; \}/);
+  assert.match(block(lo, '@media (max-height: 520px) {', '.lo-diy__frame { width: 46%; }'), /\.lo-diy__frame \{ width: 46%; \}/);
   const lobby = css('public/css/screens/lobby.css');
   assert.match(lobby, /\.ally-card__bar small \{[^}]*min-width: min\(100%, 10em\); white-space: normal; text-align: right;/);
   assert.match(lobby, /\.ally-card--create \.ally-card__bar \{ flex-wrap: wrap;/);

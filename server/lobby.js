@@ -952,7 +952,10 @@ export class Lobby {
       for (const s of r.seats) if (s && !s.left) (s.isBot ? bots++ : humans++);
       spectators += r.spectators.length;
     }
-    return { rooms: this.rooms.size, matches, humans, bots, spectators };
+    // `/healthz` 要能被人拿去写报告：这一台服务器跑的是哪一份模组字节（`mods` = 摘要，`modPacks` = 包 id 清单）。
+    // 干净安装（没有包）就不带这两个键 —— 与 `welcome.mods` 同一条「不声明就没有」的纪律。
+    return { rooms: this.rooms.size, matches, humans, bots, spectators, ...this.matchmake.stats(),
+      ...(this.modSet ? { mods: this.modSet.digest, modPacks: this.modSet.packs.length } : {}) };
   }
 
   // ---------------------------------------------------------------------------------------------------

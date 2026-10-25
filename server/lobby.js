@@ -1287,6 +1287,8 @@ export class Lobby {
     // `chat` / `quickMsg` 各自放不放行，客户端的输入框只是照着它摆样子。
     if (chatMode !== undefined) room.chatMode = chatMode;
     room.seats[0] = this.humanSeat(0, session, room);
+    // 同意落在**座位**上：房主对自己钉下的那一份集合不必再点一次同意。
+    room.seats[0].modConsent = room.modSet ? room.modSet.digest : null;
     room.hostId = session.playerId;
     this.rooms.set(code, room);
     session.roomCode = code;
@@ -1850,17 +1852,38 @@ export class Lobby {
     };
   }
 
-  join(session, { code, testAck }) {
+  join(session, { code, testAck, consent }) {
     const norm = String(code).trim().toUpperCase();
     const room = norm.length === ROOM_CODE_LEN ? this.rooms.get(norm) : undefined;
     if (!room) return fail(ERR.ROOM_NOT_FOUND);
     if (room.test && testAck !== true) return fail(ERR.TEST_CONFIRM);
+    // 服主 pin（W7）：这个房间钉住的那几个包的**字节**还在不在机器上。判在「认不认得出这个房间」之后、
+    // 「占座」之前 —— 一份已经不在的内容，占了座也是白占。没声明集合的房间在第一行早退。
+    const pin = this.modPinRefusal(room);
+    if (pin) return pin;
     const cur = this.roomOf(session);
     // idempotent for members; a spectator of this room goes on below: it may take a free player seat (header)
-    if (cur === room && !room.spectatorOf(session.playerId)) { this.sendState(room, session); return OK; }
+    // 但**同意可以在这里补**：集合中途改过之后，已经在座的人不该被逼「退出再进」——而他们必须能表态，
+    // 否则这一房永远开不了局（start 会拦下来）。所以这一处早退也要先判同意。
+    if (cur === room && !room.spectatorOf(session.playerId)) {
+      const seat = room.seatOf(session.playerId);
+      if (room.modSet && seat && seat.modConsent !== room.modSet.digest) {
+        if (consent !== true) return this.modConsentRefusal(room, seat);
+        seat.modConsent = room.modSet.digest;
+        this.log.info(`[lobby] ${room.code} ${session.name} agreed to the room's mod set (${room.modSet.digest.slice(0, 12)}…)`);
+      }
+      this.sendState(room, session);
+      return OK;
+    }
     if (cur && cur.match) return fail(ERR.ROOM_STARTED, 'leave your running match first');
     if (room.match) return fail(ERR.ROOM_STARTED);
     if (room.mode === 'solo') return fail(ERR.ROOM_FULL, 'solo room');
+    // 每名真人须同意（W7, DESIGN §28.53）：占了玩家座位就要先对**这一份**字节表态。判在占座之前，
+    // 所以没同意的人进不去（不是「进来了但只能看着」）。AI 与观战者不在这一条线上。
+    if (room.modSet && consent !== true) {
+      return fail(ERR.MOD_CONSENT_REQUIRED,
+        `this room declares the mod set (${room.modSet.packs.map((p) => p.id).join(', ')} · ${room.modSet.digest.slice(0, 12)}…) — send "consent" to agree`);
+    }
     const idx = room.freeSeat();
     if (idx < 0) return fail(ERR.ROOM_FULL);
     // a human takes a player seat: the version vote is void (header "Official versions") — before the seat is taken, so
@@ -1868,6 +1891,7 @@ export class Lobby {
     if (room.versionVote) this.voidVersionVote(room, 'members');
     if (cur) this.removeMember(cur, session.playerId);
     room.seats[idx] = this.humanSeat(idx, session, room);
+    room.seats[idx].modConsent = room.modSet ? room.modSet.digest : null;
     session.roomCode = room.code;
     session.notice = null;
     session.pendingResult = null;
@@ -2491,6 +2515,14 @@ export class Lobby {
     if (room.match) return fail(ERR.ROOM_STARTED);
     if (room.versionVote) return fail(ERR.VERSION_VOTE);
     const humans = room.activeHumans();
+    // 服主 pin 的字节漂了没有（W7）：判在开局这一刻，而不是只判 join —— 集合可以中途被房主改掉
+    // （room.mods），改完所有真人的同意都会作废，而那时**没有任何人重新 join 过**。
+    const drift = this.modPinRefusal(room);
+    if (drift) return drift;
+    for (const s of humans) {
+      const refused = this.modConsentRefusal(room, s);
+      if (refused) return refused;
+    }
     if (room.content?.trusted && humans.some(s => s.consentCs !== room.content.cs)) return fail(ERR.PLUGIN_CONSENT);
     for (const s of humans) {
       if (s.playerId !== room.hostId && (!s.connected || !s.ready)) return fail(ERR.NOT_READY);

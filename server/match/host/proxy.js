@@ -43,7 +43,7 @@ const noopLog = { info() {}, warn() {}, error() {}, debug() {} };
 /** The lobby options a worker can take (JSON-safe: no callbacks, no data, no class). */
 export function wireOptions(opts) {
   const out = {};
-  for (const k of ['roomCode', 'mode', 'difficulty', 'modeId', 'aiPicksLast', 'seats', 'spectators', 'seed', 'matchNo', 'cs', 'vs', 'requireCs', 'kitted']) {
+  for (const k of ['roomCode', 'mode', 'difficulty', 'modeId', 'aiPicksLast', 'seats', 'spectators', 'seed', 'matchNo', 'cs', 'vs', 'requireCs', 'kitted', 'plugins']) {
     if (opts[k] !== undefined) out[k] = opts[k];
   }
   // A test room must arrive as a test match. Forwarding these only when the flag is set keeps every other
@@ -119,6 +119,15 @@ export class MatchProxy {
   }
 
   handle(playerId, msg) { return this._request('handle', [playerId, msg]); }
+  /**
+   * pack.msg（§1.9.6）：lobby.packMsg 先问对局「要不要接管这条包消息」。worker 侧按方法名转发
+   * （entry.js 的 handlePackMsg 特判），回答折成布尔 —— 与进程内 Match 的同步布尔同形，调用方不必分支。
+   * @returns {Promise<boolean>}
+   */
+  async handlePackMsg(playerId, frame) {
+    const reply = await this._request('handlePackMsg', [playerId, frame]);
+    return !!(reply && reply.consumed === true);
+  }
   setLoadout(playerId, loadout, ops) { return this._request('setLoadout', [playerId, loadout, ops]); }
   requestSetupReroll(playerId, revision) { return this._request('requestSetupReroll', [playerId, revision]); }
   cancelSetupReroll(playerId, voteId) { return this._request('cancelSetupReroll', [playerId, voteId]); }

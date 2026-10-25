@@ -65,6 +65,11 @@ plugin.json (server.modules)
 * **pack.msg**：C2S 形状在 `shared/protocol.js`（`pack` 插件 id、`channel` 正则、`data` ≤4096 B）；
   `lobby.packMsg` 先投给 `Match.handlePackMsg`（返回 `true` = 消费，不广播），否则转发给同房已连接席位与旁观者
   （`from`/`seat` 由服务端从会话解析，载荷里写的不作数）。
+  **hosted 对局同样生效**：`MatchProxy.handlePackMsg` 走 IPC 把这一问送进 worker，回答折成布尔
+  （`entry.js` 按名特判，把布尔包成 `{ ok, consumed }` —— ipc 的 reply 必须是 object）；调用方读到的
+  与进程内 Match 完全同形。**房间-包绑定**：装了插件集的房间只接受**它自己装的那个包**的通道
+  （进程级的通道表不等于房间级授权）；vanilla 房没有插件集，保持旧的同房广播语义。
+  worker 侧的包装器做门控可读 `opts.plugins`（本房插件 id 列表，`wireOptions` 透传，vanilla 房不出现这个键）。
 * **干净安装零负担**：没有任何包声明时，`modMount` 的 healthz 返回 `{}`、routes 返回空 Map、包装器列表为空，
   `/healthz` 与请求路径的行为逐字节不变。
 

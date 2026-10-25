@@ -1491,6 +1491,9 @@ export class Lobby {
         // The list the lobby just checked the picks with (kittedFor). Vanilla rooms omit it: setDiy stays on
         // KITTED_CHARS, and the worker payload / test journal of a normal match do not grow a key.
         ...(modded ? { kitted: this.kittedFor(room) } : {}),
+        // 本房装上的插件 id（matchClass 包装器在 worker 里的房间门控信号；vanilla 房不出现这个键）
+        ...(modded && Array.isArray(room.content?.plugins) && room.content.plugins.length
+          ? { plugins: room.content.plugins.map((p) => p && p.id).filter((x) => typeof x === 'string' && x) } : {}),
         ...(room.content?.rules ? { rules: room.content.rules } : {}),
         data,
         log: this.log,
@@ -1686,18 +1689,24 @@ export class Lobby {
    * 先问对局（`Match.handlePackMsg`，由包的 matchClass 包装器提供）：返回 true = 对局接管，不再广播；
    * 否则（undefined / 没有该方法 / 抛错）照旧转发。`from`/`seat` 由服务端从会话与座位解析。
    */
-  packMsg(session, msg) {
+  async packMsg(session, msg) {
     const room = this.roomOf(session);
     if (!room) return fail(ERR.NOT_IN_ROOM);
     const declared = this.packChannels instanceof Map ? this.packChannels.get(msg.pack) : null;
     if (!declared || !declared.has(msg.channel)) return fail(ERR.BAD_MSG, `undeclared pack channel ${String(msg.pack)}/${String(msg.channel)}`);
+    // 房间-包绑定：通道表是进程级的，A 房的玩家不该能把帧送进 B 房（装的包不同）。
+    // room.content.plugins 是本房真正装上的插件；vanilla 房没有这个列表，任何包通道都对它无意义。
+    const roomPacks = room.content && Array.isArray(room.content.plugins) ? room.content.plugins.map((p) => p && p.id) : [];
+    // 只对本房确实装了插件集的情况生效：vanilla 房没有插件，保持旧的同房广播语义（不改既有行为）。
+    if (roomPacks.length && !roomPacks.includes(msg.pack)) return fail(ERR.BAD_MSG, `pack ${String(msg.pack)} is not a plugin of this room`);
     const seat = room.seatOf(session.playerId);
     const base = { pack: msg.pack, channel: msg.channel, from: session.playerId, seat: seat && Number.isInteger(seat.seat) ? seat.seat : null };
     const frame = { ...base, ...(msg.data === undefined ? {} : { data: msg.data }) };
     const match = room.match;
     if (match && typeof match.handlePackMsg === 'function') {
       let consumed = false;
-      try { consumed = match.handlePackMsg(session.playerId, frame) === true; } catch (e) { this.log.warn?.(`[lobby] pack.msg ${msg.pack}/${msg.channel} handler threw: ${e && e.message ? e.message : e}`); }
+      // 进程内的 Match 同步返回布尔；hosted 的 MatchProxy 返回 Promise<boolean> —— 同一个判据。
+      try { consumed = (await match.handlePackMsg(session.playerId, frame)) === true; } catch (e) { this.log.warn?.(`[lobby] pack.msg ${msg.pack}/${msg.channel} handler threw: ${e && e.message ? e.message : e}`); }
       if (consumed) return OK;
     }
     const out = { t: 'pack.msg', ...frame };

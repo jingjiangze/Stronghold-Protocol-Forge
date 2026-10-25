@@ -268,6 +268,17 @@ function handle(m) {
     let result;
     if (!match) result = { error: 'WRONG_PHASE', detail: 'no running match' };
     else if (m.method === 'diag') result = diag(match);
+    // pack.msg：包装器用布尔回答「对局是否接管」。ipc 的 reply 必须是 object，所以在这里包一层
+    // （与 diag 同款的按名特判），否则 plain(true) 过不了 validHostMessage 的 reply 校验。
+    else if (m.method === 'handlePackMsg') {
+      try {
+        const fn = match[m.method];
+        result = { ok: true, consumed: typeof fn === 'function' ? fn.apply(match, Array.isArray(m.args) ? m.args : []) === true : false };
+      } catch (e) {
+        log.error(`[host] match ${m.matchId} ${m.method} threw`, e);
+        result = { error: ERR_INTERNAL };
+      }
+    }
     else {
       try {
         const fn = match[m.method];

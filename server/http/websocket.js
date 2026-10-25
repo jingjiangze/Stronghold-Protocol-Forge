@@ -54,6 +54,8 @@ export const WS_MAX_PAYLOAD = 64 * 1024;
  */
 export const WS_DEFLATE = Object.freeze({
   threshold: 1024,
+  // 上游 0.3.2 换成「保留压缩上下文 + 8 KB 窗口」：test/ws-compression 逐帧证明同一帧第二次只花很少字节
+  // （0.2.6 时我们这边是 noContextTakeover + 2 KB 窗口，压缩比明显更差）。这一条按上游走。
   serverMaxWindowBits: 13,
   zlibDeflateOptions: Object.freeze({ memLevel: 7 }),
 });

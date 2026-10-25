@@ -601,7 +601,7 @@ export async function startServer(opts = {}) {
 
   // `accounts` / `records` 也交出来（两份都是 `null` 时表示没开 `SP_ACCOUNTS`）：运维与测试要能确认
   // 「这个进程到底有没有账号」，而不是靠猜 `hello` 的回复。
-  return { port: actualPort, host: boundHost, url, server, wss, lobby, network, registry, packs, content, visual, contents, hosts, versions, versionHosts, accounts, records, traffic, assetIndex, views, studio, eventLoop, close };
+  return { port: actualPort, host: boundHost, url, server, wss, lobby, network, registry, packs, content, visual, contents, hosts, versions, versionHosts, accounts, records, traffic, assetIndex, views, studio, eventLoop, simPool, close };
 }
 
 export function roomCodeFromArgv(argv = process.argv.slice(2)) {

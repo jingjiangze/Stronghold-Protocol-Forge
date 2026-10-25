@@ -125,7 +125,14 @@ describe('the postMessage contract', () => {
     assert.equal(buy.reason, 'intent');
     // Every client message a plugin could put on the wire must be refused ... except the transport-level control
     // messages, which carry no match intent (a plugin resyncing its own state view decides nothing in the match).
-    const control = new Set(['state.resync']);
+    // 不携带对局意图、但仍然必须被拒的控制类消息：`state.resync`（传输层重同步）与本仓库的
+    // `records.mine`（录像列表查询 —— 它是「我的录像」这条 C2S，不是意图，形状也进不了插件消息
+    // schema）。两者都靠下面那句「必须被拒」守，而不是靠意图分类。
+    // 不携带对局意图、但仍必须被拒的那些 C2S：传输层重同步（state.resync）、录像查询（records.mine）、
+    // 本仓库的资源挑战四件套（resource.*，这是客户端向服务端证明资源文件没被篡改）与包消息（pack.msg）。
+    // 它们都不是意图，形状也进不了插件消息 schema —— 靠下面那句「必须被拒」守，而不是靠意图分类。
+    const control = new Set(['state.resync', 'records.mine', 'resource.challenge.request',
+      'resource.reset', 'resource.proof', 'pack.msg']);
     for (const key of Object.keys(C2S)) {
       if (control.has(key)) {
         const r = validatePluginMessage({ v: 1, t: key });

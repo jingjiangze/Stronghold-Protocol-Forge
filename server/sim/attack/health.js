@@ -16,8 +16,12 @@ import { mitigate } from './calculation.js';
  * 'element') removes no HP and is never checked. Deterministic (Math.ceil of the same double on every engine).
  */
 export function leaderHitCancelled(battle, target, amount) {
-  if (!(BOSS_HIT_LIMIT > 0) || !target || !target.isBoss || (battle.kind !== 'boss' && battle.kind !== 'hidden')) return false;
-  if (!(Math.ceil(amount) >= BOSS_HIT_LIMIT)) return false;
+  // 这一局的限伤**取值**：`Battle.bossHitLimit`（部署期 `SP_BOSS_HIT_LIMIT` 经 Match → spec 传下来）优先，
+  // 没有就用官方常数。`Infinity` 是合法的「关掉」（spec 里 JSON null 重建为 Infinity），所以判据是
+  // `typeof === 'number'` 而不是 Number.isFinite —— 后者会把关掉当成没配。
+  const limit = battle && typeof battle.bossHitLimit === 'number' ? battle.bossHitLimit : BOSS_HIT_LIMIT;
+  if (!(limit > 0) || !target || !target.isBoss || (battle.kind !== 'boss' && battle.kind !== 'hidden')) return false;
+  if (!(Math.ceil(amount) >= limit)) return false;
   battle.fx('hitCap', { x: target.x, y: target.y, id: target.id, n: Math.ceil(amount) });
   return true;
 }

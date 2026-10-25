@@ -487,7 +487,7 @@ export async function startServer(opts = {}) {
   const indexOptions = assetIndexOptionsFrom(opts, publicDir);
   const assetIndex = indexOptions ? createAssetIndex({ publicDir, log, ...indexOptions }) : null;
   const views = assetIndex ? createManifestViews({ dataDir, index: assetIndex, log }) : null;
-  const serveStatic = createStaticHandler({ publicDir, dataDir, sharedDir, simDir, packsDir, pluginsDir, packs, content, log, workshopJson, workshopKitFiles, workshopKitDirs, workshopPanelFiles, workshopAssets, workshopRoutes, workshopResourceFiles, resourcePolicy, workshopI18n, modsJson, roomData: roomDataFace, workshopBattleFiles, modRoutes, voiceCdn: voiceCdn.overrides, assetIndex, views, visual, contents });
+  const serveStatic = createStaticHandler({ publicDir, dataDir, sharedDir, simDir, packsDir, pluginsDir, packs, content, log, workshopJson, workshopKitFiles, workshopKitDirs, workshopPanelFiles, workshopAssets, workshopRoutes, workshopResourceFiles, resourcePolicy, workshopI18n, modsJson, roomData: roomDataFace, workshopBattleFiles, modRoutes, voiceCdn: voiceCdn.overrides, assetIndex, views, visual, contents, versions });
   // 插件工坊（DESIGN §34.9）：它自己的页面与 API，只对本机与本地网开放（路由层另一道门）。它只在被用到之后才
   // 盯 plugins/（热重载），而「房主是作者或独自一人」的房间自己跟随插件的改动。`studio: false` 关掉它。
   const studio = opts.studio === false ? null : createStudio({ publicDir, pluginsDir, dataDir, registry: packs, lobby, sessions: registry, log, fetch: opts.fetch });

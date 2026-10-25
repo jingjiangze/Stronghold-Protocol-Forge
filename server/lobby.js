@@ -641,7 +641,10 @@ export class Room {
           ...(!s.isBot && s.card ? { card: s.card } : {}),
           // 干员皮肤 (room.skins, PUBLIC like Match.publicView().players[].skins): the seat card's outfit (header);
           // only a human seat with a non-empty map carries the key
-          ...(!s.isBot && s.skins && Object.keys(s.skins).length ? { skins: s.skins } : {}) }
+          ...(!s.isBot && s.skins && Object.keys(s.skins).length ? { skins: s.skins } : {}),
+          // 外观选择（皮肤层，docs/SKINS.md）：**别人看到的你** —— `{ picks?, avatar? }`（见 `appearance()`）；
+          // 不带这个键的座位逐字节不变（干净安装 / 没选过的玩家都不带）。
+          ...(s.appearance && Object.keys(s.appearance).length ? { appearance: s.appearance } : {}) }
         : null)),
       spectators: this.spectators.map((s) => ({ playerId: s.playerId, name: s.name, connected: s.connected, ...(this.needsContent ? { content: /** @type {any} */ (s).content || 'loading' } : {}) })),
       ...(this.content ? { content: this.content.trusted ? {...this.content, trusted:{...this.content.trusted, consent:Object.fromEntries(this.seats.filter(x => x && !x.isBot).map(x => [x.seat,x.consentCs === this.content.cs]))}} : this.content } : {}),
@@ -1157,6 +1160,17 @@ export class Lobby {
     mods, modIds, chatMode, seatCap } = {}) {
     // A test room exists only when the process switch allowed it. The check runs before the room is built.
     if (test === true && this.testEnabled !== true) return fail(ERR.TEST_DISABLED);
+    // 进程集合（W-A）：客户端报的摘要必须就是这台机器今天装载的那一份，否则 MOD_SET_LOCKED / MOD_UNKNOWN。
+    const modGate = this.checkModSet({ mods });
+    if (!modGate.ok) return modGate;
+    // 本房自己声明的集合：每个 id 都必须指向**这台服务器装载过**的包，拒绝时同时说出「没找到什么」与「这里有什么」——
+    // 客户端猜不出一个服务器跑不了的集合。不发 / `[]` = 今天的默认（房间不声明，`room.state` 不带 `mods`）。
+    const roomMods = resolveRoomModSet(Array.isArray(modIds) ? modIds : [], this.workshop?.mods);
+    if (!roomMods.ok) {
+      const unknown = roomMods.unknown.length ? roomMods.unknown.join(', ') : '(none)';
+      const available = roomMods.available.length ? roomMods.available.join(', ') : '(none)';
+      return fail(ERR.MOD_UNKNOWN, `this server does not run the mod pack(s) (${unknown}); available: ${available}`);
+    }
     // the official version (header "Official versions"): left out, the server's default
     const version = askedVersion ?? this.defaultVersion();
     if (!this.versionEnabled(version)) return fail(ERR.VERSION_UNKNOWN);
@@ -1223,6 +1237,10 @@ export class Lobby {
     room.content = initial;
     if (initial !== this.baseContent(version)) this.holdContent(initial);
     room.ownerKey = key;
+    // 本房声明的模组集合（W-A）：`modIds` 排序去重后存快照，`modSet` 是拿它算出来的身份；null = 不声明。
+    room.modIds = roomMods.modIds.length ? roomMods.modIds : null;
+    room.modSet = roomMods.modSet;
+    if (room.modSet && this.workshop && this.workshop.roomAssets) this.workshop.roomAssets.forRoom(room.modSet);
     // 房内聊天模式由房主在建房时定（`room.create.chatMode`，默认 'open'）。**服务端强制**：这个值决定
     // `chat` / `quickMsg` 各自放不放行，客户端的输入框只是照着它摆样子。
     if (chatMode !== undefined) room.chatMode = chatMode;
@@ -1692,6 +1710,7 @@ export class Lobby {
     this.dropReplay(room, session.playerId);
     room.modIds = nextIds;
     room.modSet = resolved.modSet;
+    if (room.modSet && this.workshop && this.workshop.roomAssets) this.workshop.roomAssets.forRoom(room.modSet);
     if (room.modSet && this.workshop && this.workshop.roomAssets) this.workshop.roomAssets.forRoom(room.modSet);
     // 集合变了 ⇒ 所有**真人**座位（房主除外，他就是改的人）重新回到未就绪：他们可能缺新集合的文件。这是
     // 「集合变更后加入者如何重新对齐」的服务端那一半；客户端那一半是 W-D 的准备就绪硬门 ——
@@ -2619,6 +2638,10 @@ export class Lobby {
         if (d) return d;
       } catch (e) { this.log.error(`[lobby] ${room.code} content data failed`, e); }
     }
+    // 房间自己声明的模组集合（W-B，DESIGN §28.10）：`room.modSet` 物化出来的那一份就是这间房的数据面；
+    // 没声明集合 / 声明了全集 ⇒ `forRoom` 交回**进程面本体**（同一个对象，`===`），所以那些房逐字节不变。
+    const roomAssets = room && this.workshop && this.workshop.roomAssets ? this.workshop.roomAssets.forRoom(room.modSet) : null;
+    if (roomAssets) return roomAssets.data;
     const v = room ? room.version : this.defaultVersion();
     if (v !== DEFAULT_VERSION) {
       try {
@@ -2629,6 +2652,17 @@ export class Lobby {
       return Object.freeze({});
     }
     return this.safeData();
+  }
+
+  /**
+   * A room's data face, the ONE place it is chosen (W-B): the room's declared mod set (`roomAssets.forRoom`),
+   * else the process singleton — `forRoom(null)` returns the process data itself, so an ordinary room is
+   * byte-for-byte today's behaviour.
+   * @param {Room | null} room
+   */
+  roomData(room) {
+    const assets = room && this.workshop && this.workshop.roomAssets ? this.workshop.roomAssets.forRoom(room.modSet) : null;
+    return assets ? assets.data : this.safeData();
   }
 
   /** The operators a 自选 slot may field in a room (its content set's list, else the vanilla one). @param {Room | null} room */
@@ -3019,6 +3053,9 @@ export class Lobby {
     }
     const frames = this.replayFor(room, session.playerId);
     if (frames) for (const frame of frames) sendRaw(session.ws, frame);
+    // 聊天回放（只给**这一个**会话）：重连的人该看到刚才房里说了什么，但别让所有人再看一遍。
+    // 空房间不回放（没有内容就是没有帧，不是一条空 history）。
+    if (room.chat.length) sendSession(session, { t: 'chat.history', messages: room.chat });
   }
 
   clearResync(playerId) {
@@ -3269,7 +3306,7 @@ export class Lobby {
   disposeRoom(room, reason) {
     if (room.disposed) return;
     room.disposed = true;
-    if (this.rooms.get(room.code) === room) { this.trustedRuntime?.event('roomClosed',{room:room.toState(this.now())}); this.rooms.delete(room.code); }
+    if (this.rooms.get(room.code) === room) { this.trustedRuntime?.event('roomClosed',{room:room.toState(null, this.now())}); this.rooms.delete(room.code); }
     // an open version vote ends with the room (its timer)
     if (room.versionVote) { clearTimeout(room.versionVote.timer); room.versionVote = null; }
     const ctx = room.matchCtx;
@@ -3332,7 +3369,7 @@ export class Lobby {
     if (room.disposed) return;
     reconcileAiTakeover(this, room);
     if (this.trustedRuntime) {
-      const state = room.toState(this.now()), prev = room.trustedPrevious;
+      const state = room.toState(null, this.now()), prev = room.trustedPrevious;
       const event = (name,extra={}) => this.trustedRuntime.event(name,{room:state,...extra});
       if (!prev) event('roomCreated');
       const before = new Set((prev?.seats || []).filter(Boolean).map(s => s.playerId));
@@ -3342,12 +3379,12 @@ export class Lobby {
       if (state.inMatch && !prev?.inMatch) event('matchStarted');
       room.trustedPrevious = state;
     }
-    const data = encode(room.toState(this.now()));
+    const data = encode(room.toState(this.supportView(room), this.now()));
     for (const session of this.memberSessions(room)) sendRaw(session.ws, data);
   }
 
   sendState(room, session) {
-    sendSession(session, room.toState(this.now()));
+    sendSession(session, room.toState(this.supportView(room), this.now()));
   }
 
   /** Match broadcast: encode once, send to every connected member. @returns {string | null} the encoded frame */

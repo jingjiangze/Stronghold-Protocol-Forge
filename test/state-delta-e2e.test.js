@@ -66,7 +66,11 @@ test('a negotiated client decodes m.state back into m.public, and a plain client
   const { message } = receiver.receive(modernFrame);
   assert.ok(message, 'the decoder applied the first frame of the channel');
   assert.equal(message.t, 'm.public');
-  assert.deepEqual(message.players, legacyPublic.players, 'both clients see the same public view');
+  // 两条通道对「空的键」口径不同，这是 viewsDelta 头注释里写下的规矩：差分通道里 `null` 就是值 `null`
+  // （bandId / fieldId / bossId 这类「还没有」一律显式 null），而普通帧由视图自己决定写不写这个键。
+  // 所以比的是**所有非 null 的值**：那条才是「两个客户端看到同一份视图」真正的意思。
+  const visible = (rows) => rows.map((r) => Object.fromEntries(Object.entries(r).filter(([, v]) => v !== null)));
+  assert.deepEqual(visible(message.players), visible(legacyPublic.players), 'both clients see the same public view');
 });
 
 test('a state.resync is answered with a full frame that restores a client which missed one', async (t) => {

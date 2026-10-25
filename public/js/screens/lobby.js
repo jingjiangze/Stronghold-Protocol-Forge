@@ -36,6 +36,8 @@
 
 import { TestMark } from '../ui/testConsole.js';
 import { ResumeMatchButton } from '../ui/resumeMatch.js';
+// 助战（W-助战, DESIGN §28.31 的入口）：大厅顶部这个按钮打开助战选择面板，与房间里那一个同一个组件。
+import { SupportButton } from './support.js';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from '../../vendor/hooks.module.js';
 import { DIFFICULTIES, DIFFICULTY_NAMES, DIFFICULTY_COLORS, ROOM_CODE_LEN, MAX_SEATS, MAX_SPECTATORS, modeIdFor, ERR, MIN_SEATS, clampSeats } from '../../../shared/constants.js';
 import { html, confirmDialog, Button, Icon, MicroLabel, Modal, PingPill, Spinner, DifficultyIcon, TextField } from '../ui/components.js';
@@ -911,6 +913,7 @@ export function LobbyScreen() {
       <div class="topbar__right">
         <${VersionSwitch} />
         <${ResumeMatchButton} />
+        <${SupportButton} from="lobby" size="sm" class="lobby-support" />
       </div>
     </header>
 

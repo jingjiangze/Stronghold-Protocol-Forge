@@ -154,7 +154,9 @@ export function createFallbackView(host, opts = {}) {
     if (p.kind === 'item') return itemIconUrl(mm, lookup('items', p.id));
     if (p.kind === 'token') return tokenAvatarUrl(mm, p.id);
     const chess = lookup('chess', p.id);
-    return avatarUrlOf(mm, ownSi(chess) || ownDiy(chess) || chess, { lookup: currentAppearanceLookup() });
+    // 补位 / 自选编队那一条记录优先（它与 render/app.js pieceInfo 用的是同一条判定），再回落到干员本身
+    const body = ownSi(chess) || ownDiy(chess) || chess;
+    return avatarUrlOf(mm, body, { lookup: currentAppearanceLookup() });
   }
   /** 0.2.0 补位: the player's own piece of a chess it does not own is its stand-in, bench and board alike (render/app.js pieceInfo) */
   function ownSi(chess) {

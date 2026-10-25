@@ -80,8 +80,13 @@ export const DEV_BUILD = /-dev$/.test(APP_VERSION);
  * 见 `docs/DESIGN.md` 的索引表，上游 §N ↔ 我们 §(N+2)：`shared/plugins/manifest.js`): a manifest 2 states the level it
  * is written for (`api`); a level outside min…current keeps the plugin out. The level rises when the data shapes, the
  * DSL vocabulary or the SDK a plugin relies on change incompatibly (CHANGELOG says how to migrate). [ASSUMED]
+ *
+ * 0.20.0（本仓库）把 `current` 从 2 抬到 **3**（新增的钩子面），但 **`min` 仍是 1**：抬 `min` 等于
+ * 一纸拒信，把**已经写好**的插件（上游 0.3.2 自己的四个模板、本仓库 67 处测试夹具都在 api 1）
+ * 全部拒之门外 —— 那是「提版本」变成「断兼容」。API 3 是**加法**，所以 1 和 2 继续收。
+ * 新写的插件建议写 2（本仓库 `plugins/_template/*` 的四个清单已按 2 标注）。
  */
-export const PLUGIN_API = Object.freeze({ current: 3, min: 2 });
+export const PLUGIN_API = Object.freeze({ current: 3, min: 1 });
 
 /**
  * The voice slots a pack may ship lines for (角色语音台词) — the ONE copy of this vocabulary: the workshop validator

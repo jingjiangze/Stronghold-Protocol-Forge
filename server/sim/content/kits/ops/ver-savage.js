@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-savage.js — 暴行 (char_230_savage), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-savage.js — 暴行 (char_230_savage), 第一期 (DESIGN §37.22.9).
 // 同时攻击阻挡的所有敌人 is the centurion profile. The elite 110% against a blocked enemy is the trait blackboard.
 
 import { enemiesInGrid, num, onHitBy, talentBb, traitBb, toggleBuff } from '../shared/tier1.js';

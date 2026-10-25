@@ -11,16 +11,16 @@
 // 「AI 队友最后选择」 switch. Phones 844×390 and 667×375 (touch): the hub (with the 成就统计 plate in place of the card),
 // 选择模拟协议, 选择同盟方式 (创建同盟 with its difficulty line under the name) and the room's 选择模拟协议 stay inside the
 // screen, their buttons in view without scrolling; 选择同盟方式 too at 640×360 and 667×375 in English at 大 / 特大 and in
-// Japanese at 特大, its key field's placeholder whole beside 观战 (every language and 文字大小, §35.18's leftover).
-// 选择模拟协议 on phones 640×360 / 667×375 / 740×360 / 844×390 in all five languages at all four 文字大小 (§35.18's
+// Japanese at 特大, its key field's placeholder whole beside 观战 (every language and 文字大小, §37.18's leftover).
+// 选择模拟协议 on phones 640×360 / 667×375 / 740×360 / 844×390 in all five languages at all four 文字大小 (§37.18's
 // leftover: at 中 and above the cards ran under 开始独立模拟): the four cards whole above the button without scrolling,
 // the button and its label whole, the names whole (the chosen card's in the brief), the description in the brief.
 // 选择模拟协议 in small desktop windows (960×540, 1024×600, 1100×530, 800×600), every language and 文字大小: the names of
-// the cards not chosen whole (§35.18 review). The room's big button (开始模拟 / 准备就绪) on the four phones in every
-// language and 文字大小, and on desktops in English / Japanese / Korean: each line of its label inside the button (§35.18
+// the cards not chosen whole (§37.18 review). The room's big button (开始模拟 / 准备就绪) on the four phones in every
+// language and 文字大小, and on desktops in English / Japanese / Korean: each line of its label inside the button (§37.18
 // review: it had taken 选择模拟协议's wrapping label, cut in its fixed 46 px).
 // The hub on the four phones and on desktops 800×600 – 1920×1080 in five languages at four sizes: every line of its text
-// inside its box (test/e2e/text-fit.mjs; §35.18 review: English 「Solo Simulation」 / 「Team Simulation」 were cut by their
+// inside its box (test/e2e/text-fit.mjs; §37.18 review: English 「Solo Simulation」 / 「Team Simulation」 were cut by their
 // cards at 小 in every window, the plates ended in an ellipsis at 大 / 特大 on phones, the title ran under the tips; and
 // in its review: Korean names broken between syllables, the decorative line and the names under the people icon, a
 // plate's label under its glyph, the two cards' tops apart — and in the review of that, the same shapes with one card's
@@ -264,7 +264,7 @@ describe('hub lobby (real server, headless Chrome)', { skip: !ENABLED && 'set SP
         ailast: [...document.querySelectorAll('.rs-opts [role="switch"]')].map((b) => [b.textContent.trim(), b.disabled]),
       }));
       assert.ok(st.diff.includes('绝境模拟') && st.diff.includes('更改') && !st.diff.includes('由创建者选择'), st.diff);
-      // §35.100 adds the host's default-off spectator handover switch alongside AI 队友最后选择.
+      // §37.100 adds the host's default-off spectator handover switch alongside AI 队友最后选择.
       assert.deepEqual(st.ailast, [['允许观战者接替 AI', false], ['AI 队友最后选择', false]]);
       await page.screenshot({ path: path.join(OUT, 'lobby-hub-room-settings.png') });
       await press(page, '.rs-opts__diff');
@@ -331,7 +331,7 @@ describe('hub lobby (real server, headless Chrome)', { skip: !ENABLED && 'set SP
         await sleep(500);
         assert.deepEqual(await fit(page), { out: [], scrolls: false }, '选择同盟方式 fits');
         assert.equal(await page.evaluate(() => document.activeElement?.tagName === 'INPUT'), false, 'no keyboard pops up on a touch screen');
-        // 创建同盟 keeps its difficulty line on a short screen (§35.18's leftover): under the name, whole inside the bar
+        // 创建同盟 keeps its difficulty line on a short screen (§37.18's leftover): under the name, whole inside the bar
         const diff = await createBar(page);
         assert.ok(barOk(diff), `${w}×${h}: 创建同盟 ${JSON.stringify(diff)}`);
         assert.match(diff.text, /^难度：.+（可在同盟内更改）$/);
@@ -400,7 +400,7 @@ describe('hub lobby (real server, headless Chrome)', { skip: !ENABLED && 'set SP
       beside: r.right <= spec.left + 1 };
   });
 
-  // 选择同盟方式's key field on a short screen (§35.18's leftover: at 特大 the placeholder ran under 观战 in English and
+  // 选择同盟方式's key field on a short screen (§37.18's leftover: at 特大 the placeholder ran under 观战 in English and
   // Japanese): the short placeholder (the field's name), whole, ≥ 11 px, in every language and 文字大小; the long one back
   // where the screen is taller than 520 px
   test('phones: 选择同盟方式\'s key field placeholder fits beside 观战 in every language at every 文字大小', { timeout: 300000 }, async () => {
@@ -436,7 +436,7 @@ describe('hub lobby (real server, headless Chrome)', { skip: !ENABLED && 'set SP
     }
   });
 
-  // 选择同盟方式's key field on a desktop (§35.18's leftover: above 520 px the whole sentence ended in an ellipsis at 特大
+  // 选择同盟方式's key field on a desktop (§37.18's leftover: above 520 px the whole sentence ended in an ellipsis at 特大
   // in English and Japanese, and in Chinese / Korean in a 1024 px window): the placeholder shown fits the field, and it is
   // the whole sentence wherever the whole sentence fits (TextField placeholderShort, by the field's width)
   test('desktop: 选择同盟方式\'s key field shows the whole sentence where it fits, else the field\'s name — never cut', { timeout: 300000 }, async () => {
@@ -613,7 +613,7 @@ describe('hub lobby (real server, headless Chrome)', { skip: !ENABLED && 'set SP
     }
   });
 
-  // §35.18 review: in a window whose 1rem is under 54 px (960×540, 1100×530, 800×600) English 「Standard Simulation」 and
+  // §37.18 review: in a window whose 1rem is under 54 px (960×540, 1100×530, 800×600) English 「Standard Simulation」 and
   // 「Ultimate Simulation」 ended in an ellipsis on cards that were not chosen once the cards went compact; the column now
   // has a 300 px floor. Every language and 文字大小, the first card, the second and the last chosen in turn.
   test('desktop: 选择模拟协议 in small windows (960×540, 1024×600, 1100×530, 800×600) keeps the unselected names whole in every language at every 文字大小', { timeout: 600000 }, async () => {
@@ -680,7 +680,7 @@ describe('hub lobby (real server, headless Chrome)', { skip: !ENABLED && 'set SP
   const roomSettled = (page) => page.waitForFunction(() => !document.getAnimations()
     .some((a) => /^(rs|tr)-/.test(String(a.animationName)) && a.playState === 'running' && a.effect?.getTiming().iterations !== Infinity));
 
-  // §35.18 review: the room's button took 选择模拟协议's wrapping label by accident; in its fixed 46 px on a short screen
+  // §37.18 review: the room's button took 选择模拟协议's wrapping label by accident; in its fixed 46 px on a short screen
   // the label (.46 × --t, 40 px at 特大) wrapped to 2–4 lines and every line was cut. Now at least 46 px, taller for a second
   // line, the label 18–20 px. The host's 开始模拟 and a guest's 准备就绪, every language and 文字大小 (set in the page, as 设置
   // does), four phones.
@@ -769,7 +769,7 @@ describe('hub lobby (real server, headless Chrome)', { skip: !ENABLED && 'set SP
       } finally { await ctx.close(); }
     }
   });
-  // §35.18 review: the hub's cards cut English 「Solo Simulation」 / 「Team Simulation」 at 小 in every window (25–40 px past
+  // §37.18 review: the hub's cards cut English 「Solo Simulation」 / 「Team Simulation」 at 小 in every window (25–40 px past
   // the 2.3rem card; 95 px of 「Simulation」 in an 84 px card on a phone), its plates ended in an ellipsis at 大 / 特大 on a
   // phone and its title ran under the left column's tips at 大 / 特大 in a 1280×720 window
   // what text-fit.mjs cannot see, as the review of those fixes found it: the entries' decorative line and names running
@@ -780,7 +780,7 @@ describe('hub lobby (real server, headless Chrome)', { skip: !ENABLED && 'set SP
     const lines = (e) => { const r = document.createRange(); r.selectNodeContents(e); return [...r.getClientRects()]; };
     const area = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
     const out = [];
-    // §35.23.11: the default server now shows the version switch beside the tools. Its full label must leave them
+    // §37.23.11: the default server now shows the version switch beside the tools. Its full label must leave them
     // pressable, including at 界面大小 75 % (小 only) and at the larger text sizes.
     const chip = document.querySelector('[data-testid="version-switch"]');
     if (chip) {
@@ -811,7 +811,7 @@ describe('hub lobby (real server, headless Chrome)', { skip: !ENABLED && 'set SP
   // the same shapes with one card's name and one plate's label made longer in the page (a text node added, then removed):
   // the matrix's own texts no longer reach the two rules that keep both cards one height (`.hub-entries` stretching,
   // `.hub-entry` filling its column) nor the label's `flex: 1 1 0; min-width: min-content` once the cards and plates follow
-  // --t (§35.18 review of the text-fit fixes: with those rules removed the plain matrix still passed)
+  // --t (§37.18 review of the text-fit fixes: with those rules removed the plain matrix still passed)
   const forcedShapes = async (page) => {
     await page.evaluate(() => {
       const add = (el, s) => { if (!el) return; const n = document.createTextNode(s); n.__spTest = true; el.append(n); };
@@ -832,7 +832,7 @@ describe('hub lobby (real server, headless Chrome)', { skip: !ENABLED && 'set SP
     // bottom-aligned text up under it)
     return out.filter((p) => !/under the icon/.test(p)).map((p) => `a longer name and label: ${p}`);
   };
-  // every tip in turn (§35.18 review of the text-fit fixes: TipsPanel starts at a random tip of 21 and turns every 5 s, so
+  // every tip in turn (§37.18 review of the text-fit fixes: TipsPanel starts at a random tip of 21 and turns every 5 s, so
   // each case checked one random tip — a tip-specific overflow, such as a Japanese line starting with ー where only two
   // tips wrap there, made the test flaky rather than red): the pager steps through them, each checked with its entry
   // animation finished; a step the 5 s turn lands in is checked again. A problem the case already shows is not repeated

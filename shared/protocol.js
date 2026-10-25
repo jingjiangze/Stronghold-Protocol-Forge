@@ -104,7 +104,7 @@ const isMap = (v, max, key, val) => {
 };
 const isList = (v, max, item) => Array.isArray(v) && v.length <= max && v.every(item);
 const isScalar = (v) => isStr(v, 64) || isNum(v) || isBool(v);
-/** An official version id (shared/versions.js: the activity id, `@<sub-version>` for a sub-version) — structural only; the lobby answers VERSION_UNKNOWN for one this server does not enable (DESIGN §35.23). */
+/** An official version id (shared/versions.js: the activity id, `@<sub-version>` for a sub-version) — structural only; the lobby answers VERSION_UNKNOWN for one this server does not enable (DESIGN §37.23). */
 export const isVersionId = (v) => typeof v === 'string' && v.length <= 40 && /^[a-z0-9]{1,32}(?:@[A-Za-z0-9_]{1,16})?$/.test(v);
 
 // ---- client-side combat (DESIGN §14): b.progress / b.result payloads -------------------------------------------
@@ -682,9 +682,9 @@ export const C2S = {
     seatCap: (v) => v === undefined || v === null || isInt(v, MIN_SEATS, SEAT_CAP),
     // test 房间（DESIGN §36.8，上游 0.3.1）：只认字面 true；普通房间不发这个键
     test: (v) => v === true,
-    // 官方版本（DESIGN §35.23，上游 0.3.2）：缺席 = 服务器缺省版本；给了就必须是启用的版本 id
+    // 官方版本（DESIGN §37.23，上游 0.3.2）：缺席 = 服务器缺省版本；给了就必须是启用的版本 id
     version: isVersionId,
-    // 「不限时」（DESIGN §35.23.10，上游 0.3.2）：只认字面布尔
+    // 「不限时」（DESIGN §37.23.10，上游 0.3.2）：只认字面布尔
     soloUnlimited: isBool,
     $optional: ['difficulty', 'mods', 'modIds', 'chatMode', 'seatCap', 'test', 'version', 'soloUnlimited'],
   },
@@ -711,7 +711,7 @@ export const C2S = {
   // string cannot sneak in as "not a test". The server still refuses it unless SP_TEST_MODE is on.
   // difficulty: may be left out — the room starts at the server's default (server/lobby.js DEFAULT_DIFFICULTY) and the
   // host changes it in the room (room.setDifficulty), as in the event's 联合模拟; a value given must be a difficulty.
-  // soloUnlimited: the timed-solo opt-out 「不限时」 (DESIGN §35.23.10). Optional, and only the literal boolean —
+  // soloUnlimited: the timed-solo opt-out 「不限时」 (DESIGN §37.23.10). Optional, and only the literal boolean —
   // the server applies `true` solely to a solo room of a version whose solo is timed, and ignores it otherwise, so a
   // default create stays the message it was.
   'room.leave': {},
@@ -749,11 +749,11 @@ export const C2S = {
   'room.mods': {
     modIds: (v) => Array.isArray(v) && v.length <= MAX_ROOM_MODS && v.every(isModId),
   },
-  // 「不限时」 (DESIGN §35.23.10; host, before the match, a solo room of a version whose solo is timed): the match's
+  // 「不限时」 (DESIGN §37.23.10; host, before the match, a solo room of a version whose solo is timed): the match's
   // preparation and 机变 stay untimed (Match opts.soloUnlimited). Off by default; room.state omits the key unless it is on.
   'room.setSoloUnlimited': { on: isBool },
 
-  // Remake-only spectator handover: host opt-in before play, default off (§35.100).
+  // Remake-only spectator handover: host opt-in before play, default off (§37.100).
   'room.setAiTakeover': { on: isBool },
   'room.aiRequest': { botId: isId },
   'room.aiVote': { voteId: (v) => typeof v === 'string' && v.length <= 16, approve: isBool },
@@ -765,7 +765,7 @@ export const C2S = {
   'room.start': {},
   'room.rerollSetup': { setupRevision: (v) => isInt(v, 0, 2 ** 31) },
   'room.cancelReroll': { voteId: (v) => isInt(v, 1, 2 ** 31) },
-  // official versions (DESIGN §35.23, M1; before the match): the host proposes the room's version; the seated humans vote
+  // official versions (DESIGN §37.23, M1; before the match): the host proposes the room's version; the seated humans vote
   // like 重刷 (unanimous, a decline cancels, a lone human switches at once); room.state.version / versionVote
   'room.proposeVersion': { version: isVersionId },
   'room.versionVote': { voteId: (v) => isInt(v, 1, 2 ** 31), agree: isBool },
@@ -1053,7 +1053,7 @@ export function validateC2S(msg) {
 // Event tuple kinds inside `b.ev` (DESIGN §8.2). 'cast' ['cast', id, slot, dur?, clip?] is display only: an enemy uses the
 // skill of that slot of its data record's skills[] (server/sim/content/enemies/helpers.js castSlot; the client's skill
 // clip and official skill effects — render/app.js); `clip` (s) when it is an attack-class skill cast in the attack's
-// turn: the clip played in place of the attack, 0 = the attack clip (DESIGN §35.57).
+// turn: the clip played in place of the attack, 0 = the attack clip (DESIGN §37.57).
 export const EV = Object.freeze({
   SPAWN: 'spawn', ATK: 'atk', DMG: 'dmg', HEAL: 'heal', SKILL: 'skill', ENGAGE: 'engage', DIE: 'die', LEAK: 'leak',
   STATUS: 'status', FX: 'fx', LAYER: 'layer', BOUNTY: 'bounty', DEPLOY: 'deploy', CAST: 'cast',

@@ -1,4 +1,4 @@
-# AI handover revision for 0.3.2 — PR #691 (§35.100)
+# AI handover revision for 0.3.2 — PR #691 (§37.100)
 
 Accepted by the maintainer on 2026-10-24 with a host room toggle defaulting to off. The host can change it before play; disabled rooms omit the option and votes from their state and refuse takeover requests. Five interface languages include the setting and help. No official combat/data rule changes.
 

@@ -1,7 +1,7 @@
 // 「轮到你选」 (ui/turnPopup.js, css/screens/game-panels.css .sptp): the official effectChoose sprites it draws, the
 // wiring in screens/game.js (the shared draft's own turn and a solo draft as it opens — the maintainer's decision of
 // 2026-10-22 —, with the 轮到你 sound, once the art is in, never with reduced motion; after the round plate and the 机变阶段
-// banner, at most TURN_CUE_PLATE_WAIT_MS / TURN_CUE_WAIT_MS after each mounts — §35.18's leftover) and the stylesheet's rules. In a browser: test/ui/turn-popup.e2e.test.js.
+// banner, at most TURN_CUE_PLATE_WAIT_MS / TURN_CUE_WAIT_MS after each mounts — §37.18's leftover) and the stylesheet's rules. In a browser: test/ui/turn-popup.e2e.test.js.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -37,7 +37,7 @@ test('screens/game.js: the disc on the shared draft\'s own turn and in solo (the
   // the turn makes the cue due (a pick or the turn moving on drops it); it plays — the sound, and the disc once the art is
   // in and motion is allowed — when no phase banner / plate is up, or at the latest TURN_CUE_PLATE_WAIT_MS after the round
   // plate and TURN_CUE_WAIT_MS after the banner it held back: the wait is keyed on the overlay on screen (the plate, then
-  // the banner, each restarts it), never timed from the turn alone (§35.18's leftover, the ROUND_START → SP_DRAFT race)
+  // the banner, each restarts it), never timed from the turn alone (§37.18's leftover, the ROUND_START → SP_DRAFT race)
   assert.match(g, /useEffect\(\(\) => \{ if \(spMine\) setTurnDue\(\(n\) => n \+ 1\); else setTurnDue\(0\); \}, \[spMine\]\);/);
   assert.match(g, /const overlayKey = hasOffers \? '' : roundPop \? `r:\$\{roundPop\.key\}` : banner \? `b:\$\{banner\.key\}` : '';/);
   assert.doesNotMatch(g, /phaseOverlay/, 'no on / off flag: a plate giving way to a banner restarts the wait');

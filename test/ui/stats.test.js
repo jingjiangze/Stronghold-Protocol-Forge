@@ -854,7 +854,7 @@ describe('local stats: recordToResult (history row → settlement re-view)', () 
   });
 });
 
-describe('local stats: official versions (DESIGN §35.23, format v3)', () => {
+describe('local stats: official versions (DESIGN §37.23, format v3)', () => {
   test('a record names another version (only a non-default one); its id does not include it; an unknown id is dropped', () => {
     const plain = buildRecord(baseResult(), { myId: 'p1', now: 1 });
     const v1 = buildRecord(baseResult(), { myId: 'p1', now: 1, version: 'act1autochess' });

@@ -1,4 +1,4 @@
-// §35.11. [ASSUMED] Advisor summaries/feasibility estimates, never authoritative gameplay or live stock.
+// §37.11. [ASSUMED] Advisor summaries/feasibility estimates, never authoritative gameplay or live stock.
 // Counts/thresholds/costs come from the seat digest and knowledge generated from activity_table.json.
 const pick = (x, keys) => Object.fromEntries(keys.filter(k => x?.[k] !== undefined).map(k => [k, x[k]]));
 // The plan addresses operator IDs, not piece UIDs. Static names/base IDs already live in the cached prefix.
@@ -17,7 +17,7 @@ export function compactChoices(d) {
   });
 }
 
-// §35.63 [ASSUMED]: the seat's own copy counts and the shop arithmetic, computed here so the model does not have to
+// §37.63 [ASSUMED]: the seat's own copy counts and the shop arithmetic, computed here so the model does not have to
 // (cycle 2: plans skipped third copies, and holds were justified by miscounted prices).
 const baseOf = p => p.baseId || String(p.id).replace(/_b$/, '_a');
 export function levelOptions(economy, mergeCosts) {
@@ -106,11 +106,11 @@ export function continuity(d, previous) {
       lp: { before: confirmed?.digest.lp ?? null, after: d.lp ?? null }, lastBattle: feedback?.lastBattle || null } };
 }
 
-// §35.62 [ASSUMED]: the band draft sets a direction before any member is owned (玛恩纳 → 卡西米尔 waited until R6 for a
+// §37.62 [ASSUMED]: the band draft sets a direction before any member is owned (玛恩纳 → 卡西米尔 waited until R6 for a
 // first copy). `intent` lists the mains of the current strategy candidates: those bonds may lead the plan without a
 // held member. A primary change still needs pivot:true and a reason.
 export function focusPlan(plan, meta, digest, previousPlan, repairs, intent = []) {
-  // §35.9's explicit empty-plan delegation remains unweighted, even when an earlier plan had targets.
+  // §37.9's explicit empty-plan delegation remains unweighted, even when an earlier plan had targets.
   if (!Object.keys(plan).length) return { pivot: false, pivotReason: '' };
   const candidates = new Set([...digest.bonds.filter(b => b.candidate).map(b => b.id), ...intent]);
   const select = bonds => (bonds || []).filter(b => candidates.has(b.id)).sort((a, b) => b.priority - a.priority).slice(0, 3);

@@ -38,7 +38,7 @@ export default {
       trait: { hitSleep: true }, // 仁慈: 自身可以攻击…沉睡的目标 (沉睡 = 无敌 for everyone else)
       skill: {
         kind: 'duration',
-        // Source: author video BV1UdAHzNEVj + maintainer confirmation 2026-10-24 (§35.91).
+        // Source: author video BV1UdAHzNEVj + maintainer confirmation 2026-10-24 (§37.91).
         // 技能开启: with an attackable target in range — the basic strategy, DEFAULT —
         // at full HP too. The data's 重装 row (TAKE_DAMAGE: "受到伤害时释放技能") made a full-HP 瑕光 hold S3 with its SP
         // ready: she opened it only after a hit, so an untouched guardian never cast. The condition is the engine's own

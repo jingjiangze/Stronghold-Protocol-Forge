@@ -36,7 +36,7 @@
 // unofficial: the aggregates leave it out unless asked to take it in (aggregateStats `modded` — the overview's
 // 「含插件对局」 switch); the history lists it with its mark.
 // Test matches (DESIGN §36.8) never create local records, including quits. Server awards are
-// Official versions (DESIGN §35.23, M1): every record of another version names it — `version` (a registry id, only when
+// Official versions (DESIGN §37.23, M1): every record of another version names it — `version` (a registry id, only when
 // it is not 第二期下半; format v3, MIGRATIONS[2]: a record without one played 第二期下半) — and its id does not include
 // it (a record's id stays what it was). 统计数据 filters by version (recordsOfVersion: the version shown by default,
 // 全部版本 on request) and the levels count the records of one season (recordsOfSeason: 第一期 / 第二期 each have their own
@@ -312,7 +312,7 @@ export function normalizeRecord(raw) {
  */
 export const MIGRATIONS = {
   1: (stats) => ({ v: 2, records: (Array.isArray(stats.records) ? stats.records : []).map((r) => (isObj(r) ? { ...r, content: null } : r)) }),
-  // 2 → 3 (0.3.2, DESIGN §35.23): records name another official version (`version`); one without played 第二期下半 —
+  // 2 → 3 (0.3.2, DESIGN §37.23): records name another official version (`version`); one without played 第二期下半 —
   // nothing to rewrite, the version keeps an older build from stripping the field
   2: (stats) => ({ v: 3, records: Array.isArray(stats.records) ? stats.records : [] }),
 };

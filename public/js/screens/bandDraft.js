@@ -220,7 +220,7 @@ function BandText({ band, class: cls }) {
  * One doctor of the draft order: the name card (the 名片干员 art, avatar, name, state), the strategy box (⌛ 决策中 / •••
  * / the pick with 🔍, which opens it) and ✓ outside it; a beam runs along the row when the pick lands (useRise).
  * `arts`: the 名片干员 pictures in order of preference (the outfit's, then the operator's default — an outfit file that fails
- * to load falls back to the default as on the seat cards, §35.51), null for none.
+ * to load falls back to the default as on the seat cards, §37.51), null for none.
  * @param {{ p: any, i: number, picked: string|null, cur: boolean, self: boolean, arts: (string|null)[]|null, medal: string|null,
  *   gd: any, onPeek: (bandId: string) => void }} props
  */
@@ -362,7 +362,7 @@ export function BandDraftScreen({ held = null } = {}) {
   // the doctor's outfit for that operator (B6 picture-only outfits, docs/SKINS.md; the maintainer's decision 4 of 2026-10-21
   // for the seat cards; ui/seatArt.js seatCardSkin): one's own choice at once, a teammate's from the match's public
   // players (m.public.players[].skins), none for another seat while 「显示其他玩家的皮肤」 is off, the default art when the
-  // outfit's pictures are not here (chessPortraitUrl) — or fail to load (the row falls back to them: §35.51)
+  // outfit's pictures are not here (chessPortraitUrl) — or fail to load (the row falls back to them: §37.51)
   const cards = useMemo(() => cardContext(cardOperators(gd.list('chess'))), [gd.ready]);
   const myCard = useStore((s) => s[CARD_KEY], Object.is, cardStore);
   const localSkins = useStore((s) => s[SKINS_KEY], Object.is, skinsStore);

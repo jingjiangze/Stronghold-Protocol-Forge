@@ -963,7 +963,7 @@ export class UnitView {
         // Query at attack time: late index loads, skill slots and facing changes need no new model or request.
         actor.skillAttackMode = () => {
           // [ASSUMED] §36.31's cast heuristic is for operators; enemy abilities and token controllers keep their roles.
-          // §34.31 / §35.20 verify operator mappings only; enemy abilities and token controllers keep their roles.
+          // §36.31 / §37.20 verify operator mappings only; enemy abilities and token controllers keep their roles.
           if (this.info.kind !== 'op') return { preserve: true };
           const mode = skillAttackMode(this.ctx.skillAttackIndex?.(), {
             info: this.info, rec: this.ctx.lookupDef?.(this.info), skillIndex: this.skillIndex,
@@ -1593,8 +1593,8 @@ export class UnitView {
   /**
    * The clip of an attack-class skill cast in the attack's turn (the sim's ['cast', id, slot, dur, clip]; enemies.js
    * attackTurnSkill — no 'atk' comes with it): the slot's clip (`anims.skills[slot]`, else the primary `anims.skill`) when
-   * its official ability names one (`clip` > 0: the §35.29 / §35.52 tables, 昆图斯's), else null — the attack clip
-   * [ASSUMED: an attack-class ability with an empty `_animKey` shows the unit's attack; DESIGN §35.57].
+   * its official ability names one (`clip` > 0: the §37.29 / §37.52 tables, 昆图斯's), else null — the attack clip
+   * [ASSUMED: an attack-class ability with an empty `_animKey` shows the unit's attack; DESIGN §37.57].
    */
   _turnClip(index, clip) {
     if (!(clip > 0) || !this.actor) return null;
@@ -1606,7 +1606,7 @@ export class UnitView {
   /**
    * An attack-turn cast is rendered now (onCast): its clip plays once at its own speed in place of the attack — from
    * its strike frame unless the look-ahead wound it up (windUpCast) —, or the attack clip in the attack's rhythm when
-   * the ability names none (DESIGN §35.57). Until then the swing it replaced showed nothing (the model stood idle).
+   * the ability names none (DESIGN §37.57). Until then the swing it replaced showed nothing (the model stood idle).
    */
   _turnCast(index, clip) {
     if (!this.alive || !this.actor) return;

@@ -15,7 +15,7 @@
 //   * Host-only: room.setDifficulty, room.setAiPicksLast, room.setSoloUnlimited, room.addBot, room.removeBot, room.kick,
 //     room.start.
 //     ▸ Changing the difficulty or the AI-picks-last option (co-op only) un-readies the other humans.
-//     ▸ 「不限时」 (room.setSoloUnlimited { on }, DESIGN §35.23.10): a solo room of a version whose rules.soloTimed is
+//     ▸ 「不限时」 (room.setSoloUnlimited { on }, DESIGN §37.23.10): a solo room of a version whose rules.soloTimed is
 //       true, off by default. On, the match is built with opts.soloUnlimited (preparation and 机变 untimed — the existing
 //       Match opt-out). room.state carries `soloUnlimited: true` only while it is on, so a default room.state stays
 //       identical. A switch to a version whose solo is not timed clears it. A create that sends the key on a co-op room
@@ -41,7 +41,7 @@
 //     (86400 s; option `soloReconnectWindowMs` overrides it) instead of the 10-minute window (net.js
 //     session.resumeWindowMs, set at every disconnect). 第一期's constData has no singleReconnectTime, so that solo
 //     uses the same 24 h figure as a carried-over convenience [ASSUMED] — not because the run is untimed (a 第一期 solo
-//     is timed unless the room's 「不限时」 is on, §35.23.10). Only after that does expiry turn into
+//     is timed unless the room's 「不限时」 is on, §37.23.10). Only after that does expiry turn into
 //     match.onLeave ('abandoned'). The extension outlives the match, so a run that ended meanwhile (e.g. a server-run
 //     Final Assault) still shows its result on the player's return.
 //     A repeated hello on a live connection is a full resync: room.state goes to the requester only
@@ -189,7 +189,7 @@
 //     time → room.closed {kicked} to it. A spectator in a LOBBY room may take a free player seat with room.join of the same
 //     code; a player never switches to spectating in place (ALREADY). Disconnect / grace / reconnect / expiry work as for
 //     a player seat (the seat is kept and given back on resume).
-//   * Official versions (DESIGN §35.23, M1; shared/versions.js, server/versions.js): a room plays one official version,
+//   * Official versions (DESIGN §37.23, M1; shared/versions.js, server/versions.js): a room plays one official version,
 //     `room.version` — room.create { version? } (omitted: the server's default version; refused VERSION_UNKNOWN when this
 //     server does not enable it, VERSION_UNSUPPORTED when it does not offer the room mode, its data failed to load
 //     (server/versions.js available; welcome then omits it) or the server owner's fixed plugins (plugins/config.json
@@ -502,7 +502,7 @@ export class Room {
     // [ASSUMED] Remake cooperation option, approved 2026-10-24; host opt-in before the match.
     this.aiTakeoverEnabled = false;
     /**
-     * 「不限时」 (room.setSoloUnlimited, DESIGN §35.23.10; a timed solo only, off by default): the match is built with
+     * 「不限时」 (room.setSoloUnlimited, DESIGN §37.23.10; a timed solo only, off by default): the match is built with
      * opts.soloUnlimited. room.state omits the key unless this is true.
      */
     this.soloUnlimited = false;
@@ -1926,7 +1926,7 @@ export class Lobby {
   }
 
   /** 「AI 队友最后选择」 (GitHub #338): host-only, before the match, co-op rooms only (a solo room has no AI seat). */
-  /** Host-only opt-in, fixed before play; inherited seat metrics never become personal rewards (§35.100). */
+  /** Host-only opt-in, fixed before play; inherited seat metrics never become personal rewards (§37.100). */
   setAiTakeover(session, { on }) {
     const room = this.roomOf(session);
     if (!room) return fail(ERR.NOT_IN_ROOM);
@@ -1959,7 +1959,7 @@ export class Lobby {
   }
 
   /**
-   * 「不限时」 (DESIGN §35.23.10): host-only, before the match, a solo room of a version whose solo is timed. `on: false`
+   * 「不限时」 (DESIGN §37.23.10): host-only, before the match, a solo room of a version whose solo is timed. `on: false`
    * clears the flag and drops the room.state key. A co-op room or a version whose solo is already untimed is BAD_TARGET.
    */
   setSoloUnlimited(session, { on }) {
@@ -3128,7 +3128,7 @@ export class Lobby {
    * How long a dropped solo run stays resumable (ms): the option, else data singleReconnectTime — the room's version's
    * (header "Official versions": 第一期 has none, so the 24 h figure below) —, else 24 h. The 24 h fallback is a
    * carried-over convenience [ASSUMED]: 第一期's constData never gained singleReconnectTime, and M2 did not add it.
-   * The code path is unchanged (§35.23.10). It is not official 第一期 data, and it is not "because the solo is untimed"
+   * The code path is unchanged (§37.23.10). It is not official 第一期 data, and it is not "because the solo is untimed"
    * — a 第一期 solo is timed unless the room's 「不限时」 is on.
    * @param {Room | null} [room]
    */

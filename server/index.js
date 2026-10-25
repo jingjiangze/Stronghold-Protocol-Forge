@@ -7,7 +7,7 @@
 //                      refused at upgrade with 404 / 429 per network / 503)
 //                      which startServer() options go to net.js / lobby.js, the console logger, the official versions
 //                      this server offers (SP_VERSIONS / SP_VERSION_DEFAULT / SP_MAX_VERSION_HOSTS — versions.js below)
-//   versions.js        the official versions (DESIGN §35.23, M1): each enabled one's cs, data, manifest
+//   versions.js        the official versions (DESIGN §37.23, M1): each enabled one's cs, data, manifest
 //                      (/cs/<cs16>/index.json) and data directory (/data/versions/<slug>/); their matches run in match
 //                      hosts of their own (match/host/, kind 'version') — the pool exists when another version is
 //                      enabled (the default: all four) and forks a process on the first match of one, never at boot;
@@ -145,7 +145,7 @@ export {
  *   studio: the plugin studio at /studio/ (default on for this machine and the local network — SP_STUDIO=local|off;
  *   false: none);
  *   matchHost: options of the match hosts (server/match/host/index.js — watchdogMs, matchOptions …; tests) — the
- *   version hosts' too; versions: the official versions this server offers (http/config.js versionsFrom; DESIGN §35.23);
+ *   version hosts' too; versions: the official versions this server offers (http/config.js versionsFrom; DESIGN §37.23);
  *   versionVoteMs / versionRetryMs: the version vote's answer window and the guard after a declined or expired vote (tests;
  *   server/lobby.js header "Official versions")
  *   roomCode: a fixed alliance key for every new room (--room-code; four letters or digits — config.js parseRoomCode);
@@ -160,7 +160,7 @@ export {
  *                     close: () => Promise<void> }>}
  */
 export async function startServer(opts = {}) {
-  // A release ignores external-AI settings (one log line) and keeps the built-in bot (§35.66).
+  // A release ignores external-AI settings (one log line) and keeps the built-in bot (§37.66).
   // An unknown strategy id still fails here, before data is loaded or the port is opened.
   const log = opts.log || makeLogger(!!opts.quiet);
   if (releaseIgnoresExternalAi()) noteLlmIgnored(log);

@@ -2217,7 +2217,7 @@ Three properties, each deliberate:
 > （`ctx.net.status()` / `ctx.net.welcome()`；只在包内 `PROVENANCE.md` 与代码里同样写作 §28.24 / §28.25，
 > 故两个号一律保持不动，mod 作者才对得上）。`docs/design/engine.md:214` 那个
 > 「Community corrections (2026-10-10, §28.25)」是**另一处松引用标签**，`docs/design/client.md:150` 引的
-> §28.25、`docs/design/network.md:23` 引的 §28.27 同为松引用（`test/docs-paths.test.js` 只判「号是否出现过」，
+> §28.25、`docs/design/network.md:23` 引的 §30.27 同为松引用（`test/docs-paths.test.js` 只判「号是否出现过」，
 > 不核对所指内容）。**二者不是同一节**，互不替代。
 
 The second half of the same gap. The `welcome` frame (`shared/protocol.js` S2C; assembled in `server/net.js:797` from
@@ -3443,7 +3443,7 @@ listener owned by untrusted code) and its own version policy — it is deliberat
 (`lanes: opts.wsLanes`), and the guard plus hand-over in `websocket.js`. Per `docs/MOD-SURFACE.md`'s policy this
 adds no pack-facing surface at all, so `MOD_API_VERSION` does not move and no published pack is refused.
 Numbering: `main` 到 0.15.1 那一刀写到 **§28.37**（§28.30–§28.37 是「服务端四格能力 + 面板第二批读面」那一批），
-**本仓库此后又往后落了若干格，现存最大是 §28.43.4**；而 §28.23（#2）与 §28.26–§28.27（#3）仍在两个待审 PR 手里，
+**本仓库此后又往后落了若干格，现存最大是 §28.43.4**；而 §28.23（#2）与 §30.26–§30.27（#3）仍在两个待审 PR 手里，
 所以这一格往后接 **§28.44**，不插进那条被占用的连号 —— 与 §28.28/29 当年的放法同一条。
 
 Tests: `test/wsLanes.test.js` (8) — the shape layer (`isLanePath`, the five refusals by name, the empty-table
@@ -3501,7 +3501,7 @@ analysis and version policy rather than being folded in here.
 single `handleRequest` and therefore the single order of decisions), and one option threaded through `startServer`.
 Nothing is added to the pack-facing surface, so `MOD_API_VERSION` does not move and no published pack is refused.
 Numbering: `main` 到 0.15.1 那一刀写到 **§28.37**，**本仓库此后又往后落了若干格，本格之前现存最大是 §28.44（姊妹格升级路径表），再往前是 §28.43.4**；
-而 §28.23（#2）与 §28.26–§28.27（#3）仍在待审 PR 手里，所以这一格接 **§28.45**，紧挨着它的姊妹格升级路径表
+而 §28.23（#2）与 §30.26–§30.27（#3）仍在待审 PR 手里，所以这一格接 **§28.45**，紧挨着它的姊妹格升级路径表
 （**§28.44**）—— 两条都不插进那条被占用的连号。
 
 Tests: `test/httpLanes.test.js` (9) — every reserved URL proven unclaimable from the imported list, the

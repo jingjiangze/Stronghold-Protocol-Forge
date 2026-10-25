@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-blackd.js — 讯使 (char_198_blackd), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-blackd.js — 讯使 (char_198_blackd), 第一期 (DESIGN §37.22.9).
 // Shop chess ids of that version are today's other operators, so the kit is keyed by charId.
 
 import { num, talentBb, traitBb, toggleBuff } from '../shared/tier1.js';

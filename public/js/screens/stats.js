@@ -14,7 +14,7 @@
 // JSON file, merged by record id on the way in) moves it between devices; 清空 resets it after a confirm dialog.
 // The host renders nothing until opened and the game data files the replay needs load only then (the lobby alone never
 // downloads them): the statistics tabs read config / bands / bonds / assets only.
-// Official versions (DESIGN §35.23, M1): a version filter above the tabs — the version the page shows by default, every
+// Official versions (DESIGN §37.23, M1): a version filter above the tabs — the version the page shows by default, every
 // version that has records, and 全部版本 — narrows every tab (ui/stats.js recordsOfVersion); a row of another version
 // carries its tag (ui/pluginTag.js VersionTag). Re-viewing a settlement needs that version's data on the page: outside a
 // room the row offers 切换到「X」查看 (the page shows that version while the replay is open — the store's `replayVersion`,
@@ -58,7 +58,7 @@ const cx = (...p) => p.flat().filter(Boolean).join(' ');
 /** Rows of 对局记录 shown at first and added by each 显示更多. */
 export const HISTORY_PAGE = 50;
 
-// `version`: the version filter (null: the version the page shows; 'all': every record — DESIGN §35.23)
+// `version`: the version filter (null: the version the page shows; 'all': every record — DESIGN §37.23)
 const statsStore = createStore({ open: false, tab: 'overview', withModded: false, version: null });
 
 /** Open the stats viewer (title screen / lobby / room entry points). */
@@ -755,7 +755,7 @@ function StatsScreen({ tab }) {
 export function AchievementDialog({ onClose }) {
   const ready = useData('config', 'bands', 'bonds', 'assets', 'chess', 'items', 'backups');
   const gd = useMemo(() => makeLookups(ready), [ready, data.locale(), data.contentId()]);
-  // the season of the version shown (DESIGN §35.23), like the lobby's card
+  // the season of the version shown (DESIGN §37.23), like the lobby's card
   const season = useStore((s) => seasonOf(shownVersion(s)));
   const records = useMemo(() => recordsOfSeason(peekStatsRecords(), season), [season]);
   const agg = useMemo(() => aggregateStats(records), [records]);

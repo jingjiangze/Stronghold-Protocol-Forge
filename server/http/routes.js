@@ -20,7 +20,7 @@
 //     unofficial plugins the server has, `content.plugins` (the title screen's count before any hello) — DESIGN §32 —,
 //     sockets, sessions,
 //     rooms, matches; `versions: { enabled, default, hosts }` only when the server enables another official version than
-//     第二期下半 — DESIGN §35.23), never cached; `?traffic=1` adds the traffic counters (traffic.js: bytes by category since the
+//     第二期下半 — DESIGN §37.23), never cached; `?traffic=1` adds the traffic counters (traffic.js: bytes by category since the
 //     start, WebSocket wire and payload bytes) for a loopback or private-network client only — the maintainer's
 //     decision of 2026-10-12: the figures are the host's, so any other client, also one a tunnel or proxy on this
 //     machine forwards, gets the plain report (net.js clientAddress, honouring TRUST_PROXY like the WebSocket limits);
@@ -154,7 +154,7 @@ function contentSets(lobby) {
  *           versions?: ReturnType<typeof import('../versions.js').createVersionSets> | null,
  *           versionHosts?: { stats: () => object } | null }} health
  *   content: the server's vanilla content (server/plugins/identity.js); versions / versionHosts: the official versions
- *   and their match hosts (DESIGN §35.23); modHealth: 创意工坊包的 /healthz 自述（docs/WORKSHOP.md）—— 上游没有这一格
+ *   and their match hosts (DESIGN §37.23); modHealth: 创意工坊包的 /healthz 自述（docs/WORKSHOP.md）—— 上游没有这一格
  * @param {boolean} [withTraffic]
  */
 export function healthReport({ startedAt, network, registry, lobby, modHealth = null, content = null, traffic, assetIndex,
@@ -180,7 +180,7 @@ export function healthReport({ startedAt, network, registry, lobby, modHealth = 
   } catch {
     /* 吞掉：见上 */
   }
-  // the official versions (DESIGN §35.23): only when another one than 第二期下半 is enabled
+  // the official versions (DESIGN §37.23): only when another one than 第二期下半 is enabled
   if (versions && versions.nonDefault.length) {
     out.versions = { enabled: [...versions.ids], default: versions.defaultId,
       hosts: versionHosts ? versionHosts.stats() : { workers: 0, matches: 0, transport: 'process' } };

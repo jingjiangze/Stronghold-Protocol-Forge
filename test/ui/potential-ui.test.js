@@ -38,7 +38,7 @@ test('storage: ops beside the entries; junk / defaults dropped; an older stored 
   assert.deepEqual(parseStoredOps(null), {});
   const raw = { v: 1, entries: {}, ops: { [V]: { potential: 1, cultivate: 0 }, [KALTS]: { potential: 6, cultivate: 3 }, x: 'junk', 'a b': { potential: 1 }, char_y: { potential: 9 }, __proto__: { potential: 1 } } };
   assert.deepEqual(parseStoredOps(raw), { [V]: { potential: 1, cultivate: 0 } });
-  // v2 (DESIGN §35.23): the choices by operator beside the ops
+  // v2 (DESIGN §37.23): the choices by operator beside the ops
   assert.deepEqual(toStored({ [V]: { skill: 0 } }, { [V]: { potential: 2 } }), { v: 2, byChar: { [V]: { skill: 0 } }, ops: { [V]: { potential: 2 } } });
   assert.deepEqual(parseStoredOps(toStored({ [V]: { skill: 0 } }, { [V]: { potential: 2 } })), { [V]: { potential: 2 } }, 'the ops read as before');
 });

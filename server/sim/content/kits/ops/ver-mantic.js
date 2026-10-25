@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-mantic.js — 狮蝎 (char_215_mantic), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-mantic.js — 狮蝎 (char_215_mantic), 第一期 (DESIGN §37.22.9).
 // Stalker dodge (`prob`) is the profession. The module slow is the hidden talent `move_speed` (攻击范围内所有敌人移动速度−20%).
 
 import { batMod, isMainHit, moduleBb, num, onHitBy, talentBb, up } from '../shared/tier1.js';

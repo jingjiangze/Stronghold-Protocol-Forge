@@ -69,7 +69,7 @@ test('band draft returns at most eight uncontended community directions; prep co
   assert.equal(draft.length, 8);
   assert.equal(new Set(draft.map(c => c.band)).size, draft.length);
   for (const id of ['band_pepe', 'band_clementia', 'band_mlynar']) assert.ok(draft.some(c => c.band === id), id);
-  // §35.62: one slot keeps the best direction of a band without a community main (the sturdiest opening, 45 LP).
+  // §37.62: one slot keeps the best direction of a band without a community main (the sturdiest opening, 45 LP).
   const community = new Set(book.bands.filter(b => b.communityMain).map(b => b.id));
   const sturdy = draft.filter(c => !community.has(c.band));
   assert.equal(sturdy.length, 1);
@@ -165,7 +165,7 @@ test('only a primary-bond change needs a pivot; sub-bonds may be added', () => {
   assert.match(rejected.at(-1).reason, /primary-bond/);
 });
 
-test('repair keeps the advisor plan fields items.buy and economy.freezeSearch (§35.14)', () => {
+test('repair keeps the advisor plan fields items.buy and economy.freezeSearch (§37.14)', () => {
   const pack = structuredClone(fixture.knowledge);
   pack.items = [...pack.items, ...Array.from({ length: 8 }, (_, i) => ({ id: `extra${i}` }))];
   const digest = structuredClone(fixture.digest);

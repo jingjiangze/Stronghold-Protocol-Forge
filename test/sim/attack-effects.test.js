@@ -204,7 +204,7 @@ test('same-named flat reduction takes the strongest value separately for each HP
   assert.equal(b.dealDamage({ target: t, amount: 100, type: 'phys' }), 70, 'weaker surviving source resumes');
 });
 
-// PRTS 伤害减免: reductions of different names stack; the name is `reductionGroup`, else the buff key (DESIGN §35.44).
+// PRTS 伤害减免: reductions of different names stack; the name is `reductionGroup`, else the buff key (DESIGN §37.44).
 test('differently named flat reductions stack, one name keeps its strongest', () => {
   const { b, t } = fixture();
   b.addBuff(t, { key: 'a', damageReduction: { phys: 30 } });
@@ -214,7 +214,7 @@ test('differently named flat reductions stack, one name keeps its strongest', ()
   assert.equal(b.dealDamage({ target: t, amount: 100, type: 'phys' }), 40, "'c' joins 'a': 40 replaces 30");
 });
 
-// its own test so it reports on its own when the assertions above change (DESIGN §35.47)
+// its own test so it reports on its own when the assertions above change (DESIGN §37.47)
 test('a reduction group that names no key keeps its strongest (per-unit keys, as 浊心斯卡蒂\'s aura)', () => {
   const { b, t } = fixture();
   b.addBuff(t, { key: 'aura:1', reductionGroup: 'aura', damageReduction: { phys: 25 } });

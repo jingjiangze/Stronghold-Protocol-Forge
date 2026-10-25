@@ -388,7 +388,7 @@ fall back independently to that operator's normal / elite art. #686's per-seat c
 stand-ins and DIY bodies stay in force; model outfits retain their model and image fallback behavior.
 [ASSUMED] The existing `avatarE2`, `portraitE2` and `illust` fields count too; metadata alone is not wearable.
 Official `skin_table.charSkins` separates operator identity, avatar, portrait, illustration and battle skin; the
-missing-plugin policy is the maintainer's choice. See [SKINS.md](SKINS.md#picture-only-outfits-032-b6) and §35.4.
+missing-plugin policy is the maintainer's choice. See [SKINS.md](SKINS.md#picture-only-outfits-032-b6) and §37.4.
 
 **Spine models and `plugin.lock.json`.** A model's clip roles, durations, events, hit times and bounds come from the
 skeleton itself: `node tools/plugin.mjs pack <dir>` parses it the way `tools/fetch-assets.mjs` parses the game's
@@ -1569,7 +1569,7 @@ cosmetic plugins only still plays the vanilla `cs` and counts as the original ga
 decisions, the measurements and the open points.
 
 Gameplay plugins (content, script and trusted) work only in rooms of 第二期下半, the default version. On a server that
-enables the official versions (`SP_VERSIONS`, DESIGN §35.23), a room of another version refuses them: room.setPlugins
+enables the official versions (`SP_VERSIONS`, DESIGN §37.23), a room of another version refuses them: room.setPlugins
 and a version proposal answer VERSION_UNSUPPORTED (`roomSets.resolve({ gameplay: false })`); room.create of such a room
 leaves the server's default gameplay plugins off (warned once in the log), or answers VERSION_UNSUPPORTED when
 `plugins/config.json` fixes every room's plugins (`rooms: "fixed"`); the 插件 panel disables their switches. Cosmetic plugins carry over to every version; a proposal whose cosmetic plugins do not
@@ -1940,7 +1940,7 @@ are unrestricted and never labelled sandboxable; their sim/meta entries still us
 Geometry helpers read no battle state and incur no engine-action charge; their caller still uses the callback budget.
 `sortEnemyTargets` remains unavailable: it mutates its candidate array, uses live Unit references and calls Battle.remainingDistance.
 
-**SDK hit and damage helpers (0.3.2 settlement, DESIGN §35.32).** `kit.onHitBy(battle, unit, fn)` (damage `unit` deals to
+**SDK hit and damage helpers (0.3.2 settlement, DESIGN §37.32).** `kit.onHitBy(battle, unit, fn)` (damage `unit` deals to
 an enemy) and `kit.onHitOn(battle, unit, fn)` (damage dealt to `unit`) listen on `hit`: once per HP-damage instance, before
 the calculation, output and injury stages — `ctx.dmg.amount` is the instance's input, no DEF / RES, barrier, shield or
 dodge has acted yet, and a handler may still set `ctx.dmg.cancel`. A 流失 (`dealHPLose`) and a gauge fill (`'element'`)
@@ -2003,7 +2003,7 @@ entries run at startup in one separate child, never the HTTP process. `api.http.
 exact path whose handler receives a frozen `{ method, path, url }` and returns a JSON value. No live request/socket is
 passed. `api.lobby.on(name, fn)` receives frozen copies for `roomCreated`, `playerJoined`, `playerLeft`, `matchStarted`,
 `roomClosed`; their `room` is the room.state the members get, so on a server that enables official versions it carries
-`version` and, while a version vote is open, `versionVote` (DESIGN §35.23; absent in 第二期下半 rooms). `api.health.extend(value)` replaces that plugin's JSON under `/healthz.plugins[id]`. Routes never leave
+`version` and, while a version vote is open, `versionVote` (DESIGN §37.23; absent in 第二期下半 rooms). `api.health.extend(value)` replaces that plugin's JSON under `/healthz.plugins[id]`. Routes never leave
 `/x/<id>/`: both the child API and parent IPC receiver check the loaded plugin id, reject `..`, `%2e` in any
 letter case and backslashes, and dispatch by the same raw path used by the HTTP handler (query excluded). A nonmatch
 continues to the original health/static handler. `health.extend` accepts at most 16 KiB of serialized UTF-8 JSON per

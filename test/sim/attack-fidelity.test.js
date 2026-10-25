@@ -1,4 +1,4 @@
-// Intentional differences from the v0.3.1 settlement (DESIGN §35.32 records its outcomes): assert the sourced rules.
+// Intentional differences from the v0.3.1 settlement (DESIGN §37.32 records its outcomes): assert the sourced rules.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mitigate } from '../../server/sim/attack.js';
@@ -169,7 +169,7 @@ test('physical/arts element-burst damage uses normal dodge while burst status an
 });
 
 // Native ep_break_* NoSourceDamage carries no cancellation mask: the burst's HP damage is ordinary, the necrosis tick too
-// (it had dodgeMode 'ignore' until the merge review of 2026-10-23; DESIGN §35.32).
+// (it had dodgeMode 'ignore' until the merge review of 2026-10-23; DESIGN §37.32).
 test('the necrosis burst tick is ordinary 无来源 damage: an injury dodge effect cancels it, the burst stays', () => {
   const h = makeBattle({ defs: { chess: { probe: chessRec({ id: 'probe', stats: { maxHp: 100000, def: 0 }, skill: null }) } },
     units: [{ uid: 'probe', chessId: 'probe', row: 10, col: 5 }], content: 'none', autoFinish: false });

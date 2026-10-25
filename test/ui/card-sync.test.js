@@ -119,7 +119,7 @@ test('card sync: offline it waits for the next welcome (no request)', async (t) 
   assert.deepEqual(h.net.sent, [{ t: 'room.card', charId: 'char_1_a' }]);
 });
 
-test('card sync: a content change (a version switch, a room\'s set) with the same payload sends nothing — the session keeps the card (DESIGN §35.23)', async (t) => {
+test('card sync: a content change (a version switch, a room\'s set) with the same payload sends nothing — the session keeps the card (DESIGN §37.23)', async (t) => {
   const h = harness({ card: 'char_1_a' });
   t.after(h.dispose);
   await h.flush();

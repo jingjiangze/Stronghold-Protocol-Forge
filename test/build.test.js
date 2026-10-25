@@ -47,7 +47,7 @@ test('computeBuildTag: server-only code and downloaded media do not change the b
   const root = fixture();
   try {
     const known = computeBuildTag(root);
-    // data/versions/: another official version's data, served only when the server enables it (DESIGN §35.22, §35.23)
+    // data/versions/: another official version's data, served only when the server enables it (DESIGN §37.22, §37.23)
     for (const rel of ['server/index.js', 'server/http/routes.js', 'server/data.js', 'public/assets/sprite.png',
       'data/versions/act1autochess/chess.json']) {
       const abs = path.join(root, rel);
@@ -60,7 +60,7 @@ test('computeBuildTag: server-only code and downloaded media do not change the b
   }
 });
 
-test('computeBuildTag: a served official version\'s data is part of the build; an unserved one\'s is not (DESIGN §35.23)', () => {
+test('computeBuildTag: a served official version\'s data is part of the build; an unserved one\'s is not (DESIGN §37.23)', () => {
   const root = fixture();
   try {
     const bare = computeBuildTag(root);

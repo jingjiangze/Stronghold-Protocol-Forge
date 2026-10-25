@@ -1,4 +1,4 @@
-// server/sim/content/kits/shared/version.js — helpers shared by the 第一期 charId kits (ops/ver-*.js, DESIGN §35.22.9).
+// server/sim/content/kits/shared/version.js — helpers shared by the 第一期 charId kits (ops/ver-*.js, DESIGN §37.22.9).
 
 import { CHAIN_RADIUS, COLS } from '../../../constants.js';
 import { aggregateMods } from '../../../buffs.js';

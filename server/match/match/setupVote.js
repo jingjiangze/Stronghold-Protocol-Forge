@@ -14,7 +14,7 @@ import { OK, fail } from './common.js';
 // the opening. A completed reroll starts a new opening and therefore a new window. (SETUP_REROLL_COOLDOWN_MS, 30 s, lives
 // in shared/constants.js so the client's refusal toast names the same value.) With one human every start completes at
 // once and clears the seat cooldown, so the throttle there is the connection's heavy bucket: room.rerollSetup is in
-// server/net.js HEAVY_TYPES (2 per second, burst 6), as each reroll rebuilds the opening and resends m.public (DESIGN §35.47).
+// server/net.js HEAVY_TYPES (2 per second, burst 6), as each reroll rebuilds the opening and resends m.public (DESIGN §37.47).
 
 export class MatchSetupVote {
   requestSetupReroll(playerId, revision) {

@@ -12,7 +12,7 @@
 // behind her — including one about to leave the tile — is not reversed. `keepDir` keeps her attack direction and still
 // applies the −2 level (0.12 tile). Beside her, or nearer than 0.25 tile, the push stays the official radial −2.
 // the other way, towards the protection objective. The maintainer's 2026-10-19 decision and official recordings
-// (#782, DESIGN §35.10) supersede round 40 (§32.14.9): behind targets DO move away radially at reduced force.
+// (#782, DESIGN §37.10) supersede round 40 (§34.14.9): behind targets DO move away radially at reduced force.
 
 
 import { test } from 'node:test';

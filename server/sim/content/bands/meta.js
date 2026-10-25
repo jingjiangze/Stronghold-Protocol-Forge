@@ -39,7 +39,7 @@
 // 机变 round (config spRounds) meets 老鲤 / 昆图斯 at R3 and the even-round ones (杜宾, 松桐, 娜仁图亚) at R6 of NORMAL; elsewhere
 // only the order around the round start changes. "回合开始时" (余, 铃兰) and 哈洛德's gain_bond_char_per_round stay onRoundStart.
 // The operators' 「<进入休整期时>」 traits (SERVER_PREP_START garrisons) run on onPrepStart too (effectsMeta.js GARRISON_HOOK,
-// DESIGN §35.53), after the strategy's grants of that dispatch (global → band → bonds → garrisons).
+// DESIGN §37.53), after the strategy's grants of that dispatch (global → band → bonds → garrisons).
 
 import { GEO } from '../../../../shared/constants.js';
 import { bbCap } from '../../../../shared/plugins/officialBounds.js';

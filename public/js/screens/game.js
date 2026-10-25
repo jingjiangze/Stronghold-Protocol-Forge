@@ -20,7 +20,7 @@ import { AiTakeoverPanel } from '../ui/aiTakeover.js';
 // legality reads the player's half of the boss field (gameLogic deployFieldOf, user playtest #5 item 7).
 // Shortcuts: R refresh, F freeze, D level-up, Space ready, Esc closes the topmost popup.
 // The UI never mutates match state locally; it re-renders from m.public / m.private / m.field pushes.
-// Official versions (DESIGN §35.23): a match of another version waits (正在载入模拟数据…) until the page shows that
+// Official versions (DESIGN §37.23): a match of another version waits (正在载入模拟数据…) until the page shows that
 // version's checked data (content.js — a spectator joining a running match, a reload or a resume would otherwise draw
 // the frames with the lobby's data, whose chess ids name other operators); the settlement screen shows the room's
 // version vote (ui/versionVote.js), so a doctor still reading the result can vote.
@@ -1028,7 +1028,7 @@ function MatchScreen() {
   // your turn cue in the 机变 draft, and the official 轮到你选 disc over the cards (ui/turnPopup.js) once its art is in —
   // a shared draft's turn, and a solo draft as it opens (the maintainer's decision of 2026-10-22, decision 7 extended: as
   // the strategy draft's 请选择策略 band, screens/bandDraft.js). The cue comes due with the turn and plays once no phase
-  // banner or plate is on screen (the 机变阶段 banner that opens the draft hid the disc's words: §35.18's leftover); a pick
+  // banner or plate is on screen (the 机变阶段 banner that opens the draft hid the disc's words: §37.18's leftover); a pick
   // (or the turn moving on) before then drops it. The wait runs per overlay (overlayKey): the round plate still up from
   // ROUND_START holds the banner back (the server's ROUND_START is 2 s, the plate 1.98 s: a plate mounted late, or a slow
   // phone, has the turn come under it), so the plate gets at most TURN_CUE_PLATE_WAIT_MS, then the banner as it mounts

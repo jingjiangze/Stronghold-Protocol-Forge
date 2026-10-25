@@ -8,7 +8,7 @@
 //   * UnofficialMark — the small 「非官方」 / MOD mark of a match with gameplay plugins (the briefing, the HUD corner, the
 //     result; DESIGN §34.6, the design study's §7.4); nothing for the original game (cosmetic plugins only included).
 //     result; DESIGN §32.6, the design study's §7.4); nothing for the original game (cosmetic plugins only included).
-//   * VersionTag — the name of the official version a room or a record plays when it is not 第二期下半 (DESIGN §35.23:
+//   * VersionTag — the name of the official version a room or a record plays when it is not 第二期下半 (DESIGN §37.23:
 //     the room's top bar beside the mode, the briefing, the settlement and the result beside UnofficialMark, a 统计数据
 //     row [ASSUMED placement]); nothing for 第二期下半. Not unofficial: an official version is the original game.
 // Texts go through t() (docs/I18N.md).

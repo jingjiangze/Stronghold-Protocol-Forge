@@ -128,17 +128,17 @@
    ========================================================================================== */
 
 /* ---- hub backdrop ------------------------------------------------------------------------------------- */
-/* the entries' width follows 文字大小 (2.3rem at 小; §35.18 review: at a fixed 2.3rem the names had to stop at 小's size) */
+/* the entries' width follows 文字大小 (2.3rem at 小; §37.18 review: at a fixed 2.3rem the names had to stop at 小's size) */
 .lobby-hub { --hub-entry-w: calc(2.3 * var(--t)); --hub-gap: .14rem; background: #050807; }
-/* Korean breaks between words, not between the syllables of one (§35.18 review: 「독립 시뮬레이|션」 at 小); a word too
+/* Korean breaks between words, not between the syllables of one (§37.18 review: 「독립 시뮬레이|션」 at 小); a word too
    long for its box still breaks rather than running out of it. The hub's own stage only: 选择模拟协议's button keeps its
    two lines (「독립 시뮬레이션 시작」 took three at 特大 in a 1024×600 window by words) */
 .lobby-hub:lang(ko) .hub-stage { word-break: keep-all; overflow-wrap: break-word; }
-/* Japanese never starts a line with a small kana, ー or a closing mark (§35.18 review: the tips' 「オペレ|ーター」 at 中 / 特大
+/* Japanese never starts a line with a small kana, ー or a closing mark (§37.18 review: the tips' 「オペレ|ーター」 at 中 / 特大
    in a 1024×600 window; line-break: normal allows a break before them), as in the room */
 .lobby-hub:lang(ja) .hub-stage { line-break: strict; }
 /* a last line of one character: the hub's tips, the protocol dialog's paragraphs and its big button's label wrap `pretty`
-   (§35.18 review of the text-fit fixes: 「比較的所要時間が短いシミュレーショ|ン」 on a phone at 特大, 「単独演算を開|始」,
+   (§37.18 review of the text-fit fixes: 「比較的所要時間が短いシミュレーショ|ン」 on a phone at 特大, 「単独演算を開|始」,
    Korean 「독립 시뮬레이션 시|작」 on desktops). Scoped as in the room (room.css): WebKit's `pretty` adds lines to short
    labels, and the lobby's other dialogs were not measured with it. The dialog's button only (`.proto-foot`): the room's
    big button shares the label's class and wraps plainly — in Safari `pretty` broke its Japanese 「シミュレーション|開始」
@@ -149,7 +149,7 @@
    at 特大 on the phones, now 「…教えて|もらうか、招待リンクを|直接開いてください」); Safari and Firefox ignore it and wrap as
    before */
 .ally-recent:lang(ja) { word-break: auto-phrase; }
-/* the top bar's ping pill grows with its text at 大 / 特大, as in the room (§35.18 review: its fixed .32rem cut it) */
+/* the top bar's ping pill grows with its text at 大 / 特大, as in the room (§37.18 review: its fixed .32rem cut it) */
 .lobby-hub > .topbar .ping { height: auto; min-height: .32rem; padding-top: 1px; padding-bottom: 1px; }
 .hub-bg {
   position: absolute;
@@ -349,7 +349,7 @@
   position: relative;
   margin: 0;
   /* follows 文字大小 while it fits on one line beside the side columns (larger, it ran under the left column's tips —
-     §35.18 review): the centre is the stage's width (100vw less its .72rem padding) and the title's box 8.8rem less (below);
+     §37.18 review): the centre is the stage's width (100vw less its .72rem padding) and the title's box 8.8rem less (below);
      7 CJK characters with their spacing are 7.4–8em, so it stops at that box / 8.2 (never below .56rem at 小); the latin
      title below */
   font-size: min(calc(.56 * var(--t)), calc((100vw - 9.52rem) / 8.2));
@@ -364,7 +364,7 @@
 .hub-center__title--latin { font-family: var(--font-display); letter-spacing: .04em; text-transform: uppercase; }
 /* the title is centred over the whole stage: it keeps clear of the side columns (4rem and its gap each side), and the
    latin one — 「STRONGHOLD PROTOCOL: ALLIANCE」, 20em of the display font — is .46 × --t while it fits on one line
-   inside that, (100vw − 9.52rem) / 20.2 (§35.18 review: at .56rem it reached under the left column's tips in English, at
+   inside that, (100vw − 9.52rem) / 20.2 (§37.18 review: at .56rem it reached under the left column's tips in English, at
    大 / 特大 in 800–1280 px windows; pinned at .46rem it no longer followed 文字大小). [ASSUMED] the .46 */
 .hub-center__title { max-width: calc(100% - 8.8rem); }
 .hub-center__title--latin { font-size: min(calc(.46 * var(--t)), calc((100vw - 9.52rem) / 20.2)); }
@@ -623,7 +623,7 @@
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
 }
 .hub-plate__glyph svg { width: 100%; height: 100%; }
-/* (a label too long for its plate wraps beside its glyph and the plate grows, rather than an ellipsis — §35.18 review:
+/* (a label too long for its plate wraps beside its glyph and the plate grows, rather than an ellipsis — §37.18 review:
    Japanese S.W.E.E.P.レポート beside its tag at 特大 in 800–1280 px windows. It takes the row's free width, at least its
    longest word, so only the tag drops under it when even that does not fit) */
 .hub-plate__label, .lobby-hub .hub-plate .btn__label { flex: 1 1 0; min-width: min-content; font-weight: 900; letter-spacing: .04em; line-height: 1.15; white-space: normal; color: #111816; }
@@ -635,7 +635,7 @@
 
 /* ---- entries (独立模拟 / 同盟模拟), bottom right ----------------------------------------------------------- */
 /* (the card, the line above it, the tips' head and the 成就统计 card's label grow or wrap rather than cut their text at
-   大 / 特大 in a small window — §35.18 review; the trophy count under the medal stops at .15rem, 大's size [ASSUMED]) */
+   大 / 特大 in a small window — §37.18 review; the trophy count under the medal stops at .15rem, 大's size [ASSUMED]) */
 /* (the two cards share a height: the taller one's, their text at the bottom) */
 .hub-entries { grid-area: entries; position: relative; z-index: 1; display: flex; align-items: stretch; justify-content: flex-end; gap: var(--hub-gap); min-width: 0; }
 .hub-entry-wrap { display: flex; flex-direction: column; gap: .05rem; min-width: 0; animation: card-in var(--t-slow) var(--ease-out) backwards; }
@@ -677,11 +677,11 @@
 .hub-entry__icon .icon { width: calc(.42 * var(--t)); height: calc(.42 * var(--t)); }
 /* the card, its icon and its text follow 文字大小 together (2.3 × 1.34 --t, the icon .42 --t), as at 小; the text stays
    below the icon — the card's top padding is the icon's .12rem offset, its height and a gap — so a long name or the
-   decorative line grows the card rather than running under it (§35.18 review: 「ALLIANCE SIMULATION」 ran under the
+   decorative line grows the card rather than running under it (§37.18 review: 「ALLIANCE SIMULATION」 ran under the
    people icon in English, Korean names under it at 大 / 特大; a padding beside it instead wrapped the line in every
    language, Chinese 「ALLIANCE / SIMULATION」 at 小, which never reached the icon). A short card keeps its min-height */
 .hub-entry__en { font-family: ui-monospace, Consolas, monospace; font-size: calc(.11 * var(--t)); font-weight: 700; letter-spacing: .22em; color: var(--mint-400); }
-/* the name wraps between words (§35.18 review: on one line English 「Solo Simulation」 / 「Team Simulation」 ran 25–40 px
+/* the name wraps between words (§37.18 review: on one line English 「Solo Simulation」 / 「Team Simulation」 ran 25–40 px
    past the 2.3rem card at 小 in every window and 84–100 px at 特大, the card cutting it); 「Simulation」 alone is ~6.2em,
    and the card (2.3 × --t) keeps ~1.98 × --t inside for the .3 × --t name */
 .hub-entry__name { margin-top: .04rem; font-size: calc(.3 * var(--t)); font-weight: 900; letter-spacing: .06em; line-height: 1.1; }
@@ -703,7 +703,7 @@
 }
 .tips__head { display: flex; flex-wrap: wrap; align-items: center; gap: .1rem; font-size: calc(.16 * var(--t)); font-weight: 700; color: var(--text-md); }
 .tips__head > .icon { width: .2rem; height: .2rem; color: var(--mint-500); }
-/* the count and its arrows move to a line of their own, together, when the head is too narrow for them (§35.18 review) */
+/* the count and its arrows move to a line of their own, together, when the head is too narrow for them (§37.18 review) */
 .tips__pager { display: inline-flex; align-items: center; gap: .1rem; margin-left: auto; }
 .tips__idx { font-size: calc(.16 * var(--t)); color: var(--text-md); }
 .tips__nav {
@@ -790,7 +790,7 @@
 .proto-title__mode .icon { width: 1.1em; height: 1.1em; }
 .proto-title__mode i { font-style: normal; font-family: var(--font-display); font-size: calc(.13 * var(--t)); letter-spacing: .16em; color: #8b8f8e; }
 
-/* the cards' column 5.6rem, at least 300 px (§35.18 review: in a window whose 1rem is under 54 px — 960×540, 1100×530,
+/* the cards' column 5.6rem, at least 300 px (§37.18 review: in a window whose 1rem is under 54 px — 960×540, 1100×530,
    800×600 — the px floors of the glyph and the 文字大小 made 5.6rem too narrow for English 「Standard Simulation」 /
    「Ultimate Simulation」 on one line, and the unselected cards' names ended in an ellipsis), never past 46vw. [ASSUMED] the
    floor */
@@ -866,7 +866,7 @@
 /* the difficulty cards: the chosen one slides out with a glow and the 已选定 stamp; centred while they fit (auto margins, so
    a list taller than the column still scrolls from its top). The gaps and pads a little tighter than #643's (.14rem, .1rem
    and .1 / .11rem) so the full cards fit at 小 in a 16:9 window (they were 2–26 px too tall at 1280x720 – 1920x1080:
-   §35.18's leftover). [ASSUMED] the spacing */
+   §37.18's leftover). [ASSUMED] the spacing */
 .proto-side { min-height: 0; display: flex; flex-direction: column; gap: .14rem; }
 .proto-list {
   flex: 1 1 auto;
@@ -2182,9 +2182,9 @@ button.sw-eth:hover { border-color: #fff; }
 .ally__bg { background:
 .proto-start__label { position: relative; display: inline-flex; align-items: center; gap: .1rem; min-width: 0; font-size: calc(.4 * var(--t)); font-weight: 900; letter-spacing: .08em; white-space: nowrap; }
 /* 选择模拟协议's own button (.proto-foot; the room's GoButton shares the rules above and makes its own choice in
-   css/screens/room.css — §35.18 review: these rules once reached it too): the label wraps onto a second line (the button
+   css/screens/room.css — §37.18 review: these rules once reached it too): the label wraps onto a second line (the button
    grows: min-height above) rather than being cut, and stops at .46rem — 大's size — on a screen taller than 520 px, the
-   mark's rook at .4rem (§35.18's leftover: English 开始独立模拟 was cut at every desktop size, even at 小 at 1440x900;
+   mark's rook at .4rem (§37.18's leftover: English 开始独立模拟 was cut at every desktop size, even at 小 at 1440x900;
    the short-screen block has its own caps). [ASSUMED] the label's caps */
 .proto-foot .proto-start__label { flex: 1 1 auto; padding-right: 8%; font-size: min(calc(.4 * var(--t)), .46rem); white-space: normal; line-height: 1.1; }
 .proto-foot .proto-start__rook { font-size: min(calc(.36 * var(--t)), .4rem); }
@@ -2612,9 +2612,9 @@ button.ally-card:hover, button.ally-card:focus-visible { border-color: rgba(93, 
   background: linear-gradient(180deg, #4fe8c0, #2fcf9f);
   border: 0;
 }
-/* the difficulty line wraps at the bar's right rather than ending in an ellipsis (§35.51: English 「Difficulty: Standard
+/* the difficulty line wraps at the bar's right rather than ending in an ellipsis (§37.51: English 「Difficulty: Standard
    Simulat…」 at 1280–1440 px, Japanese at 1024×600 特大). It keeps a column of at least 10em beside the name, else it
-   takes a row of its own under the name and the bar grows (§35.51 review: squeezed into the 96 px the name left in
+   takes a row of its own under the name and the bar grows (§37.51 review: squeezed into the 96 px the name left in
    English at 特大 on 1024×600, six lines ran out of the 42 px bar); Korean breaks between words only (the review:
    「시뮬레이|션」 once balanced), Japanese by its line-breaking rules */
 .ally-card--create .ally-card__bar { flex-wrap: wrap; align-content: center; row-gap: 1px; height: auto; min-height: max(.74rem, 32px, calc(42px * var(--sp-ui, 1)));
@@ -2699,7 +2699,7 @@ button.ally-card:disabled .ally-card__bar { filter: grayscale(.5) brightness(.8)
 .code-chip:hover { border-color: var(--amber); background: rgba(246, 163, 41, .08); }
 
 /* ---- 选择模拟协议's cards when they do not fit their column (screens/lobby.js pickCardFit: data-fit), above 520 px tall --
-   (§35.18's leftover there: at 大 / 特大, in a small window or a long language the list ran under 开始独立模拟 with 终极模拟
+   (§37.18's leftover there: at 大 / 特大, in a small window or a long language the list ran under 开始独立模拟 with 终极模拟
    out of view.) 'brief': the description only in the brief at the left, where the chosen difficulty's already is;
    'names': a line each, and the brief adds the chosen difficulty's effects and rounds. At both, the chosen card's name
    ends in an ellipsis beside the stamp should a long language need it (the brief names it in full); the names stop at
@@ -2729,7 +2729,7 @@ button.ally-card:disabled .ally-card__bar { filter: grayscale(.5) brightness(.8)
   .proto-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, .7fr) minmax(0, 1.3fr); }
   .ally-body { grid-template-rows: minmax(0, .5fr) minmax(0, 1.5fr); }
   .proto__pic { inset: 0 0 .9rem; }
-  /* the list keeps the .5rem the chosen card slides into (§35.51: at .1rem its -.44rem ran past the screen's left edge) */
+  /* the list keeps the .5rem the chosen card slides into (§37.51: at .1rem its -.44rem ran past the screen's left edge) */
   .proto-foot { padding-left: .1rem; }
   .ally-side { padding-left: 0; }
   /* the cards and the button span the width here: the caps for the landscape column (a 5.6rem column) give way */
@@ -2767,7 +2767,7 @@ button.ally-card:disabled .ally-card__bar { filter: grayscale(.5) brightness(.8)
   .hub-entry__icon .icon { width: .42rem; height: .42rem; }
 
   .proto-top { padding-top: 8px; }
-  /* 选择模拟协议 (§35.18's leftover: at 文字大小 中 and above the four cards ran under 开始独立模拟 — 终极模拟 out of sight,
+  /* 选择模拟协议 (§37.18's leftover: at 文字大小 中 and above the four cards ran under 开始独立模拟 — 终极模拟 out of sight,
      the label cut — in every language, 844×390 and smaller): a wider column (7.4rem as 选择同盟方式's, 296 px here), the cards one
      line each — the name, 16–20 px, an ellipsis in the chosen card of a long language (the brief names it in full) —, the
      chosen difficulty's description in the brief at the left (11–13 px, the event's own place for it, as on a desktop),
@@ -2775,7 +2775,7 @@ button.ally-card:disabled .ally-card__bar { filter: grayscale(.5) brightness(.8)
      still scrolls should a pack's names not fit. [ASSUMED] every cap */
   /* the column and the brief keep their unscaled widths under 界面大小 (÷ --sp-ui): the names' 16 px floor, the brief's
      11 px floor and the px paddings and stamp space do not shrink, so at 75 % a 222 px column cut 'Perilous Simulation'
-     in English and the brief broke a Korean word (DESIGN §35.47) */
+     in English and the brief broke a Korean word (DESIGN §37.47) */
   .proto-body { grid-template-columns: minmax(0, 1fr) min(calc(7.4rem / var(--sp-ui, 1)), 50vw); gap: 10px; padding-bottom: 10px; }
   .ally-body { grid-template-columns: minmax(0, 1fr) min(calc(7.4rem / var(--sp-ui, 1)), 54vw); }
   .proto__pic { inset: 0 0 1.6rem; }
@@ -2805,14 +2805,14 @@ button.ally-card:disabled .ally-card__bar { filter: grayscale(.5) brightness(.8)
   .mf-radar { inset: 0 0 .6rem; height: calc(100% - .6rem); }
   /* 1rem is ~40 px here: the text gets its own sizes (still following 文字大小) */
   .hub-center__en { font-size: calc(.24 * var(--t)); }
-  /* the plates' labels, the entries' names and their decorative English capped so they stay whole (§35.18 review: at 大 /
+  /* the plates' labels, the entries' names and their decorative English capped so they stay whole (§37.18 review: at 大 /
      特大 the plates ended in an ellipsis and the entries cut both lines); each cap is its size at 中 and grows a pixel a
      step above it (--t-step, theme.css), the entries 7 px wider a step for the name's longest word (「Simulation」 ~6.2em).
      [ASSUMED] the caps */
   .lobby-hub .hub-plate { font-size: min(calc(.3 * var(--t)), calc(18px + var(--t-step))); }
   .hub-plate__tag { display: none; }
   .hub-entry__group { height: auto; font-size: calc(.22 * var(--t)); }
-  /* 同盟模拟's line keeps only 「1–4 名博士」 here (§35.51: the whole line, nowrap, ran 81–320 px past its entry at 特大 —
+  /* 同盟模拟's line keeps only 「1–4 名博士」 here (§37.51: the whole line, nowrap, ran 81–320 px past its entry at 特大 —
      two to four lines if it wrapped; the AI teammates are the room's to show) */
   .hub-entry__long { display: none; }
   .hub-entry__short { display: inline; }
@@ -2834,18 +2834,18 @@ button.ally-card:disabled .ally-card__bar { filter: grayscale(.5) brightness(.8)
   .proto-foot .proto-start__mark small { font-size: min(calc(.08 * var(--t)), 6px); }
   /* the bars' names 16–26 px here ([ASSUMED] the cap: en 「Create Alliance」 on its row at 特大, the column on the screen) */
   .ally-card__bar { font-size: clamp(16px, calc(.3 * var(--t)), 26px); }
-  /* 创建同盟 keeps its difficulty line (§35.18's leftover: it was hidden here): two columns, the icon and the name on the
+  /* 创建同盟 keeps its difficulty line (§37.18's leftover: it was hidden here): two columns, the icon and the name on the
      first row, the line under the name on the second, wrapping rather than cut short; 11–14 px, [ASSUMED] the cap */
   .ally-card--create .ally-card__bar { display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: center; row-gap: 1px; height: auto;
     min-height: max(.74rem, 32px, calc(42px * var(--sp-ui, 1))); padding-top: 5px; padding-bottom: 5px; }
   .ally-card--create .ally-card__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
   .ally-card--create .ally-card__bar small { grid-column: 2; margin-left: 0; overflow: visible; white-space: normal; text-align: left; font-size: clamp(11px, calc(.28 * var(--t)), 14px); line-height: 1.3; }
   .ally-key input { font-size: calc(.32 * var(--t)); }
-  /* the key field's placeholder fits beside 观战 (§35.18's leftover: clipped at 特大 in English and Japanese): the short
+  /* the key field's placeholder fits beside 观战 (§37.18's leftover: clipped at 特大 in English and Japanese): the short
      text (screens/lobby.js AllianceSelect `short`), 11–13 px, and 观战 at most 14 px; an ellipsis should a pack's
      name still be longer. [ASSUMED] the caps */
   .ally-key input::placeholder { font-size: clamp(11px, calc(.26 * var(--t)), 13px); }
-  /* the empty field takes the placeholder's size, so the placeholder sits in the middle like the key will (§35.51: on the
+  /* the empty field takes the placeholder's size, so the placeholder sits in the middle like the key will (§37.51: on the
      28 px key's baseline it sat 6–9 px below the key icon and 观战 at 特大) */
   .ally-key input:placeholder-shown { font-size: clamp(11px, calc(.26 * var(--t)), 13px); }
   .ally-key__spec { font-size: min(calc(.26 * var(--t)), 14px); }
@@ -3456,7 +3456,7 @@ button.ally-card:disabled .ally-card__bar { filter: grayscale(.5) brightness(.8)
   .proto__body::after, .ally__body::after { display: none; }
 }
 
-/* official versions (DESIGN §35.23): the version under the title, the cards' wait while a version's data loads */
+/* official versions (DESIGN §37.23): the version under the title, the cards' wait while a version's data loads */
 .hub-center__ver { position: relative; margin-top: .04rem; font-size: calc(.22 * var(--t)); font-weight: 700; letter-spacing: .08em; color: #9fd3ff; text-shadow: 0 1px .08rem rgba(0, 0, 0, .85); overflow-wrap: anywhere; }
 .proto-list__wait { display: flex; align-items: center; gap: .08rem; margin: 0; color: var(--text-lo); font-size: calc(.15 * var(--t)); }
 .proto-list__wait.is-failed { flex-wrap: wrap; color: var(--amber); }

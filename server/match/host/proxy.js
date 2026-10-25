@@ -18,7 +18,7 @@
 // When the worker stops — it crashed, ran out of memory, or the watchdog terminated it after its heartbeats stopped
 // (server/match/host/index.js) — or the match could not be created there, every pending request is answered INTERNAL,
 // the room's members are told (an m.toast, a message id) and onEnd({ reason, detail }) returns the room to its lobby
-// (`reason`: 'plugin-crash' | 'plugin-hang' | 'plugin-start'; a match of an official version's host — DESIGN §35.23 —
+// (`reason`: 'plugin-crash' | 'plugin-hang' | 'plugin-start'; a match of an official version's host — DESIGN §37.23 —
 // 'version-crash' | 'version-hang' | 'version-start', told with the version msgids). A request the worker leaves unanswered for
 // REQUEST_TIMEOUT_MS is answered INTERNAL too (a living worker never takes that long: the watchdog acts first).
 

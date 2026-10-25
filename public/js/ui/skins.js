@@ -45,7 +45,7 @@ const str = (v) => (typeof v === 'string' && v ? v : null);
  */
 export const skinHasModel = (skin) => !!skin && isObj(skin.spine) && isObj(skin.spine.front) && typeof skin.spine.front.skel === 'string';
 
-// B6: maintainer option A (2026-10-18), docs/history/0.3.2.md §35.4. [ASSUMED] The existing E2 and
+// B6: maintainer option A (2026-10-18), docs/history/0.3.2.md §37.4. [ASSUMED] The existing E2 and
 // illust slots count as pictures too; metadata alone never offers a selectable outfit.
 export const skinHasPictures = (skin) => !!skin && ['avatar', 'avatarE2', 'portrait', 'portraitE2', 'illust'].some((key) => str(skin[key]));
 

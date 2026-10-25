@@ -1321,7 +1321,7 @@ describe('websocket lobby', () => {
     assert.ok(h.rooms >= 1);
     assert.ok(h.sockets >= 1);
     assert.ok(h.sessions >= 1);
-    assert.deepEqual(h.versions.enabled, VERSIONS.map((v) => v.id), 'nothing set enables every version (DESIGN §35.23.11)');
+    assert.deepEqual(h.versions.enabled, VERSIONS.map((v) => v.id), 'nothing set enables every version (DESIGN §37.23.11)');
     assert.equal(h.versions.default, DEFAULT_VERSION);
     assert.equal(h.versions.hosts.workers, 0, 'an idle server has forked no version match host');
     assert.equal(h.versions.hosts.matches, 0);

@@ -1,4 +1,4 @@
-// §35.12. [ASSUMED] Reproducible candidate policy, not an optimizer or official build prescription.
+// §37.12. [ASSUMED] Reproducible candidate policy, not an optimizer or official build prescription.
 // Only a static playbook and the existing seat-visible digest enter this module. No Match/GameData/live pool.
 import { cycleCandidates } from './cycle-candidates.js';
 import { communityCandidates, survivalScore, finalAssaultScore } from './community-candidates.js';
@@ -85,7 +85,7 @@ export function strategyCandidates(playbook, digest, previousPlan = null) {
       const communityRole = playbook.community.roles.find(r => r.band === band.id);
       const role = communityRole?.role === 'supplier' && !teammates.length ? 'carry'
         : communityRole?.role || (band.roleClasses.includes('economy') && !band.bondIds.length ? 'economy' : 'carry');
-      // §35.63 [ASSUMED]: a carry's main is a core faction bond (thresholds 3/6). A class bond (迅捷 2, 精准 2/3 …) has
+      // §37.63 [ASSUMED]: a carry's main is a core faction bond (thresholds 3/6). A class bond (迅捷 2, 精准 2/3 …) has
       // nothing past its first threshold to build toward: in cycle 2 every 迅捷 / 精准 / 坚守 main dealt 2-6 % of the
       // leader pool. A band engine tied to a class bond and the safety-net / supplier / economy roles keep theirs.
       if (role === 'carry' && main.core === false && !band.bondIds.includes(main.id)) continue;
@@ -172,7 +172,7 @@ export function strategyCandidates(playbook, digest, previousPlan = null) {
       const prev = best.get(key);
       if (!prev || rank(c, prev) < 0) best.set(key, c);
     }
-    // §35.62 [ASSUMED]: every community band starts with 23–29 LP; keep one slot for the best direction of another
+    // §37.62 [ASSUMED]: every community band starts with 23–29 LP; keep one slot for the best direction of another
     // band (歌利亚 45 LP, 鸭爵 29 …) so a sturdy opening is always on the list.
     const sturdy = pool.find(c => ![...wanted].some(key => key.startsWith(`${c.band}:`)));
     for (const c of [...best.values()].sort(rank)) {

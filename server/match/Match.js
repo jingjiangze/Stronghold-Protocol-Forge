@@ -52,7 +52,7 @@
 //                                              then runs in a match host, server/match/host/): a b.result whose
 //                                              `cs` is missing or not opts.cs is refused like an implausible one — the
 //                                              server simulates that battle itself
-//   opts.version     string (optional)          a non-default official version's registry id (DESIGN §35.23,
+//   opts.version     string (optional)          a non-default official version's registry id (DESIGN §37.23,
 //                                              shared/versions.js; the lobby passes it for such a room only, the match
 //                                              then runs in that version's match host on its data): this.version, the
 //                                              test journal's init.options.version, the external AI's context.gameVersion,
@@ -319,7 +319,7 @@ export class Match {
     this.vs = isContentHash(opts.vs) ? opts.vs : null;
     /** a room with gameplay plugins (opts.requireCs): a client result must name this match's cs (reports.js) */
     this.requireCs = opts.requireCs === true && !!this.cs;
-      /** a non-default official version's id (opts.version, DESIGN §35.23), else null (the default, act2autochess) */
+      /** a non-default official version's id (opts.version, DESIGN §37.23), else null (the default, act2autochess) */
       this.version = typeof opts.version === 'string' && opts.version !== DEFAULT_VERSION && versionById(opts.version)
         ? opts.version : null;    /**
      * The content this match runs with (DESIGN §28.2): `{ digest, packs }`, or null for a plain install. It goes into
@@ -683,7 +683,7 @@ export class Match {
     this.sp = null;
     this.wave = null;
     this.bossWaves = null;
-    this.bossPairs = null; // drawn for the Final Assault, drawn anew for the Hidden Core (GitHub #845, DESIGN §35.27)
+    this.bossPairs = null; // drawn for the Final Assault, drawn anew for the Hidden Core (GitHub #845, DESIGN §37.27)
     this.bossPairsRound = null; // the round whose first plan drew bossPairs (a re-plan after a departure keeps them)
     this.fields = [];
     this.runner = null;

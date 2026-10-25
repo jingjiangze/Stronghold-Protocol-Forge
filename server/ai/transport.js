@@ -35,7 +35,7 @@ export function httpDecision(config, observation, signal) {
 
 // [ASSUMED] One multiplexed, long-lived child per match; request IDs correlate concurrent seats.
 // Crash/protocol failure kills this child; next demand restarts after backoff (no idle restart loop).
-// §35.62: a cancelled request (the host dropped that decision) ends only that request; its late reply is
+// §37.62: a cancelled request (the host dropped that decision) ends only that request; its late reply is
 // ignored by ID. The child is killed only for a protocol error, a crash, or a timeout with no reply at all
 // since the request was written (a real hang), so one slow seat cannot fail every other seat's request.
 const ABANDONED_CAP = 256;

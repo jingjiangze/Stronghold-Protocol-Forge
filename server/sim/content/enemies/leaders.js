@@ -489,8 +489,8 @@ function kitXi(ab) {
       if (s2) s2.left = s2.icd;
     },
   });
-  // the three skills take the attack's turn (DESIGN §35.52); 破桎而出 (MeleeAttack, its `cond` only the form) has no
-  // selector of its own: it waits for a swing at the attack's target (`own` false; PRTS 「触发索敌和普通攻击相同」, §35.54)
+  // the three skills take the attack's turn (DESIGN §37.52); 破桎而出 (MeleeAttack, its `cond` only the form) has no
+  // selector of its own: it waits for a swing at the attack's target (`own` false; PRTS 「触发索敌和普通攻击相同」, §37.54)
   const s1 = skill(sb, burst(sb), { cond: () => !P.form2, turn: attackSkillOf('enemy_1517_xi', 'ShieldBurst', false) });
   const s2 = skill(sb2, sb2 ? burst(sb2) : null, { cond: () => P.form2, turn: attackSkillOf('enemy_1517_xi', 'ShieldBurstReborn', false) });
   return [re, s1, s2, doubleHit(() => P.form2),                   // 普通攻击进行两次
@@ -549,7 +549,7 @@ function kitMace(ab) {
   }, doubleHit(() => P.form2, (c, b, e) => ({ defIgnorePct: penOn(c, e) })),
   skill(ab.sk.Blink, blink(ab.sk.Blink || { bb: {} }), { id: 'blink', cond: (b, e) => !P.form2 && !!e.blockedBy }),
   skill(ab.sk.Blink2, blink(ab.sk.Blink2 || { bb: {} }), { id: 'blink2', cond: (b, e) => P.form2 && !!e.blockedBy }),
-  // 【肆虐风雪】 takes the attack's turn (DESIGN §35.52); 【速杀】 (ActiveBuffAbility) keeps its own timer
+  // 【肆虐风雪】 takes the attack's turn (DESIGN §37.52); 【速杀】 (ActiveBuffAbility) keeps its own timer
   skill(ab.sk.CircleAttack, circle(ab.sk.CircleAttack || { bb: {} }), { id: 'circle', cond: (b, e) => !P.form2 && inR(b, e, ab.sk.CircleAttack), turn: attackSkillOf('enemy_1525_blkswb', 'CircleAttack') }),
   skill(ab.sk.CircleAttack2, circle(ab.sk.CircleAttack2 || { bb: {} }), { id: 'circle2', cond: (b, e) => P.form2 && inR(b, e, ab.sk.CircleAttack2), turn: attackSkillOf('enemy_1525_blkswb', 'CircleAttack2') }),
   reborn({
@@ -620,7 +620,7 @@ function kitWolfLord(ab) {
         } });
     }
   }, { cd: fc ? fc.sp || fc.cd : null, icd: fc ? fc.sp || fc.icd : null, cond: (b, e) => !P.form2 && !caught(b) && b.time >= P.waitUntil && allTargets(b, e).some((u) => u.kind === 'op'),
-    turn: attackSkillOf('enemy_1535_wlfmster', 'FearCage') }),   // MeleeAttack: once ready, the attack's turn (DESIGN §35.52)
+    turn: attackSkillOf('enemy_1535_wlfmster', 'FearCage') }),   // MeleeAttack: once ready, the attack's turn (DESIGN §37.52)
   doubleHit(() => P.form2),                                     // 攻击变为远程二连击
   reborn({
     dur: T(ab, 'Reborn.duration') ?? 0, invincible: T(ab, 'Passive2.invincible_time') ?? 0,

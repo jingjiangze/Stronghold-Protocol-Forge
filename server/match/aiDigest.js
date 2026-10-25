@@ -1,4 +1,4 @@
-// §35.9: a readable index over human-visible data, not a second intent executor.
+// §37.9: a readable index over human-visible data, not a second intent executor.
 import { FIELD, legalTiles, parseKey } from './board.js';
 import { interestDigest, effectText } from '../ai/knowledge.js';
 import { operatorCaps } from '../ai/playbook.js';

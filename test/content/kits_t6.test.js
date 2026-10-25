@@ -593,7 +593,7 @@ test('迷迭香: S2 adds 2 aftershocks per attack, ignores 160 DEF (talent)', ()
   assert.equal(u.profile.shockTimes, u.def.traitBb['attack@times'], 'restored after the skill');
 });
 
-test('新约能天使 火力电台 (PRTS 备注, DESIGN §35.28): one target per round, a bombing per success 0.1 s apart, radius 1.3', () => {
+test('新约能天使 火力电台 (PRTS 备注, DESIGN §37.28): one target per round, a bombing per success 0.1 s apart, radius 1.3', () => {
   const h = battle({
     units: [{ chessId: 'chess_char_6_13_a', row: 10, col: 1 }, { chessId: 'test_lat_a', row: 10, col: 2 }],
     enemies: [{ key: 'enemy_dummy', pos: [10, 8] }, { key: 'enemy_dummy2', pos: [9, 8.7] }],
@@ -628,7 +628,7 @@ test('新约能天使 火力电台 (PRTS 备注, DESIGN §35.28): one target per
 
 test('新约能天使 火力电台: the target among the enemies of the consumer\'s own grid — a permanent 攻击距离 extension does not count', () => {
   // PRTS 「不受对方的攻击距离增减」: baseRangeKeys carries the permanent extension (talents, modules, bonds), the bombing's
-  // search takes the consumer's grid alone (DESIGN §35.28)
+  // search takes the consumer's grid alone (DESIGN §37.28)
   const h = battle({
     units: [{ chessId: 'chess_char_6_13_a', row: 10, col: 1 }, { chessId: 'test_short_a', row: 10, col: 3 }],
     enemies: [{ key: 'enemy_dummy', pos: [10, 5] }],
@@ -658,7 +658,7 @@ test('新约能天使 火力电台: a module that replaces the consumer\'s grid 
   const d = enemyAt(h, 'enemy_dummy');
   assert.ok(!h.b.enemiesInKeys(sh.rangeKeys, u).includes(d), 'outside the original grid');
   // The production module helper replaces rangeGrid, unlike a rangeExtend buff. No current ammo consumer has such
-  // a module, so the fixture supplies one to exercise that distinction (DESIGN §35.28 review).
+  // a module, so the fixture supplies one to exercise that distinction (DESIGN §37.28 review).
   const grid = [[0, 0], [0, 1], [0, 2]];
   applyModuleRange(h.b, sh, { raw: {
     module: { active: true, id: 'test:module' },

@@ -15,7 +15,7 @@
 
 服务器**无状态**：房间和对局只存在内存里，没有数据库和存档，**不需要备份**。重启服务器会结束正在进行的对局（包括断线后本可在 24 小时内回来继续的独立模拟）。
 
-**外部 AI（目前仅开发分支，不随发布包提供）：**维护者 2026-10-23 决定，在语言模型席位的终极胜率接近 100% 之前，外部 AI 与顾问模式不进入发布包、更新包和 Docker 镜像（§35.66）。发布包里的服务器遇到 `SP_BOT_STRATEGY=external`、`SP_EXTERNAL_AI_*` 或 `SP_LLM_*` 时不崩溃、不连外网，忽略这些设置，用内置 AI，并打一行日志。内置 AI 和 #673 策略框架照常随包提供。从源码运行的开发分支仍可按
+**外部 AI（目前仅开发分支，不随发布包提供）：**维护者 2026-10-23 决定，在语言模型席位的终极胜率接近 100% 之前，外部 AI 与顾问模式不进入发布包、更新包和 Docker 镜像（§37.66）。发布包里的服务器遇到 `SP_BOT_STRATEGY=external`、`SP_EXTERNAL_AI_*` 或 `SP_LLM_*` 时不崩溃、不连外网，忽略这些设置，用内置 AI，并打一行日志。内置 AI 和 #673 策略框架照常随包提供。从源码运行的开发分支仍可按
 [服主接入指南](EXTERNAL_AI_ZH.md)与 [External AI API](EXTERNAL_AI.md) 配置；本机程序具有服务器权限，第三方服务能看到该席位视图，请自行选择可信服务。
 
 
@@ -277,7 +277,7 @@ docker run -d --name stronghold -p 3000:3000 --restart unless-stopped \
   -v "$PWD/public/assets:/app/public/assets:ro" stronghold-protocol
 ```
 
-镜像从源码（`git clone`）构建，Releases 的整合包不含 `Dockerfile`。镜像基于 `node:22-alpine`，多阶段构建，只含生产依赖（包括 `ses@2.3.0` 和 `acorn@8.18.0`）；`public/vendor`（含 `ses.umd.js` / `acorn.mjs`）在构建时生成。构建阶段会删掉外部 AI / 语言模型集成的文件并写入 `server/release-without-llm`，与发布包同一道门（§35.66）：镜像里的服务器忽略 `SP_BOT_STRATEGY=external` 及相关变量，用内置 AI。`node_modules` 是镜像安装目录里的实际文件，不是指向镜像外的符号链接，脚本沙箱子进程可以在 `--allow-fs-read` 范围内读取。`.dockerignore` 排除了 `public/assets`（不会把宿主机素材打进构建上下文）；`public/fonts`、`data/assets.json` 和 `data/local-assets.json` 若存在会被复制进去。环境变量同 README（`-e SP_VERIFY=sample` 等）。健康检查：`GET /healthz`。
+镜像从源码（`git clone`）构建，Releases 的整合包不含 `Dockerfile`。镜像基于 `node:22-alpine`，多阶段构建，只含生产依赖（包括 `ses@2.3.0` 和 `acorn@8.18.0`）；`public/vendor`（含 `ses.umd.js` / `acorn.mjs`）在构建时生成。构建阶段会删掉外部 AI / 语言模型集成的文件并写入 `server/release-without-llm`，与发布包同一道门（§37.66）：镜像里的服务器忽略 `SP_BOT_STRATEGY=external` 及相关变量，用内置 AI。`node_modules` 是镜像安装目录里的实际文件，不是指向镜像外的符号链接，脚本沙箱子进程可以在 `--allow-fs-read` 范围内读取。`.dockerignore` 排除了 `public/assets`（不会把宿主机素材打进构建上下文）；`public/fonts`、`data/assets.json` 和 `data/local-assets.json` 若存在会被复制进去。环境变量同 README（`-e SP_VERIFY=sample` 等）。健康检查：`GET /healthz`。
 
 **持久化插件**：把命名卷或宿主机目录挂到 `/app/plugins`，例如加 `-v stronghold-plugins:/app/plugins`。
 镜像在 `/app/plugin-resources` 保留只读的 `_template/`、`README.md` 和 `AGENTS.md`，用
@@ -555,7 +555,7 @@ Node 22 的 `--permission` **不限制网络**（TCP/UDP/DNS/监听均可能可�
 第一期下半（`act1autochess`）、第一期上半（`act1autochess@V1_1`）。数据随发布包和 Docker 镜像一起提供（`data/versions/`）。
 **不设置时四个版本都启用**（注册表顺序，默认版本仍是第二期下半），大厅右上角有「版本」。`npm start`、`scripts/start.sh` 和
 `scripts/start-windows.bat` 不用加参数。`SP_VERSIONS=act2autochess`（或只含第二期下半的列表）收窄到这一个版本，大厅不显示版本按钮。
-房间和消息里省略的版本字段仍表示代码常量 `act2autochess`（DESIGN §35.23.11）。
+房间和消息里省略的版本字段仍表示代码常量 `act2autochess`（DESIGN §37.23.11）。
 
 | 环境变量 | 作用 |
 |---|---|

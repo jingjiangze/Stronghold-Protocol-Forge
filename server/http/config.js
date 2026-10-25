@@ -12,7 +12,7 @@
 //     (assetIndex.js); the index of the default public/ persists in .cache/asset-hashes.json;
 //   * SP_VERSIONS ('all' or a comma list of shared/versions.js ids), SP_VERSION_DEFAULT and SP_MAX_VERSION_HOSTS (or the
 //     `versions: { enabled, default, maxHosts }` option, which wins) → the official versions this server offers
-//     (DESIGN §35.23, versionsFrom): every registry id unless one of them narrows the list (SP_VERSIONS=act2autochess
+//     (DESIGN §37.23, versionsFrom): every registry id unless one of them narrows the list (SP_VERSIONS=act2autochess
 //     is 第二期下半 alone, the switch off);
 //   * the served directories (public/, data/, shared/, the content packs' packs/ and the plugins' plugins/ of this
 //     repository unless the options name others), and which startServer() options are handed on to net.js Network and
@@ -187,7 +187,7 @@ function applyEnvLimits(target, table, log) {
 }
 
 /**
- * The official versions this server offers (DESIGN §35.23): the `versions` option, else SP_VERSIONS ('all' or a comma
+ * The official versions this server offers (DESIGN §37.23): the `versions` option, else SP_VERSIONS ('all' or a comma
  * list of registry ids), SP_VERSION_DEFAULT and SP_MAX_VERSION_HOSTS. Nothing set enables every registry id (the lobby
  * switch on; the default version stays act2autochess). SP_VERSIONS or `versions.enabled` narrows that list —
  * SP_VERSIONS=act2autochess is 第二期下半 alone, the switch off. An unknown id is warned about and dropped; nothing left

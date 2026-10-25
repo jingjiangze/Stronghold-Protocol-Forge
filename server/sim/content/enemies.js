@@ -63,7 +63,7 @@
 //   FLY        — engine (FLY motion, ranged-only targeting). Flyer kits in enemies/fly.js (御4, 护障, 寒霜, 萨科塔之翼/眼, 黑云 …).
 //   TIMES 频次 — "需要N次伤害击倒": maxHp := N hits; engine buff flag hitCount — every damage instance (any type, element
 //                bursts included) removes exactly 1 on its own DamageInfo (茶器 hitCountArts: only arts and true
-//                instances remove 1, phys and 元素伤害 remove 0 — DESIGN §35.32, PRTS 青瓷茶器); HP loss
+//                instances remove 1, phys and 元素伤害 remove 0 — DESIGN §37.32, PRTS 青瓷茶器); HP loss
 //                (loseHp) bypasses the rule. The faction's enemies
 //                create those units (death spawns, embers, blades, 再生).
 //   ELEMENT    — element damage on hit = ATK × ep_damage_ratio into the ally's gauge. 侵蚀 (erosion) is an engine
@@ -225,7 +225,7 @@ function onBeforeAttack(b, c) {
  * (an interval slowed past 5.167 s gives it every turn: the clip is not stretched by a slow, bosses.js QUINTUS_CLIP).
  * The next swing waits for the skill's clip when that is longer than the attack interval (attackCdAfter: 高准度伦蒂尼姆城防
  * 自行炮's 10 s Cannon over its 6 s interval, W's 4.8 s C4 over 4: the official unit is held by its ability's clip and
- * cannot attack inside it; DESIGN §35.54). [ASSUMED] (no source): readiness checked at the damage frame, not when the
+ * cannot attack inside it; DESIGN §37.54). [ASSUMED] (no source): readiness checked at the damage frame, not when the
  * swing starts (a skill that becomes ready during the wind-up takes that turn; PRTS 「可以攻击时」 reads as the swing's
  * start, where the attack would go ahead and the skill wait one turn), the attack cooldown restarting at the skill (a
  * clip shorter than the interval: the interval as after a strike), the skill's effect at the attack's damage frame (not
@@ -240,7 +240,7 @@ function attackSlotSkill(b, e, c) {
 }
 
 /** The attack cooldown of enemy `e` after it cast attack-class skill `a` in the attack's turn: the interval, or the skill's
- *  clip when that is longer [ASSUMED: the unit is held by the clip; DESIGN §35.54]. */
+ *  clip when that is longer [ASSUMED: the unit is held by the clip; DESIGN §37.54]. */
 const attackCdAfter = (e, a) => Math.max(e.s.interval, a.clip > 0 ? a.clip : 0);
 
 /**
@@ -249,7 +249,7 @@ const attackCdAfter = (e, a) => Math.max(e.s.interval, a.clip > 0 ? a.clip : 0);
  * attack).
  * The engine's swing calls it at the damage frame (attackSlotSkill); a kit whose leader attacks through its own loop
  * (假想敌：管 / 弦's strikes on 余音, “萨米的意志”'s 【冰凌】: bosses.js) calls it when that loop's attack is due and has a
- * target, and skips the attack when it returns true (DESIGN §35.29). `ownOnly`: only the skills with a trigger selector
+ * target, and skips the attack when it returns true (DESIGN §37.29). `ownOnly`: only the skills with a trigger selector
  * of their own (`own`) — the turn of an attack that is ready with no swing (onTick).
  */
 export function attackTurnSkill(b, e, ownOnly = false) {
@@ -276,7 +276,7 @@ function castNow(b, e, a) {
   a.left = Math.max(TICK, a.cd + (a.clip > 0 ? a.clip : 0));
   a.casts = (a.casts ?? 0) + 1;
   e.skillAnimUntil = b.time + 0.5;
-  // display only: the skill slot it uses (render/app.js 'cast'); an attack-class one with its clip (DESIGN §35.57)
+  // display only: the skill slot it uses (render/app.js 'cast'); an attack-class one with its clip (DESIGN §37.57)
   if (a.sk) castSlot(b, e, a.sk, a.atk ? (a.clip > 0 ? a.clip : 0) : null);
   safe(b, e, () => a.fire(b, e, a));
 }
@@ -336,8 +336,8 @@ function onTick(b, dt) {
     // An attack-class skill with a trigger selector of its own (`own`: 卢西恩 / 不祥幻影's aoe, 「仅在半径2范围内存在我方单位时
     // 触发」) also takes a turn when the attack is ready and no swing started this tick — the attack has no target (a melee
     // enemy nobody blocks: 卢西恩 past his blocker) —, PRTS 「可以攻击时不进行攻击，改为触发技能」 read as the attack's
-    // cooldown being over (DESIGN §35.29). The attack cooldown restarts as after a strike, or at the skill's longer clip
-    // (attackCdAfter, DESIGN §35.54). [ASSUMED] the effect comes at once (no wind-up: no swing), and the refusals of a
+    // cooldown being over (DESIGN §37.29). The attack cooldown restarts as after a strike, or at the skill's longer clip
+    // (attackCdAfter, DESIGN §37.54). [ASSUMED] the effect comes at once (no wind-up: no swing), and the refusals of a
     // normal attack hold (恐惧 / 缴械 / 战栗 while blocked); an enemy that makes no normal attack (`profile.noAttack`) has
     // none to give up, its cooldown still running out.
     if (ab.ownTurn && e.alive && !e.swing && !(e.atkCd > 0)

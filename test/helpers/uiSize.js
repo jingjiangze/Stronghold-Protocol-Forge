@@ -1,4 +1,4 @@
-// 界面大小 (DESIGN §35.43): the stylesheet's floors carry var(--sp-ui, 1) — `max(.56rem, 32px, calc(34px * var(--sp-ui, 1)))`
+// 界面大小 (DESIGN §37.43): the stylesheet's floors carry var(--sp-ui, 1) — `max(.56rem, 32px, calc(34px * var(--sp-ui, 1)))`
 // for a size floor, `max(.1rem, calc(4px * var(--sp-ui, 1)))` for the rest — and both layout roots multiply the design rule by
 // it. Tests that pin a rule's design values read the stylesheet through `unscaled`, which writes each floor back as its
 // design px (`max(.56rem, 34px)`), so they keep checking the design while test/ui/ui-size.test.js guards the factor.

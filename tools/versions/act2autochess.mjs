@@ -1,5 +1,5 @@
 // tools/versions/act2autochess.mjs — build profile of the default version, 第二期下半: 盟约·下半 (act2autochess) in its
-// final state V2_2 (docs/DATA.md "Official versions (M0)", DESIGN §35.22). It is today's build, verbatim: the master
+// final state V2_2 (docs/DATA.md "Official versions (M0)", DESIGN §37.22). It is today's build, verbatim: the master
 // tables of Kengxxiao/ArknightsGameData (.cache/gamedata/), the research in docs/research/, the 下半-measured tables of
 // tools/build-data.mjs, and no config.version — data/*.json stays byte-identical (test/versions-default-guard.test.js).
 

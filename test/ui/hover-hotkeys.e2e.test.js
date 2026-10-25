@@ -96,7 +96,7 @@ describe('selected operator shortcuts', { skip: !ENABLED && 'set SP_E2E=1 and CH
 
       // Right-click (or long-press) on another own operator while one is selected: the press on the field clears the
       // selection, as any press there does, and the release only opens that operator's card (no underframe). Q / X then
-      // follow the hover as with no selection — the PR's behaviour, accepted by the maintainer on 2026-10-23 (§35.31).
+      // follow the hover as with no selection — the PR's behaviour, accepted by the maintainer on 2026-10-23 (§37.31).
       await select(selected.uid);
       const otherPoint = await hover(other.uid);
       const card = () => page.evaluate(() => document.querySelector('.dpanel--chess')?.textContent ?? null);

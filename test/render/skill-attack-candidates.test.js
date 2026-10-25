@@ -1,4 +1,4 @@
-// §35.20: original index-shaped fixtures and existing manifest metadata; no client dumps or art fixtures.
+// §37.20: original index-shaped fixtures and existing manifest metadata; no client dumps or art fixtures.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

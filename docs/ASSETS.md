@@ -308,7 +308,7 @@ node tools/fetch-assets.mjs --cache-dir=D:\sp-cache  # an absolute path
 | Original token Spine overlays (40 summons: most 自选 summons, 凯瑟琳's 爬行号·防护单元, 凛御银灰's 风雪之眼, 香槟炸弹) | local-client extraction (`tools/local-extract/extract.py TOKEN_SPINES`, optional); the original overlay is preferred, with any listed web model retained as fallback | `local/spine/token/{tokenId}/{stem}.*` (listed in `data/local-assets.json`) |
 | Official trap models: 射击台 and 阻隔工事 (`trap_1105_accrate` = renderer `crate`, #663) | `arts/maps/common/trap/trap_110.ab`, `tools/local-extract/extract.py --only mesh/trap_110`; only `trap_1106_achplat` and `trap_1105_accrate`, their materials and textures. Crate: 636 vertices / 344 triangles, own UVs, 1024² DXT1 texture; battle prefab scale 0.01, X rotation −90°. Texture copies use lossy WebP quality 95. Without the crate mesh or texture the 3D board keeps `s_common_box_01` + atlas (procedural box if that mesh is absent); 2D keeps its atlas crops | `local/mesh/trap_110/{trap_1106_achplat,trap_1105_accrate}.obj`, `TX_*.png` / `.webp`, `materials.json`, `prefab.json` (listed in `data/local-assets.json`) |
 | Official battlefield scenes (one per battlefield: meshes, lightmaps, albedo textures; DESIGN §15, DESIGN §30.21) | the scene bundles `scenes/activities/<season>/level_<stage>/…` (`tools/local-extract/extract.py --only scene`, optional). The client carries them only while the season runs; off season `tools/local-extract/fetch_scenes.py` downloads the bundles of the in-season version `26-04-13-12-31-42_e9b560` from the official CDN into `.cache/official-scenes/` (33 bundles, 22,801,308 bytes compressed on the Android list, md5-checked), and the materials / textures still come from the local client's theme bundles. The 0.2.5 full release zip includes the extracted files under `public/assets/local/scene/` when the maintainer extracted them before packaging; a lite zip and a source install may fetch and extract them (`node tools/setup.mjs --scenes`). The repository never stores the bundles or the extracted files. Normal, metallic-gloss and emission copies are lossless WebP (emission only when the material's `_EMISSION` keyword is on; lossy 4:2:0 was turning saturated lights grey); albedo and lightmaps stay lossy quality 95; `env` stays PNG. An extract whose manifest `scene` record is older than this version, including the previous lossless normal/gloss extract, is stale, and setup asks once. Answering yes on that version-only prompt runs `extract.py --only scene`, the same as a first extract; answering no is remembered. A partial set (some battlefields missing) still does not start that extract from a typed yes. Without a scene the 3D board draws its procedural metal tiles | `local/scene/{stageId}/scene.json`, `scene.bin`, `lm{i}.*`; `local/scene/tex/{texture}.*` (listed in `data/local-assets.json`) |
-| Official battle effects (特效: the particle systems, meshes and textures of hits, projectiles, casts, status loops and skills; DESIGN §33) | the local client only (`tools/local-extract/extract.py --only fx --fx-set used`, opt-in: a plain extraction leaves them out); WebP quality 90 by default, optional `--fx-texture-format png` for lossless textures (§35.96); never downloaded; inclusion in full release zips follows `tools/package.mjs FULL_ZIP_FX` (currently on) | `local/fx/index.json`, `local/fx/textures.json`, `local/fx/prefabs/{key}.json`, `local/fx/tex/{key}.webp` or `.png` (and `tex/half/`), `local/fx/mesh/{key}.json` (listed in their own `data/local-fx.json`, not in `data/local-assets.json`) |
+| Official battle effects (特效: the particle systems, meshes and textures of hits, projectiles, casts, status loops and skills; DESIGN §33) | the local client only (`tools/local-extract/extract.py --only fx --fx-set used`, opt-in: a plain extraction leaves them out); WebP quality 90 by default, optional `--fx-texture-format png` for lossless textures (§37.96); never downloaded; inclusion in full release zips follows `tools/package.mjs FULL_ZIP_FX` (currently on) | `local/fx/index.json`, `local/fx/textures.json`, `local/fx/prefabs/{key}.json`, `local/fx/tex/{key}.webp` or `.png` (and `tex/half/`), `local/fx/mesh/{key}.json` (listed in their own `data/local-fx.json`, not in `data/local-assets.json`) |
 | BGM | AA2 `voice` branch `audio/sound_beta_2/music/**` (大厅/休整期 `act1autochess`, 开战 `act13side/m_bat_kazimierz2_{1,2}` — 骑士之日 / 无畏者; the 开战 track follows the round: `_2` 无畏者 rounds 1–7, `_1` 骑士之日 from round 8) | `audio/bgm/{file}.mp3` |
 | SFX (UI, battle, per unit) | AA2 `voice` `audio/sound_beta_2/**`, mapped from `audio_data.json` banks | `audio/sfx/{same sub-path}.mp3` |
 | 干员战斗语音 | AA2 `voice` `audio/sound_beta_2/voice_cn/{charId}/cn_nn.mp3` (Chinese, `audio.voice`) and `voice/{charId}/cn_nn.mp3` (Japanese, `audio.voiceJp`: the same file names) — the lines `charword_table.json` lists (`placeType` = when the game plays one, `voiceAsset` = the path); `--voice-lang=jp|en|kr` fills `audio.voice` from `voice/`, `voice_en/`, `voice_kr/` instead | `audio/voice/cn/{charId}/{cn_nn}.mp3`, `audio/voice/jp/{charId}/{cn_nn}.mp3` (`audio/voice/{lang}/…` for another `--voice-lang`) |
@@ -369,7 +369,7 @@ containing the plugin JSON and roster; `--only plugin-art/<charId>` narrows the 
 
 ### Re-extracting scenes after an update
 
-Scene extraction version **4** removes complete, exact redundant renderers (GitHub #684, DESIGN §34.24).
+Scene extraction version **4** removes complete, exact redundant renderers (GitHub #684, DESIGN §36.24).
 The official Android `26-04-13-12-31-42_e9b560` m03 scene contains both a base rock (renderer 2048) and its
 `HIDDEN@1` copy (2193); static batching gives the base a different mesh buffer and lightmap UVs. **[ASSUMED]**
 The maintainer's 2026-10-17 correction keeps the normal bake: all submeshes, oriented triangles, UV0, colours,
@@ -377,7 +377,7 @@ materials/textures, extra UV channels and other renderer state must agree; world
 and tangents use an absolute
 `1e-6` tolerance for float32 baking. Partial overlaps and different objects stay. A surviving renderer must also
 cover the removed copy's visibility (the same group or the always-visible base). Bake preference and stable-id
-ties are described in §34.24; deletion is a remake art correction, not an official activation rule.
+ties are described in §36.24; deletion is a remake art correction, not an official activation rule.
 
 After updating, run `node tools/setup.mjs --scenes`, or answer a typed **yes** to setup's existing version-only
 re-extraction prompt. Version-3 scenes still load but contain the redundant geometry; replacing code alone does
@@ -406,7 +406,7 @@ union by charId / enemyKey / iconId. A chess id is not an art identity: the same
 different seasons. Backups, DIY forms, summons, all skill icons, modules, items, bands and bonds participate too.
 The required avatar / portrait / Front check covers the whole union. `--add-only` preserves existing manifest values
 as well as files; only new entries, the content hash and statistics change. This keeps today's presentation stable
-when filling an earlier season's gaps (history §35.109).
+when filling an earlier season's gaps (history §37.109).
 
 To fill gaps from an installed official client without downloading art:
 
@@ -472,13 +472,13 @@ version; base/E2 avatars and half-body portraits are mandatory where the data se
   - The parse extracts animation names and durations, event names, `OnAttack` times per animation, and bounds.
   - Attachment paths are checked against the atlas regions.
   - Then the animation-role resolver runs. See `tools/assets/anim-roles.mjs` and research 07 §5.4.
-  - Runtime skill attacks (§34.31) distinguish a cast from a strike. Blemishine S2 uses the verified official
+  - Runtime skill attacks (§36.31) distinguish a cast from a strike. Blemishine S2 uses the verified official
     mode's Attack / Attack_Down, S3 Skill_3; this does not request the optional effects index. Her Skill_2 has
-    OnAttack and therefore needs that verified mapping even without the index. §35.20 also verifies normal attacks
+    OnAttack and therefore needs that verified mapping even without the index. §37.20 also verifies normal attacks
     for Texas S1/S2, Vigil S1/S2, Specter the Unchained S1, Reed the Flame Shadow S2 and Nearl the Radiant Knight S2.
     They select the installed model's attack role (including Begin/End and downward variant), with or without the
     index. Held loops, own strikes and skill idles retain their existing logic. The alleged Tulip S2 is not an
-    official skill in the local tables (§35.21); no mapping is added for it.
+    official skill in the local tables (§37.21); no mapping is added for it.
     Raw effects-index animKey values are not generally skeleton clip names: mode `_replaceAnimPairs` and skin
     `_animations` are not exported by the current index. Other indexed skills retain their existing roles until
     those mappings are available [ASSUMED]. No manifest or skeleton metadata is rewritten.
@@ -488,10 +488,10 @@ version; base/E2 avatars and half-body portraits are mandatory where the data se
     the unnumbered red one (【解放】) the names point to. 盐风主教昆图斯, 假想敌：胄 (both records) and 阿利斯泰尔 get
     `skills` per data slot from their EnemySkill abilities' `_animKey` (fx/index.json `units.<key>.skills.*.abilities`):
     the resolver's "Skill_n = slot n−1" swapped 大潮 / 崩坍 and gave 死亡集群 `Skill_2` for `Skill_3` (0.3.2, history
-    §35.19). The same table covers 泥岩 (its two slots swapped), “自在” (CrossAttack `Skill_01_02`), “斩胄之剑” / “破胄之锤”
+    §37.19). The same table covers 泥岩 (its two slots swapped), “自在” (CrossAttack `Skill_01_02`), “斩胄之剑” / “破胄之锤”
     (`Launch_Begin` / `Back_End`), 锏 (`A_Skill2` / `B_Skill2`) and, as `strike` slots (an attack-class skill whose
     attack plays the clip, design/client.md §9), 杰斯顿·威廉姆斯 (`C1_Skill` / `C2_Skill`) and “碎铳之簧” (`Skill_b` /
-    `Skill_c`) (history §35.48). A slot whose ability names no clip keeps the resolved one, marked in the table
+    `Skill_c`) (history §37.48). A slot whose ability names no clip keeps the resolved one, marked in the table
     ([ASSUMED] for 自在's 破桎而出). `test/enemy-skill-clips.test.js` compares every enemy slot the sim casts with the
     official animKey when the effects index is extracted. `applyRoleFix` checks every clip of a `skills` map; a fix naming
     a missing clip keeps the resolved roles.
@@ -610,7 +610,7 @@ All paths are URL paths relative to the site root, for example `/assets/char/ava
   // the unsuffixed ability) never takes a numbered variant `attack.N` — a skill mode's, whatever its file name (银灰's S3
   // swing p_atk_silver_n, community report of 2026-10-06); one that numbers its default mode takes those banks (`attack.0`,
   // `attack.0.1` …, START before ON) before any other number, so a shallower skill bank never wins (弑君者's S3 `attack.3`
-  // smoke impact was her normal one until 0.3.2, DESIGN §35.38); enemies and tokens take the first attack-like bank
+  // smoke impact was her normal one until 0.3.2, DESIGN §37.38); enemies and tokens take the first attack-like bank
   fonts: { css: '/fonts/fonts.css', faces: { [name]: { family, weight, woff2?, original } } }
 }
 ```
@@ -648,7 +648,7 @@ Roles = {
   skills?: { [index]: SkillClip },   // when the char is used with several default skills (backups); an enemy: every
                            //   numbered skill clip as slot n−1 (the slot a sim `cast` event names, PR #275) — or, from
                            //   PREFAB_SPINE_ROLES, the clip of each data slot's official ability (盐风主教昆图斯, 胄, 阿利斯泰尔,
-                           //   泥岩, 自在, the 胄's hands, 锏, 杰斯顿, 碎铳之簧 — history §35.48)
+                           //   泥岩, 自在, the 胄's hands, 锏, 杰斯顿, 碎铳之簧 — history §37.48)
   die: string|null,        // null ⇒ a Back model gives way to the Front model's Die (DESIGN §22.1); any other
                            //   skeleton holds its idle's first frame while it fades out
   move: Clip|null,         // enemies: Move_Begin|Move_Start + Move_Loop|Move + Move_End → Run_*
@@ -707,7 +707,7 @@ Not mapped (clip names ambiguous): “自在”, “巨大的丑东西”, 主�
 is not known) keep their manifest clips.
 
 Other renderer rules from research 07 §5.4–5.5:
-- **Choosing the model:** Front when the unit faces right or down; Front mirrored when facing left; Back when facing up — while it stands: a dead or knocked-out operator falls and lies with the Front model unless its Back skeleton has a Die clip of its own (131 of the 135 have none; DESIGN §22.1, GitHub issue #25). A cast follows the same reasoning when the skill's animation exists only on the Front skeleton (the Back model's role for it is `via: 'attack'`, borrowed from the attack triple): the Front model is shown while the skill runs and until its clip ends (10 of the 209 operators, 德克萨斯 S2 剑雨 among them; DESIGN §35.90; [ASSUMED] the official client's choice).
+- **Choosing the model:** Front when the unit faces right or down; Front mirrored when facing left; Back when facing up — while it stands: a dead or knocked-out operator falls and lies with the Front model unless its Back skeleton has a Die clip of its own (131 of the 135 have none; DESIGN §22.1, GitHub issue #25). A cast follows the same reasoning when the skill's animation exists only on the Front skeleton (the Back model's role for it is `via: 'attack'`, borrowed from the attack triple): the Front model is shown while the skill runs and until its clip ends (10 of the 209 operators, 德克萨斯 S2 剑雨 among them; DESIGN §37.90; [ASSUMED] the official client's choice).
 - **Attack speed:** set the attack `timeScale` to `duration / attackInterval`.
 - **Model size:** every skeleton is drawn at one `UNIT.modelScale` (render/style.js, 320 skeleton units per tile), which stands for the official standard. The official client also scales each enemy model in its battle prefab: the Graphic / FaceSwitcher / Spine transforms multiply to 0.27 for most enemies and for the operators' battle skins, but not for all of them. For example, 威龙 is 0.16, 妖怪 0.20 and 青铜镜 0.6. The skeletons themselves carry no such scale, because every enemy SkeletonDataAsset uses 0.01. So an enemy is drawn × data/enemies.json `modelScale` (its prefab's product ÷ 0.27, see docs/DATA.md; user playtest #6: 威龙 used to be drawn 1.35× a 妖怪 instead of 1.08×), and its HP bar sits on that model: at its setup-pose bounds' height × the same factors, or, for a skeleton without bounds, at the chibi headroom × `modelScale` (bosses 2.2 tiles). `tools/local-extract/enemy_scales.py` reads the products from a local client, and `tools/build-data.mjs MODEL_SCALES` keeps them. Two prefab quirks on top (PR #211 by @xcdoge; the owner's decision of 2026-10-06; docs/research/12 §3.1): the two 帝国炮火先兆者 are stretched vertically (`modelScaleY` 1.263: their Graphic scale is (0.19, 0.24, 0.24)) and 木制瑞印 is mirrored (`mirrorX`: a negative Graphic X scale) — `tools/local-extract/enemy_model_offsets.py` reads them, `tools/build-data.mjs MODEL_STRETCH_Y` / `MIRRORED_PREFABS` keep them.
 - **Flying units** hover `FLY_HOVER` = 1.3 tiles up (render/units.js; the client's single fly offset 0.35 in its character space, whose unit is the standard prefab scale 0.27 — docs/research/12) — an enemy flyer above the road whatever tile it crosses (a high-ground or forbidden block under it is no step, GitHub #277), an operator or summon above its tile: the body, its HP bar, damage numbers and hits ride the lift, the shadow stays on the ground tile (the block top under an enemy flyer crossing one), on the 2D and the 3D board alike (one camera drives both).
@@ -940,8 +940,8 @@ out. Judged per kind (swing / impact), so a mode may keep the normal swing and o
 are the bare bank and every mode 0 bank (`attack.0`, `combat.0.1`, …). Such a plain bank only fills a skill that no
 lettered bank fills (假日威龙陈's START `p_atk_watergun_d_cast` never displaces her ON `p_atk_watergun_d`), and only for
 the mode the skill itself links, never as a phase fill (乌尔比安's `S3_Respawn_A`). The rule reaches beyond 宴: on the
-official banks it adds 26 swing / impact slots on 19 operators (DESIGN §35.38 lists them). Preserve `mixOf` for
+official banks it adds 26 swing / impact slots on 19 operators (DESIGN §37.38 lists them). Preserve `mixOf` for
 each selected bank separately; `attacks`/`hits` and `attackMix`/`hitMix` use matching skill keys. Regenerate the current
 manifest instead of importing an older PR's full JSON, preserving JP voices and current operators. See DESIGN §34.3.
 
-The 40th local token model is the original champagne bomb (`token_10031_swire2_gdtrap`, §29.5), extracted from the official `btl_pfb_tokens_0.ab` through `TOKEN_SPINES`. Its web fallback is retained. Failed board-pack/image requests can retry after connectivity/visibility recovers; a failed three.js module gets at most two fresh-URL retries per page because browser module failures are cached. Successful resources remain cached.
+The 40th local token model is the original champagne bomb (`token_10031_swire2_gdtrap`, §31.5), extracted from the official `btl_pfb_tokens_0.ab` through `TOKEN_SPINES`. Its web fallback is retained. Failed board-pack/image requests can retry after connectivity/visibility recovers; a failed three.js module gets at most two fresh-URL retries per page because browser module failures are cached. Successful resources remain cached.

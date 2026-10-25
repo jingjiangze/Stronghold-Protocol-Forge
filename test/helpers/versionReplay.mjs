@@ -1,4 +1,4 @@
-// test/helpers/versionReplay.mjs — replay a test journal of an official version's match (DESIGN §35.23) in a process of
+// test/helpers/versionReplay.mjs — replay a test journal of an official version's match (DESIGN §37.23) in a process of
 // its own, as server/match/testReplay.js asks: the version's data becomes this process's data singleton (server/data.js
 // setData) and its official-bounds snapshot is installed — as in the version's match host (server/match/host/entry.js) —
 // before the match code is imported.

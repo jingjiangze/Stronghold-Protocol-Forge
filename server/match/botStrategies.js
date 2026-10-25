@@ -1,5 +1,5 @@
 // Registry only: implementations import the contract, not this module, to avoid registration/import cycles.
-// The external host is loaded by llmGate.js, and only on a dev checkout (§35.66). A release has no `external` id.
+// The external host is loaded by llmGate.js, and only on a dev checkout (§37.66). A release has no `external` id.
 import { createBotRegistry, defineBotStrategy } from './botStrategyContract.js';
 import { EXTERNAL_BOT, llmIntegrationEnabledNow } from './llmGate.js';
 

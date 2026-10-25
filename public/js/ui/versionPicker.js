@@ -1,4 +1,4 @@
-// ui/versionPicker.js — the official version switch (DESIGN §35.23, M1; versions.js): the lobby's chip and the picker the
+// ui/versionPicker.js — the official version switch (DESIGN §37.23, M1; versions.js): the lobby's chip and the picker the
 // lobby and the room open.
 //
 //   * VersionSwitch — the chip at the lobby's top right (screens/lobby.js, before 恢复本机对局): only when the server

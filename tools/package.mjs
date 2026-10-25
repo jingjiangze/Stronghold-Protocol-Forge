@@ -29,7 +29,7 @@
 // Left out: test/, the maintainer tools (build-data, golden, botbench, i18n, check-imports, this file …),
 // scripts/make-windows-bundle.mjs, the other docs (DESIGN, SIM, the research notes, docs/img …), public/dev/, handoff/,
 // .github/, types/, lint / editor / Docker files (Docker builds from a git clone).
-// Also left out, by the maintainer's decision of 2026-10-23 (§35.66): the external-AI / LLM integration. The explicit
+// Also left out, by the maintainer's decision of 2026-10-23 (§37.66): the external-AI / LLM integration. The explicit
 // list is LLM_RELEASE_EXCLUDE in server/match/llmRelease.js (re-exported below). A release tree gets
 // server/release-without-llm and the server then ignores external-AI settings. The #673 framework and the built-in
 // bots stay, including server/match/aiPlan.js and server/match/aiEconomy.js (no host ships with them).
@@ -99,7 +99,7 @@ import {
   APPLIED_FILE, MANIFEST_FILE, UPDATE_FILE, affectsRuntime, digestFile, inManifest, isSetupArt, listedArtFiles,
   parseManifest, parseUpdate, pathProblem, removalProblem,
 } from '../server/update.js';
-// The one list of LLM paths a release must not contain, and the marker a release tree carries (§35.66).
+// The one list of LLM paths a release must not contain, and the marker a release tree carries (§37.66).
 import {
   LLM_RELEASE_EXCLUDE, LLM_RELEASE_MARKER, LLM_RELEASE_MARKER_TEXT, isLlmReleasePath, omitLlmFromRelease,
 } from '../server/match/llmRelease.js';

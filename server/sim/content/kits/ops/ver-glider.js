@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-glider.js — 蜜莓 (char_449_glider), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-glider.js — 蜜莓 (char_449_glider), 第一期 (DESIGN §37.22.9).
 // The trait's element heal ratio is the wandermedic profile. "N名" is read from the skill text (the blackboard has no count).
 
 import { alliesInGridOf, num, skillBbOf, skillRec, talentBb, up } from '../shared/tier1.js';

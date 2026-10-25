@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-ethan.js — 伊桑 (char_355_ethan), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-ethan.js — 伊桑 (char_355_ethan), 第一期 (DESIGN §37.22.9).
 // Stalker dodge is the profession. The module slow is the hidden talent, the same aura as 狮蝎.
 // `frozen_duration` binds (束缚); the key name is the table's. The poison is a 1 s arts tick of the blackboard damage
 // for the blackboard duration. [ASSUMED] that tick, where it differs from 棘刺's precomputed poison.

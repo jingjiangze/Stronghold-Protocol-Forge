@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-mm.js — 梅 (char_133_mm), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-mm.js — 梅 (char_133_mm), 第一期 (DESIGN §37.22.9).
 // 优先攻击空中单位 and the elite fly damage scale are the fastshot profile (professions.js). The kit does not set them again.
 
 import { batMod, num, statBuff, talentBb } from '../shared/tier1.js';

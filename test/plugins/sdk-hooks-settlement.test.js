@@ -1,5 +1,5 @@
 // The plugin SDK's hit / damage helpers (shared/plugins/sdk.js `kit`: onHitBy, onHitOn, onDamagedOn, byEnemyAttack —
-// server/sim/content/kits/shared/tier1.js) under the ordered settlement pipeline of 0.3.2 (PR #802, DESIGN §35.32;
+// server/sim/content/kits/shared/tier1.js) under the ordered settlement pipeline of 0.3.2 (PR #802, DESIGN §37.32;
 // PLUGINS.md "SDK hit and damage helpers"): when each one fires and what it sees, through a plugin's content
 // registration in a real battle.
 import { test } from 'node:test';

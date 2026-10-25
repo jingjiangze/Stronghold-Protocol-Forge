@@ -72,7 +72,7 @@ const NOT_SCALED = [
   // decorative wordmarks and boot/rotate overlays whose size is the composition (the top bar's deco type: the text
   // stand-in of the official hudPanel/frame_deco_txt* sprites, at their size)
   /\.title-cn/, /\.title-en/, /\.title-bg__target/, /\.brief-boss__q/, /\.boot__/, /\.rotate-hint/, /\.gtop__deco/,
-  // The cropped official next-button face uses layout rem for its label (§35.94).
+  // The cropped official next-button face uses layout rem for its label (§37.94).
   /\.settle__next/,
   // the join code's letter-spaced field, the px-floored 本局信息 dialog, the 16 px diagnostics box (iOS zoom guard)
   /\.field--code/, /\.minfo-dlg/, /\.set-diag__text/,
@@ -184,7 +184,7 @@ describe('文字大小: the CSS text root', () => {
   const theme = sheets.find((s) => s.rel === `${CSS}/theme.css`).src;
 
   test('theme.css defines --t for 小 and every step, and nothing else defines it', () => {
-    // 小 = the design's own sizes; the 64 / 76 / 88 px floors never shrink with 界面大小 (DESIGN §35.43, ui-size.test.js)
+    // 小 = the design's own sizes; the 64 / 76 / 88 px floors never shrink with 界面大小 (DESIGN §37.43, ui-size.test.js)
     assert.match(theme, /:root \{ --t: 1rem; \}/, '小 = the design\'s own sizes');
     for (const [attr, value] of [['md', /--t: max\(1rem, 64px\)/], ['lg', /--t: max\(calc\(1rem \* 1\.15\), 76px\)/], ['xl', /--t: max\(calc\(1rem \* 1\.3\), 88px\)/]]) {
       assert.match(theme, new RegExp(`:root\\[data-text="${attr}"\\] \\{ ${value.source}; \\}`), `the ${attr} step`);

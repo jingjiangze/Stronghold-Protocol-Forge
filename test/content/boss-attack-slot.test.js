@@ -1,5 +1,5 @@
 // test/content/boss-attack-slot.test.js — the attack-class skills of the leaders and parts other than 昆图斯 take the
-// attack's turn (DESIGN §35.29, after §35.19's 昆图斯 fix). Official: each skill's prefab ability is a MeleeAttack /
+// attack's turn (DESIGN §37.29, after §37.19's 昆图斯 fix). Official: each skill's prefab ability is a MeleeAttack /
 // RangedAttack / MultiRangedAttack (fx/index.json units.<key>.skills), PRTS's skill rules 「大多数技能自动触发会占用攻击
 // 间隔」, 「优先级相同则随机触发其中之一」, 「同一技能的冷却时间于该技能结束时开始计时」. Until 0.3.2 they ran on their own
 // timers (阿利斯泰尔's 王权号令 on its SP) on top of the attacks.
@@ -96,7 +96,7 @@ test('卢西恩 / 不祥幻影 (lucienCore): the aoe takes an attack\'s turn —
 test('卢西恩 / 不祥幻影: unblocked, the aoe still takes the ready attack\'s turn with an operator within radius 2 (its own trigger selector)', () => {
   // PRTS 不祥幻影 「仅在半径2范围内存在我方单位时触发」: the trigger is any selectable operator in the radius, not the attack's
   // own target — a melee enemy nobody blocks has none (卢西恩 past his blocker). Its turn comes when the attack is ready
-  // and no swing started (enemies.js onTick, `own`); the attack cooldown restarts as after a strike (DESIGN §35.29).
+  // and no swing started (enemies.js onTick, `own`); the attack cooldown restarts as after a strike (DESIGN §37.29).
   for (const key of ['enemy_2017_csphts', 'enemy_2016_csphtm']) {
     const h = field([{ chessId: 't_wall', row: 11, col: 8 }], { kind: 'normal' });
     const e = put(h, key, [10, 9], { tag: null });

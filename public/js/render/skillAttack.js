@@ -1,12 +1,12 @@
 // §36.31: verified skill-mode animation keys, using only the field's already loaded effects index.
-// §34.31 / §35.20: verified skill-mode animation keys; never fetch an effects index here.
+// §36.31 / §37.20: verified skill-mode animation keys; never fetch an effects index here.
 // Official source: charpack/char_423_blemsh.ab, Modes/S2/Body/Attack: Attack, down Attack_Down;
 // Modes/S3/Body/Attack: Skill_3. chararts/char_423_blemsh.ab DefaultSkin maps those keys identically.
 // skchr_blemsh_2's blemsh_s_2[switch] uses switch_mode → S2; Skill_2 is its Sleep cast.
 import { resolveSkill, skillRecordOf } from './vfx/skills.js';
 
 // Official charpack/<id>.ab Modes + chararts/<id>.ab DefaultSkin._animations, checked with
-// character/skill_table and the local fx index's skills/uses (full evidence: history §35.20):
+// character/skill_table and the local fx index's skills/uses (full evidence: history §37.20):
 // Texas Default attack's _oneshotAnim=Attack maps to Attack_Loop; neither skill switches its attack.
 // Vigil Default _oneshotAnim=Attack maps identically; Skill1/2 are AnimatedActionToOwnerAbility casts.
 // Specter S1's initial switch is Empty; the S1 attack after ExchangeHp is Attack, with no AnimatorHooker.
@@ -54,7 +54,7 @@ export function skillAttackMode(index, { info = null, rec = null, skillIndex } =
   const resolved = unit ? resolveSkill(index, { info, rec, unitKey: charId, skillIndex: slot }) : null;
   // A known skill with unexported animation mappings keeps the pre-§36.31 roles. The no-event heuristic is
   // only for a missing unit/skill entry; it must not override an indexed skill's own cast/strike semantics.
-  // A known skill with unverified animation mappings keeps the pre-§34.31 roles. There is no generic
+  // A known skill with unverified animation mappings keeps the pre-§36.31 roles. There is no generic
   // no-OnAttack heuristic: cast/strike semantics must be verified even without a unit/skill index entry.
   if (charId !== 'char_423_blemsh') return resolved?.skill ? { preserve: true } : null;
   // S1 is a replacement attack (Skill_1), not an attack while a lasting mode is running.

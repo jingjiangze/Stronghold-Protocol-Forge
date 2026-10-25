@@ -38,7 +38,7 @@
 //                            unblockable (PRTS 能力修正: also without the shield); shield back 25 s after breaking. It passes
 //                            on as 无来源 HP loss to the highest-hatred 铳 (PART_TRANSFER) and, split, the other springs: the
 //                            arts variant every applied modifier — damage, heals, element (actrpa_passive ON_APPLIED_MODIFIER)
-//                            —, the others the damage they take at their injury stage (§35.34).
+//                            —, the others the damage they take at their injury stage (§37.34).
 //   boss_3/10 假想敌：管     summons 余音 (dark) every 40 s (20 s < 50 %); normal attacks strike dark 余音 (their pulse hurts
 //                            operators); 裂管之奏 3 strikes on every dark 余音 (AoE arts + apoptosis). boss_10 + 假想敌：弦
 //                            (invulnerable, gold 余音, 断弦之奏 AoE + flips them dark; leaves with 管).
@@ -170,7 +170,7 @@ const SHELL_KEY = 'enemy_9016_acstmr', ECHO_KEY = 'enemy_9023_acdums', PHANTOM_K
  * RangedAttack Skill_1, 管 `1` (裂管之奏) MultiRangedAttack Skill, 弦 `1` (断弦之奏) RangedAttack Skill, 阿利斯泰尔 `equip` /
  * `equipA` (王权号令) RangedAttack Skill_1 and `Suicide` (斥退) MeleeAttack Skill_3, “萨米的意志” `Lasso` (自然涌动)
  * RangedAttack with no `_animKey` [ASSUMED: no clip, cooldown from the cast — its clips Skill_01_Begin / _Loop / _End
- * are a channel whose length the prefab does not give] and `Doom` MeleeAttack Skill_02 (DESIGN §35.29).
+ * are a channel whose length the prefab does not give] and `Doom` MeleeAttack Skill_02 (DESIGN §37.29).
  */
 export const ATTACK_SKILL_CLIP = Object.freeze({
   enemy_2016_csphtm: { aoe: 1.8 },
@@ -895,9 +895,9 @@ function pipeCore(ab, e, b, tpl, { form, prefix }) {
       const t = b2.rng.pick(echoesOf(b2, form));                 // 优先攻击…形态余音
       if (!t) return;
       P.atk = 0;
-      const cast = attackTurnSkill(b2, e2);                       // 裂管之奏 / 断弦之奏 take this attack's turn (DESIGN §35.29)
+      const cast = attackTurnSkill(b2, e2);                       // 裂管之奏 / 断弦之奏 take this attack's turn (DESIGN §37.29)
       if (cast) {
-        // [ASSUMED] a longer clip holds this custom attack loop too (管: 4.167 s clip, 3 s interval; DESIGN §35.54).
+        // [ASSUMED] a longer clip holds this custom attack loop too (管: 4.167 s clip, 3 s interval; DESIGN §37.54).
         P.heldUntil = b2.time + (cast.clip || 0);
         return;
       }
@@ -961,11 +961,11 @@ function kitQuintus(ab, e, b, tpl) {
   // 【大潮】 / 【崩坍】 are attack-class (prefab ability MeleeAttack like the Attack; PRTS 「触发索敌和普通攻击相同」): they take the
   // attack's turn (enemies.js attackSlotSkill; PRTS 「大多数技能自动触发会占用攻击间隔」), equal priorities at random. Every
   // skill's cooldown counts from the end of its clip (QUINTUS_CLIP; PRTS 「同一技能的冷却时间于该技能结束时开始计时」): the
-  // third-form tide (3.5 + 1.667 s) alternates with the attack instead of coming on top of it every 3.5 s (DESIGN §35.19).
+  // third-form tide (3.5 + 1.667 s) alternates with the attack instead of coming on top of it every 3.5 s (DESIGN §37.19).
   // 断裂生殖 / 物种爆发 (AnimatedActionToOwnerAbility) take the attack's turn too — PRTS's default (most skills; no
   // exception noted for them) and arknights.wiki.gg's one action ("attacking once or using another ability") between two
   // tides —, with a trigger of their own (`own`: the abilities' `_allowNoTarget` 1), so they also come with the attack
-  // ready and nothing in range (enemies.js onTick; DESIGN §35.55; until then on their own timers). 断裂生殖 「仅仍有未执行的小队动作指令时
+  // ready and nothing in range (enemies.js onTick; DESIGN §37.55; until then on their own timers). 断裂生殖 「仅仍有未执行的小队动作指令时
   // 可触发」: its level branch (blackboard branch_id; prefab MoveNextLevelBranch, not looping) is shared by the three forms
   // and used up after its last phase (7 in act1autochess_h07_04 / _s); a template without the branch keeps the
   // random-target fallback with no limit.
@@ -1003,7 +1003,7 @@ function kitQuintus(ab, e, b, tpl) {
     P.stage = n; P.stageAt = b2.time;
     // one form's bonus at a time (the key is shared): the official AtkUp1 / AtkUp2 are mode-scoped talents (G1 / G2),
     // so the third form is +70 %, not 40 + 70 (arknights.wiki.gg's +110 %, unsourced) [ASSUMED: inferred from where the
-    // talents sit; footage of the third-form panel ATK at base × 2.1 would make it one key per form; DESIGN §35.19]
+    // talents sit; footage of the third-form panel ATK at base × 2.1 would make it one key per form; DESIGN §37.19]
     b2.addBuff(e2, { key: 'boss:grow', persist: true, visible: true, mods: { atkPct: T(ab, `atkup${n}.atk`) ?? 0 } });
     for (const a of skills) if (a.stage === n) a.left = a.icd;   // the new form's skills start from their initial cooldown
     b2.fx('grow', { x: e2.x, y: e2.y, id: e2.id, stage: n });
@@ -1023,7 +1023,7 @@ const QUINTUS_ATTACK_SKILLS = new Set(['Tidewater', 'Rockfall']);
  * the skills' abilities share the timing fields of 昆图斯's own Attack (`_timeMode` 0, `_maxAnimScale` 1.0), but their
  * `_affectedBySlowDown` 1 allows a slower clip. So the third-form tide is ready 3.5 + 1.667 = 5.167 s after its cast
  * whatever the slow: an attack interval past that (寒冷's −30 gives 5.0 s; 寒冷 plus any further cut crosses it) makes
- * every turn a tide, with no normal attack (DESIGN §35.19, CHANGELOG 0.3.2).
+ * every turn a tide, with no normal attack (DESIGN §37.19, CHANGELOG 0.3.2).
  */
 export const QUINTUS_CLIP = Object.freeze({ Tidewater: 1.667, Rockfall: 3, SummonTentac: 2, Doom: 4.467 });
 
@@ -1084,7 +1084,7 @@ function lucienCore(ab, e) {
       // selection (targetsNear — PRTS 选择器 "所有触发选择器通常不无视迷彩"): an airborne (起飞) operator evades a ground
       // leader (对地规避 — counting her spent the skill on nobody, §21.22), nor does an unblocking 隐匿 or 迷彩 one count.
       // In the attack's turn: a swing's (blocked) or, with that selector of its own (`own`), the ready attack of an
-      // unblocked one (enemies.js onTick; DESIGN §35.29)
+      // unblocked one (enemies.js onTick; DESIGN §37.29)
       cd: s.cd, icd: s.icd, sk: s, ...atkSkill(e, 'aoe'), own: true, cond: (b) => targetsNear(b, e, LUCIEN_AOE_RADIUS).length > 0,
       fire(b, e2) {
         // "该技能伤害无视迷彩": an area selection (areaAllies) — a 迷彩 operator is hit, an unblocking 隐匿 one not
@@ -1125,7 +1125,7 @@ function kitLion(ab, e, b) {
     const sk = P.adv && eqA ? eqA : eq;
     const t = b2.rng.pick(targetsNear(b2, e2, range()));
     if (!t) return false;
-    castSlot(b2, e2, sk, ATTACK_SKILL_CLIP[e2.defId]?.equip ?? 0);   // 【王权号令】: equip / equipA, an attack-turn clip (§35.57)
+    castSlot(b2, e2, sk, ATTACK_SKILL_CLIP[e2.defId]?.equip ?? 0);   // 【王权号令】: equip / equipA, an attack-turn clip (§37.57)
     const r0 = t.tileR, c0 = t.tileC;
     const tiles = [[r0, c0], [r0 + 1, c0], [r0 - 1, c0], [r0, c0 + 1], [r0, c0 - 1]];
     b2.fx('telegraph', { x: c0, y: r0, r: 1, kind: 'royalDecree', tiles: 'plus', id: e2.id });
@@ -1183,7 +1183,7 @@ function kitLion(ab, e, b) {
       hitOut(c, b2, e2) { if (P.wand && c.dmg.isAttack) c.dmg.type = 'arts'; },
       dealt(c, b2, e2) { if (!P.wand) return; P.wand = false; if (disarm > 0) b2.applyStatus(c.target, 'disarm', { duration: disarm, source: e2 }); },
     },
-    // 【王权号令】 (equip / equipA, RangedAttack, priority 1): with its SP full, cast in the attack's turn (DESIGN §35.29;
+    // 【王权号令】 (equip / equipA, RangedAttack, priority 1): with its SP full, cast in the attack's turn (DESIGN §37.29;
     // until 0.3.2 at once, on top of the attacks); the SP restarts at the cast
     eq && {
       cd: 0, icd: 0, pr: eq.pr ?? 0, atk: true, clip: ATTACK_SKILL_CLIP[e.defId]?.equip ?? 0,
@@ -1228,9 +1228,9 @@ function kitDeer(ab, e) {
         const cands = fairOrder(b, e2, allTargets(b, e2), P);
         if (!cands.length) return;
         P.acc = 0;
-        const cast = attackTurnSkill(b, e2);                        // 自然涌动 / Doom take this attack's turn (DESIGN §35.29)
+        const cast = attackTurnSkill(b, e2);                        // 自然涌动 / Doom take this attack's turn (DESIGN §37.29)
         if (cast) {
-          // [ASSUMED] no 冰凌 inside its skill clip even with a shortened interval (DESIGN §35.54).
+          // [ASSUMED] no 冰凌 inside its skill clip even with a shortened interval (DESIGN §37.54).
           P.heldUntil = b.time + (cast.clip || 0);
           return;
         }

@@ -1,6 +1,6 @@
 // The settlement kernel against the outcomes of the v0.3.1 one for the behaviour the new kernel does not change on
 // purpose. Those outcomes were recorded once from server/sim/damage.js (the v0.3.1 settlement PR #802 kept as an
-// independent oracle) into test/fixtures/attack-differential.json before that second kernel was removed (DESIGN §35.32).
+// independent oracle) into test/fixtures/attack-differential.json before that second kernel was removed (DESIGN §37.32).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -45,7 +45,7 @@ test('legacy-compatible damage keeps the v0.3.1 HP, barriers, event order, attri
           const spec = { type, attribution, shield, amount };
           const current = runDamage(spec);
           // The red mark is tested on the final damage after the barrier (PRTS 作战机制 「伤害红字」: 期望伤害 leaves out
-          // 屏障吸收, the shown 最终伤害 does not — DESIGN §35.32); v0.3.1 tested it on the amount before the barrier.
+          // 屏障吸收, the shown 最终伤害 does not — DESIGN §37.32); v0.3.1 tested it on the amount before the barrier.
           const expected = type === 'phys' ? Math.max(amount - 200, amount * 0.05) : type === 'arts' ? amount * 0.7 : amount;
           const final = current.trace.find(c => c.name === 'damaged')?.amount ?? 0;
           for (const event of current.events) if (event[0] === 'dmg') assert.equal(event[4], final + 1e-9 >= expected * 1.5 ? 'r' : undefined);

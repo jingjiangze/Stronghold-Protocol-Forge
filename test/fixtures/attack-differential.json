@@ -1,5 +1,5 @@
 {
- "about": "Recorded once from the v0.3.1 settlement (server/sim/damage.js as PR #802 restored it, before its removal; DESIGN §35.32): the outcomes test/sim/attack-differential.test.js expects of the current kernel. Damage events keep their first four fields (the red mark is checked separately).",
+ "about": "Recorded once from the v0.3.1 settlement (server/sim/damage.js as PR #802 restored it, before its removal; DESIGN §37.32): the outcomes test/sim/attack-differential.test.js expects of the current kernel. Damage events keep their first four fields (the red mark is checked separately).",
  "damage": {
   "phys/source/0/100": {
    "result": 7.799999999999272,

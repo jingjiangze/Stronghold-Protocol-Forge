@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-ceylon.js — 锡兰 (char_348_ceylon), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-ceylon.js — 锡兰 (char_348_ceylon), 第一期 (DESIGN §37.22.9).
 // The far-heal penalty stays: the elite trait text still says 治疗量变为80% and the blackboard keeps heal_scale 0.8
 // (the healer profile). The kit adds taunt and 抵抗 only when those keys are on the trait.
 

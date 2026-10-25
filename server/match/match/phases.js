@@ -405,7 +405,7 @@ export class MatchPhases {
     const bossId = hidden ? this.hiddenBossId : this.bossId;
     // Pairing uses an independent seeded draw, consuming no shop, wave, draft or battle randomness. The Hidden Core
     // draws its pairs and sides anew (GitHub #845: the official R15 of BV1VCXyBjEN1 p1 pairs 1-2 / 3-4 after an R14 of
-    // 1-4 / 2-3; DESIGN §35.27, superseding §30.12's kept partners) from a stream of its own, so the Final Assault's
+    // 1-4 / 2-3; DESIGN §37.27, superseding §32.12's kept partners) from a stream of its own, so the Final Assault's
     // draw is unchanged; a player who changes half keeps the board (bossFieldPlacement mirrors it, the halves' deploy
     // maps are identical). Only the round's first plan draws anew: a re-plan after a departure in its round start, 机变
     // draft or prep (platform.js _quit) keeps the intact pairs and re-pairs the orphan, as the Final Assault does.

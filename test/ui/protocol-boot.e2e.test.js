@@ -160,7 +160,7 @@ describe('协议启动！ screen (headless Chrome)', { skip: !ENABLED && 'set SP
     await context.close();
   });
 
-  test('solo with a cold cache: the band\'s sprites arrive 2 s after the turn began — it plays once they are in, never taking a click (§35.18)', async () => {
+  test('solo with a cold cache: the band\'s sprites arrive 2 s after the turn began — it plays once they are in, never taking a click (§37.18)', async () => {
     const context = await browser.createBrowserContext();
     const page = await context.newPage();
     await page.setBypassServiceWorker(true);

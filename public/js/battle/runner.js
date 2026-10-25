@@ -78,7 +78,7 @@
 // the server — and so is every spec naming a content while the page does not know the original one's cs. For a room's
 // content set the simulation is loaded on that set's data (content.js contentFor; the next spec of another content
 // loads it again — one at a time), and a b.result names the content the battle was simulated on (`cs`, its
-// simulation's; a vanilla room's sends none, as before). An official version's set (DESIGN §35.23: content.js
+// simulation's; a vanilla room's sends none, as before). An official version's set (DESIGN §37.23: content.js
 // loadVersionSet, `version` on simContent) is a content set like any other here, except that it runs on this page's own
 // Battle (its data only, no script) instead of the plugin Worker, so 作战统计 works as on the original content.
 // A plugin set keeps one Worker for that content: `load` once, then `start` each round. `clear` parks it. It stops
@@ -483,7 +483,7 @@ export function createBattleRunner(deps) {
     simCs = want;
     const p = (want ? contentFor(want).then((content) => {
       if (!content || content.cs !== want) throw new Error(`the content set ${want.slice(0, 8)} is not loaded on this page`);
-      // a gameplay plugin set runs in the plugin Worker; an official version's set (DESIGN §35.23: data only, no script)
+      // a gameplay plugin set runs in the plugin Worker; an official version's set (DESIGN §37.23: data only, no script)
       // runs on this page like the original content — 作战统计 included
       return deps.loadSim || content.version
         ? (perFace ? loadSim(base, content) : loadSim(content))
@@ -1217,7 +1217,7 @@ export function createBattleRunner(deps) {
       // Leaving the room drops the parked Worker even when RESULT already cleared the entries.
       if (!pub || phase === 'LOBBY') releaseParked();
       // warm the simulation up as soon as a match runs (the first b.start then starts at once) — on the room's content set
-      // when it plays one (DESIGN §32.6), or its official version's (§35.23)
+      // when it plays one (DESIGN §32.6), or its official version's (§37.23)
       const roomCs = s && s.room && s.room.content && (s.room.content.vanilla === false || typeof s.room.version === 'string') ? s.room.content.cs : null;
       if (phase && phase !== 'LOBBY' && (!simP || simCs !== (roomCs || null))) ensureSim(roomCs).catch(() => {});
     }));

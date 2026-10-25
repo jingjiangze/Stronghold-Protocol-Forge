@@ -33,7 +33,7 @@ describe('loadout export includes DIY-only cultivation (real server, headless Ch
   const disabled = (c, id) => c.page.$eval(`[data-testid="${id}"]`, e => e.disabled);
   const saved = (c) => c.page.evaluate(() => {
     const p = JSON.parse(localStorage.getItem('sp.pref.loadout') || '{}');
-    return { byChar: p.byChar || {}, ops: p.ops || {} }; // (sp.pref.loadout v2: by operator, DESIGN §35.23)
+    return { byChar: p.byChar || {}, ops: p.ops || {} }; // (sp.pref.loadout v2: by operator, DESIGN §37.23)
   });
   async function chooseKalts(c) {
     await tab(c, 'diy');

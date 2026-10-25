@@ -200,7 +200,7 @@ describe('干员调配 卡片视图 (real server, headless Chrome)', { skip: !EN
       await clickSel(page, '[data-testid="loadout-quick"]');
       await page.waitForSelector(`.lo-op[data-chess="${INSIDE}"] .lo-op__quick .lo-q--skill[data-skill="0"]`, { visible: true });
       await page.click(`.lo-op[data-chess="${INSIDE}"] .lo-op__quick .lo-q--skill[data-skill="0"]`);
-      // (stored by operator: sp.pref.loadout v2, DESIGN §35.23 — 隐现 is char_498_inside)
+      // (stored by operator: sp.pref.loadout v2, DESIGN §37.23 — 隐现 is char_498_inside)
       await page.waitForFunction((id) => JSON.parse(localStorage.getItem('sp.pref.loadout') || '{}').byChar?.[id]?.skill === 0, {}, 'char_498_inside');
       await clickSel(page, '.lo-qseg [data-quick="cult"]');
       await page.waitForSelector(`.lo-op[data-chess="${INSIDE}"] .lo-op__quick--cult select`, { visible: true });
@@ -253,7 +253,7 @@ describe('干员调配 卡片视图 (real server, headless Chrome)', { skip: !EN
       assert.equal(await page.$('[data-testid="loadout-drawer"]'), null);
 
       // a locked loadout (the server's 'locked') is said once on a wide screen — the bottom bar's chip — not again in the
-      // top bar's note, its sync chip or the drawer's detail (§35.18's leftover: three times); with 快速配置 too
+      // top bar's note, its sync chip or the drawer's detail (§37.18's leftover: three times); with 快速配置 too
       const lockSays = () => page.evaluate(() => [...document.querySelectorAll('.lo *')].filter((el) => {
         if (![...el.childNodes].some((n) => n.nodeType === 3 && /锁定/.test(n.textContent))) return false;
         const r = el.getBoundingClientRect();

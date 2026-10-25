@@ -1,6 +1,6 @@
 // Offline re-simulation of [test-input ROOM] JSON lines. Supply the SAME content set and
 // build as the original match. This is a developer API, not a network request or script loader.
-// A journal of an official version's match (init.options.version, DESIGN §35.23) replays in a process whose data
+// A journal of an official version's match (init.options.version, DESIGN §37.23) replays in a process whose data
 // singleton is that version's (server/data.js setData(getVersionData(id)) before this module is imported — the kits,
 // builtinMeta and the official-bounds cache read the singleton, as in the version's match host), with that data passed in.
 // Both are checked, as the version host checks its own (host/entry.js): another version's data would re-simulate on other

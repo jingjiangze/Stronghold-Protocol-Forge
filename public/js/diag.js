@@ -263,7 +263,7 @@ const PLUGINS_SHOWN = 32;
  * cosmetic (its `cs` still the vanilla one) `vanilla cs=<64 hex> cosmetic vs=<64 hex> plugins=<id>@<version>(<first 8
  * digits of its hash>),…`; `MODDED cs=<64 hex> plugins=…` (a room with gameplay plugins — its own content set, DESIGN
  * §32.6; ` vs=<64 hex>` too when it has art plugins as well, ` mode=<id>` for a plugin mode); `unknown` before the
- * first welcome. ` personal=<id>,…` follows for the player's own cosmetic plugins. Another official version (DESIGN §35.23)
+ * first welcome. ` personal=<id>,…` follows for the player's own cosmetic plugins. Another official version (DESIGN §37.23)
  * adds ` version=<id>` after the cs: the room's (its content set is the version's), or in the lobby the version the page
  * shows (versions.js shownVersion; the cs is then still welcome's default one).
  * @param {any} state the store state

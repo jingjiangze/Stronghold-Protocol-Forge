@@ -1,5 +1,5 @@
 // test/content/boss-quintus-attack-slot.test.js — 盐风主教昆图斯's 【大潮】 / 【崩坍】 take the place of a normal attack
-// (DESIGN §35.19; the maintainer's recordings of 2026-10-22, 「BOSS反复释放同一技能」).
+// (DESIGN §37.19; the maintainer's recordings of 2026-10-22, 「BOSS反复释放同一技能」).
 //
 // Official: both skills are attack-class — the prefab ability of `tidewater*` / `rockfall*` is a MeleeAttack, the same
 // class as the boss's own Attack, and PRTS 盐风主教昆图斯 says of both 「触发索敌和普通攻击相同」. PRTS's skill rules on the
@@ -10,7 +10,7 @@
 // Tide twice in a row. Until this fix the tide ran on its own 3.5 s timer next to the normal attack: a tide every 3.5 s
 // **and** an attack every 3.5 s, tides back to back, and a tide with no operator to attack. 【断裂生殖】
 // 「仅仍有未执行的小队动作指令时可触发」: no cast after the level branch's 7 phases. 【断裂生殖】 / 【物种爆发】 take the attack's
-// turn too, with a trigger of their own (DESIGN §35.55; until then on their own timers).
+// turn too, with a trigger of their own (DESIGN §37.55; until then on their own timers).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -68,7 +68,7 @@ function actions(h, e, secs) {
 }
 
 const sk = (p) => W[TPL].overrides[KEY].skills.find((x) => x.prefabKey === p);
-/** The actions that take an attack's turn: the normal attack and every 昆图斯 skill (DESIGN §35.19 / §35.55). */
+/** The actions that take an attack's turn: the normal attack and every 昆图斯 skill (DESIGN §37.19 / §37.55). */
 const TURN = /^(ATTACK|Tidewater|Rockfall|SummonTentac|Doom)/;
 /** The tides after a gap with no other skill in it (崩坍, 断裂生殖, 物种爆发 move the tide by a turn). */
 const plainTides = (log, tides) => tides.filter((x, i) => i > 0 && !log.some((a) => /^(Rockfall|SummonTentac|Doom)/.test(a.what) && a.t > tides[i - 1].t && a.t < x.t));
@@ -109,7 +109,7 @@ test('昆图斯 third form: 【大潮】 takes an attack slot — never twice in
   const plain = plainTides(log, tides);
   assert.ok(plain.length >= 4, `${plain.length} tide gaps without another skill`);
   for (const x of plain) { const prev = tides[tides.indexOf(x) - 1]; assert.ok(Math.abs(x.t - prev.t - 2 * iv) < 0.06, `gap ${(x.t - prev.t).toFixed(3)} at ${x.t.toFixed(3)}`); }
-  // one action per slot: the tide, 崩坍, 断裂生殖 and the normal attack share the attack's turn (DESIGN §35.55)
+  // one action per slot: the tide, 崩坍, 断裂生殖 and the normal attack share the attack's turn (DESIGN §37.55)
   const slot = log.filter((a) => TURN.test(a.what));
   assert.ok(slot.some((a) => /^SummonTentac/.test(a.what)), '断裂生殖 among the turns');
   for (let i = 1; i < slot.length; i++) assert.ok(slot[i].t - slot[i - 1].t >= iv - 1e-6, `${slot[i - 1].what} then ${slot[i].what} ${(slot[i].t - slot[i - 1].t).toFixed(3)} s apart`);
@@ -133,7 +133,7 @@ test('昆图斯 first form: 崩坍 and 大潮 come at the first attack slot afte
   const log = actions(h, e, 60);
   const iv = e.s.interval;
   const at = (p) => (log.find((a) => a.what === p) || {}).t;
-  // 断裂生殖 (AnimatedActionToOwnerAbility) takes a turn too, since §35.55 (until then its own timer)
+  // 断裂生殖 (AnimatedActionToOwnerAbility) takes a turn too, since §37.55 (until then its own timer)
   for (const p of ['Rockfall', 'Tidewater', 'SummonTentac']) {
     const t = at(p);
     assert.ok(t != null, `${p} cast`);
@@ -163,7 +163,7 @@ test('昆图斯 third form under 寒冷 (interval 5.0): still alternating; 寒�
   // [ASSUMED] the tide's 1.667 s clip keeps its length when the attack speed is cut (as the engine's attack clip, ai.js
   // clipSpeed: never slower), so the tide is ready 3.5 + 1.667 = 5.167 s after its cast whatever the slow: 寒冷's −30
   // (interval 3.5 × 100 / 70 = 5.0) is 0.167 s short of that and keeps the alternation; 寒冷 with 引星棘刺's 视界 −5 (the
-  // repro's field, interval 5.385) makes every turn a tide. DESIGN §35.19 states it; if a slow is to stretch the clip
+  // repro's field, interval 5.385) makes every turn a tide. DESIGN §37.19 states it; if a slow is to stretch the clip
   // (the abilities' `_affectedBySlowDown` 1), the second half of this test changes.
   const ready = sk('TidewaterG2').cooldown + QUINTUS_CLIP.Tidewater;
   const { h, e } = quintus(TWO());
@@ -246,7 +246,7 @@ test('昆图斯 【断裂生殖】: no cast once the 7 squad actions of the leve
   const log = actions(h, e, 240).filter((a) => /^SummonTentac/.test(a.what));
   assert.equal(log.length, 7, `casts at ${log.map((a) => a.t.toFixed(1)).join(', ')}`);
   // the cooldown counted from the end of its 2 s clip (18 + 2 s), then the next attack's turn — one more when a tide
-  // ready on the same turn wins the draw (DESIGN §35.55)
+  // ready on the same turn wins the draw (DESIGN §37.55)
   const ready = sk('SummonTentacG2').cooldown + QUINTUS_CLIP.SummonTentac, iv = e.s.interval;
   for (let i = 1; i < log.length; i++) { const g = log[i].t - log[i - 1].t; assert.ok(g >= ready - 1e-6 && g <= ready + 2 * iv + 0.06, `gap ${g.toFixed(3)}`); }
   assert.equal(h.eventsOf('fx').filter((f) => f[1] === 'tentacle').length, br.reduce((n, p) => n + p.length, 0), 'every phase once: 1+1+1+1+2+2+4 tentacles');
@@ -270,8 +270,8 @@ test('昆图斯 skill clips: QUINTUS_CLIP = the length of the official clip of e
 
 test('昆图斯 solo template: 【物种爆发】 at its initial cooldown after the third form starts, then its cooldown plus its 4.467 s clip apart', () => {
   // the solo template has no override (enemy_database: Doom cooldown 100, initial cooldown 200); the pair level's
-  // 999 / 999 never lets it come. It takes the attack's turn (DESIGN §35.55), the cooldown counted from the clip's end
-  // (castNow); its 4.467 s clip holds the next attack (enemies.js attackCdAfter, DESIGN §35.54)
+  // 999 / 999 never lets it come. It takes the attack's turn (DESIGN §37.55), the cooldown counted from the clip's end
+  // (castNow); its 4.467 s clip holds the next attack (enemies.js attackCdAfter, DESIGN §37.54)
   assert.equal((W[`${TPL}_s`].overrides || {})[KEY], undefined, 'the solo template: no 昆图斯 override');
   const doom = E[KEY].skills.find((s) => s.prefabKey === 'Doom');
   assert.deepEqual([doom.cooldown, doom.initCooldown], [100, 200]);

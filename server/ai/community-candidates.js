@@ -1,12 +1,12 @@
-// §35.12. [ASSUMED] Named combat recipes use catalogue reachability, not hidden stock or guaranteed offers.
+// §37.12. [ASSUMED] Named combat recipes use catalogue reachability, not hidden stock or guaranteed offers.
 // Official mechanics and the maintainer-supplied sources/disagreements stay in the versioned playbook.
 const unique = xs => [...new Set(xs)];
 const cheap = (a, b) => a.tier - b.tier || a.cost - b.cost || a.id.localeCompare(b.id);
-// §35.62 [ASSUMED]: 26 LP is the median band; each LP above it is one more leaked enemy (R5–R13) or one more second of
+// §37.62 [ASSUMED]: 26 LP is the median band; each LP above it is one more leaked enemy (R5–R13) or one more second of
 // Final Assault overtime. Measured on ABYSS: 23–24 LP picks died before the FA where legacy's 25–45 LP picks arrived (seeds 4–6).
 export const survivalScore = band => Number.isFinite(band?.lp) ? +((band.lp - 26) * 1.5).toFixed(2) : 0;
 
-// §35.63 [ASSUMED]: what the main brings to the round-14 leader fight: a core bond that can field its top threshold
+// §37.63 [ASSUMED]: what the main brings to the round-14 leader fight: a core bond that can field its top threshold
 // (6 distinct members at L5-L6), a damage multiplier sub (灵巧 / 奥术 / 精准, RESEARCH §1.6) among its community pairs,
 // and a community counter to the announced boss (strategy-community.js bossCounters, from R3 the boss is public).
 const MULTIPLIERS = ['skillfulShip', 'arcaneShip', 'preciShip'];

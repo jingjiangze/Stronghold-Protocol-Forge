@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-aurora.js — 极光 (char_422_aurora), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-aurora.js — 极光 (char_422_aurora), 第一期 (DESIGN §37.22.9).
 // Normal form: no SP unless she blocks (trait text; no sp_recover_ratio). Elite: ×(1 + sp_recover_ratio) while she
 // blocks nobody, the same reading as 森蚺. The magazine is the number in the skill text — the flattened blackboard has no ammo key.
 

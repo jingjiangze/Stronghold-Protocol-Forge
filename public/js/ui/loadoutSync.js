@@ -23,7 +23,7 @@
 // against the room's data (its operators too); the stored settings keep every entry — one the room does not know is
 // only left out of what is sent, never deleted. Whenever the room's content set arrives or goes (content.js contentSet)
 // the three settings are sent again, and the 自选 picker's list (`diyKitted`) is the set's own (else welcome's).
-// Official versions (DESIGN §35.23, M1): the loadout and the 干员持有 list are stored by operator (charId: `byChar`,
+// Official versions (DESIGN §37.23, M1): the loadout and the 干员持有 list are stored by operator (charId: `byChar`,
 // `notOwnedChars` — every version reuses chess ids for other operators) and shown as views by the chess ids of the data
 // on screen (`entries`, `notOwned`: refreshViews, rebuilt whenever that data changes — installSettingsViews); an edit is
 // written back through the map of the view it was made on (setEntries / setNotOwned `base`). A v1 store is migrated
@@ -121,7 +121,7 @@ function readStoredDiy(version = DEFAULT_VERSION) {
 
 /**
  * Loadout + ownership + screen state (separate from the app store: it must survive room / match resets). By operator
- * (DESIGN §35.23): `byChar` / `notOwnedChars` are the stored settings (null while a v1 store waits for its migration);
+ * (DESIGN §37.23): `byChar` / `notOwnedChars` are the stored settings (null while a v1 store waits for its migration);
  * `entries` / `notOwned` are their views by the chess ids of the data on screen (what the screens and the sync read);
  * `diy` is the picks of the version on screen (`diyVersion`).
  */
@@ -144,7 +144,7 @@ export const loadoutStore = createStore({
   diySync: 'idle',
 });
 
-// ---- by operator: views, migration (DESIGN §35.23) --------------------------------------------------------------------
+// ---- by operator: views, migration (DESIGN §37.23) --------------------------------------------------------------------
 
 /** The charKeyMap a view was built from (view object → map): an edit is written back through it. */
 const viewMaps = new WeakMap();
@@ -317,7 +317,7 @@ export function setOpsMap(ops) {
 }
 
 /**
- * The choices by operator of an import as entries of the view on screen (DESIGN §35.23): a v2 payload's `byChar`
+ * The choices by operator of an import as entries of the view on screen (DESIGN §37.23): a v2 payload's `byChar`
  * through the shown data's map, a v1 payload's `entries` (第二期下半's chess ids) through 第二期下半's map — loaded by
  * openLoadout; until then (and on the server's own files, where the ids are the same) as they are.
  * @param {{ entries?: Record<string, any>, byChar?: Record<string, any> }} parsed ui/loadoutModel.js parseImport's result
@@ -443,13 +443,13 @@ export function openLoadout(from = 'lobby', sel = null, tab = null) {
   data.load('backups');
   data.load('effects'); // 0.2.2: the 练度 multipliers of the 局内数值 (effects.json CHAR_MAP)
   data.load('garrisons'); // the 特质 at the top of the detail (PR #301)
-  void loadDefaultCharMap(); // a v1 导入 (第二期下半's chess ids) maps through it (DESIGN §35.23)
+  void loadDefaultCharMap(); // a v1 导入 (第二期下半's chess ids) maps through it (DESIGN §37.23)
   loadoutStore.set({ open: true, from, ...(sel ? { sel } : {}), ...(from === 'prep' ? { tab: 'loadout', sync: 'idle' } : {}), ...(tab === 'loadout' || tab === 'ownership' || tab === 'diy' ? { tab } : {}) });
 }
 export const closeLoadout = () => loadoutStore.set({ open: false });
 
 /**
- * Whether the page may send its settings now (DESIGN §35.23; the server checks them against the data of the room, or
+ * Whether the page may send its settings now (DESIGN §37.23; the server checks them against the data of the room, or
  * outside a room against the server's default version's — lobby.js dataFor / csOf: 第二期下半's own files unless
  * welcome.versions names another default): never while the page's content is loading; in a room once the room's content
  * is on the page (its version or plugin set checked, or a room of the server's own files showing them); outside a room
@@ -512,7 +512,7 @@ function installPrefSync({ net, timers, target, notify, key, stateKey, msgType, 
   async function flush() {
     if (disposed) return;
     if (net.status !== 'online') { setState('idle'); return; } // the next welcome resends
-    // the data the server checks against is not on the page (yet): the content's arrival sends it (DESIGN §35.23)
+    // the data the server checks against is not on the page (yet): the content's arrival sends it (DESIGN §37.23)
     if (!(gate || canSendSettings)({ store: app, content })) { gated = true; setState('idle'); return; }
     gated = false;
     const preparing = revision;
@@ -567,7 +567,7 @@ function installPrefSync({ net, timers, target, notify, key, stateKey, msgType, 
   });
   // a match leaving INFO_CHECK locks the loadout; a new match (the room back in LOBBY / a new INFO_CHECK) accepts it again
   const offRoom = net.on('room.state', (msg) => { if (msg && !msg.inMatch && target.get()[stateKey] === 'locked') { lastSent = null; schedule(); } });
-  // entering a room (DESIGN §35.23) after the lobby could not send them (another version on screen there): sent now.
+  // entering a room (DESIGN §37.23) after the lobby could not send them (another version on screen there): sent now.
   // (A room of another version sends them once its content arrives — below —; otherwise the server keeps the session's
   // copy, and five settings sent at every room entry would spend the server's heavy-message budget an edit needs.)
   let roomCode = app?.get?.()?.room?.code ?? null;
@@ -618,7 +618,7 @@ export function installLoadoutSync({ net, getChessReady, getBackupsReady, lookup
     net, timers, target, notify, content, app, gate, key: ['entries', 'ops'], stateKey: 'sync', msgType: 'room.loadout', field: null, tag: 'loadout',
     lockedText: N_('本局的干员调配已锁定，修改将在下一局生效'),
     async prepare() {
-      // by operator (DESIGN §35.23): a v1 store migrates first; the view is rebuilt for the data on screen
+      // by operator (DESIGN §37.23): a v1 store migrates first; the view is rebuilt for the data on screen
       if (target === loadoutStore) { await migrateSettings(); await ready(); refreshViews(); }
       // a v1 store that could not migrate holds 第二期下半's chess ids: never sent against another version's data
       const unmapped = target === loadoutStore && !target.get().byChar && pageVersion() !== DEFAULT_VERSION;

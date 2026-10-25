@@ -55,7 +55,7 @@ describe('#746 bond timer settings and selected-unit card', { skip: !ENABLED && 
       }, LABEL);
       assert.equal(state.on, 'false'); assert.match(state.prior, /显示弹药与能量数量/);
       await toggle(page); await page.keyboard.press('Escape');
-      // #792 / DESIGN §35.93: opening settings dismisses the detail card. Select the unit again
+      // #792 / DESIGN §37.93: opening settings dismisses the detail card. Select the unit again
       // to test the setting, rather than waiting for a card that intentionally closed.
       assert.equal(await page.$('.dpanel'), null);
       await page.click('.ff-unit.is-ally');

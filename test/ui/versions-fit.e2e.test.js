@@ -1,4 +1,4 @@
-// Real-server browser E2E — text fit of the official versions' interface (DESIGN §35.23, M1; the §35.18 matrix): on the
+// Real-server browser E2E — text fit of the official versions' interface (DESIGN §37.23, M1; the §37.18 matrix): on the
 // four phones 640×360 / 667×375 / 740×360 / 844×390, in all five languages at all four 文字大小, and on desktops
 // 1920×1080 / 1280×720:
 //   * the lobby's version chip inside the top bar and the screen, the version picker inside the screen with every name
@@ -184,7 +184,7 @@ describe('official versions: text fit (real server, SP_VERSIONS=all)', { skip: !
               { sel: '.vervote__actions .btn', within: '[data-testid="version-vote"]', inView: true },
               // (a short screen gives the banner's line to the seats: then it is not shown at all)
               { sel: '[data-testid="version-banner"]', wrap: true, optional: h <= 520 },
-              // §35.18's phone layout hides the redundant ready tag (02eebe5b); loading / failed tags remain visible.
+              // §37.18's phone layout hides the redundant ready tag (02eebe5b); loading / failed tags remain visible.
               { sel: '.seat__content.is-ready', within: '.rseat', optional: h <= 520 },
               { sel: '.seat__content:not(.is-ready)', within: '.rseat', optional: true },
               // the whole name (the part tells two halves apart): two lines on a short screen, never an ellipsis

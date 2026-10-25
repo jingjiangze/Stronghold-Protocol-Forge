@@ -2,7 +2,7 @@
 // 创建者, the ready state at the bottom, the name plate under the card; an empty seat offers 邀请 — copies the key — and,
 // to the host, 添加 AI 队友; the host's 移出 / 移除 AI 队友 at a card's top right), the top bar (leave, mode and ping, 统计 /
 // 设置 / 玩法说明, 干员调配 and the 同盟密钥 with 复制 / the link), the bottom: the ready count and status line, the
-// difficulty pill and ⚙ 同盟设置 (co-op; a timed solo's ⚙ is 模拟设置 and holds 「不限时」, DESIGN §35.23.10; the ⚙ sits where the event's pill has 快速搜寻 — matchmaking is dropped by the
+// difficulty pill and ⚙ 同盟设置 (co-op; a timed solo's ⚙ is 模拟设置 and holds 「不限时」, DESIGN §37.23.10; the ⚙ sits where the event's pill has 快速搜寻 — matchmaking is dropped by the
 // maintainer's PR #643 keep / drop list of 2026-10-15), and the big 开始模拟 / 准备就绪 button (its disabled reason in
 // the project's Tooltip: hover, or a long press on touch; the status line says it too).
 // Room settings: a co-op room is created at once from the lobby's 创建同盟 (the event's 联合模拟, research 06 §3.2; the
@@ -36,7 +36,7 @@
 // 「显示其他玩家的皮肤」 is off; an outfit this page's appearance plugins do not have draws the default art (ui/seatArt.js
 // seatCardSkin). The picker is one's own picker, so its tiles wear one's own outfits too (like 干员调配's).
 // Without the art pack the card keeps its avatar frame; a bot keeps its robot frame.
-// Official versions (DESIGN §35.23, M1; versions.js): a room plays one version (room.state.version; absent = 第二期下半).
+// Official versions (DESIGN §37.23, M1; versions.js): a room plays one version (room.state.version; absent = 第二期下半).
 // Another version's name shows beside the mode in the top bar (ui/pluginTag.js VersionTag) and every page loads and checks
 // its data like a gameplay plugin's content set (content.js) — the seat tags read 版本数据载入中 / 就绪 / 校验失败 and
 // 准备就绪 / 开始模拟 wait for it (needsContent: gameplay plugins or another version; 非官方 stays the plugins' alone).
@@ -121,7 +121,7 @@ export function roomFacts(room, myId) {
   const isReady = (s) => !!s.ready || s.playerId === room?.hostId;
   const readyHumans = humans.filter(isReady).length;
   const othersReady = others.every((s) => s.ready && s.connected !== false);
-  // a room with gameplay plugins (DESIGN §32.6) or another official version (§35.23): every player's page has loaded and
+  // a room with gameplay plugins (DESIGN §32.6) or another official version (§37.23): every player's page has loaded and
   // checked its content (the host's too); `modded` (非官方) is the plugins' alone
   const modded = isModdedRoom(room);
   const loadsContent = needsContent(room);
@@ -163,7 +163,7 @@ export function aiTakeoverOption(room, myId) {
 }
 
 /**
- * The solo room option 「不限时」 (DESIGN §35.23.10; room.setSoloUnlimited). null unless the room is solo AND `timed`
+ * The solo room option 「不限时」 (DESIGN §37.23.10; room.setSoloUnlimited). null unless the room is solo AND `timed`
  * is exactly true (a version whose solo is timed, and whose data is on screen). Off when room.state omits the key.
  * The host switches it; everybody else sees it read-only.
  * @param {any} room room.state payload
@@ -258,7 +258,7 @@ function CardPicker({ current, list, m, localSkins = {}, onPick, onClose }) {
  * One seat: a tall card — the top strip (P#), the 名片干员 portrait (or the avatar frame: a bot, no art pack), 创建者, the
  * state at the bottom (准备中 / 待命中 / 已就绪 with its box) — and the name plate under it. The art's text sits in two
  * groups in flow, `.rseat__top` (the badge, 更换立绘, the tags) and `.rseat__low` (the operator's name, the state), so a
- * larger 文字大小 wraps and pushes them apart rather than drawing one over another (§35.18 review). One's own card offers 更换立绘
+ * larger 文字大小 wraps and pushes them apart rather than drawing one over another (§37.18 review). One's own card offers 更换立绘
  * (`onPickCard`); the host gets 移出 / 移除 AI 队友 at the top right. An empty seat: 邀请 (copies the key) and, for the
  * host of a co-op room, 添加 AI 队友. `portrait` is the outfit's picture, `portraitDefault` the operator's default one
  * (given when an outfit is worn): a picture that fails to load gives way to the next, the last to the avatar frame.
@@ -460,7 +460,7 @@ function GoButton({ label, onClick, disabled, loading = false, ready = null, ico
     ${ready != null
       ? html`<span class="rs-go__box" aria-hidden="true">${ready ? html`<${Icon} name="check" />` : null}</span>`
       : icon
-        // (a spectator's 观战中: its eye in the mark's place, so the label keeps the width — §35.18 review)
+        // (a spectator's 观战中: its eye in the mark's place, so the label keeps the width — §37.18 review)
         ? html`<span class="rs-go__icon" aria-hidden="true"><${Icon} name=${icon} /></span>`
         : html`<span class="proto-start__mark" aria-hidden="true"><span class="proto-start__rook"><i>[</i><${Icon} name="rook" /><i>]</i></span><small>STRONGHOLD<br />PROTOCOL</small></span>`}
     <span class="proto-start__label">${loading ? html`<${Spinner} size="sm" />` : null}${label}</span>
@@ -798,7 +798,7 @@ export function RoomScreen() {
     const name = DIFFICULTY_NAMES[room.difficulty] ? t(DIFFICULTY_NAMES[room.difficulty]) : room.difficulty;
     toast(t('创建者已将模拟难度改为「{name}」', { name }), 'info');
   }, [room?.code, room?.difficulty]);
-  // official versions (DESIGN §35.23): the room's switch is told to everybody (the host's own page included — a vote's
+  // official versions (DESIGN §37.23): the room's switch is told to everybody (the host's own page included — a vote's
   // result arrives later than the pick); never on entering a room or switching rooms
   const versions = useStore((s) => s.versions);
   const myLobby = useStore(lobbyVersion);
@@ -903,7 +903,7 @@ export function RoomScreen() {
 
   const copy = async (what) => {
     // the copied link carries an invitation line (#103): 「{name}邀请你加入卫戍协议：盟约【{difficulty}】」 — with the
-    // version's name for another official version (DESIGN §35.23)
+    // version's name for another official version (DESIGN §37.23)
     const params = { name: me.name ?? '', difficulty: DIFFICULTY_NAMES[room.difficulty] ? t(DIFFICULTY_NAMES[room.difficulty]) : '' };
     const invite = roomVersion(room) !== DEFAULT_VERSION
       ? t('{name}邀请你加入卫戍协议：盟约·{version}【{difficulty}】', { ...params, version: versionLabel(roomVersion(room)) })
@@ -924,7 +924,7 @@ export function RoomScreen() {
     if (d === room.difficulty && !pluginMode) { closeProto(); return; }
     if (!(await setDifficulty(d))) return;
     savePref('lobby.difficulty', d);
-    // the plugin mode is gone: said, as a same-difficulty 确认 changes nothing else the host sees (§35.51; §35.18's nit)
+    // the plugin mode is gone: said, as a same-difficulty 确认 changes nothing else the host sees (§37.51; §37.18's nit)
     if (pluginMode) toast(t('已退出插件模式「{name}」', { name: pluginMode }), 'info');
     if (alive.current) closeProto();
   };
@@ -939,7 +939,7 @@ export function RoomScreen() {
   const soloOpt = soloUnlimitedOption(room, me.playerId, soloTimed);
   const soloBrief = soloTimeMsgid('brief', { timed: soloTimed, unlimited: room.soloUnlimited === true });
   const modeName = coop ? t('同盟模拟') : t('独立模拟');
-  // the room's version (DESIGN §35.23): the pill and ⚙'s row on a server that enables versions (or in a version room)
+  // the room's version (DESIGN §37.23): the pill and ⚙'s row on a server that enables versions (or in a version room)
   const vote = versionVoteOf(room);
   const curVersion = roomVersion(room);
   const showVersion = Array.isArray(versions) || curVersion !== DEFAULT_VERSION;

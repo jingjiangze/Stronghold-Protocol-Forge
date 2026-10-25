@@ -1,5 +1,5 @@
 {
-  "_note": "First-season research override; remaining fallback fields and ban counts are [ASSUMED], see history/0.3.2.md §35.22.7.",
+  "_note": "First-season research override; remaining fallback fields and ban counts are [ASSUMED], see history/0.3.2.md §37.22.7.",
   "_criticAddendum": {
     "enemyStatMultipliers": {
       "source": "11-18 hotfix aceffect_enemy_4/5 blackboards: .8/.8 and .7/.75, DEF unchanged. [ASSUMED] no additional per-round stacks without first-season evidence; co-op HARD neutral.",

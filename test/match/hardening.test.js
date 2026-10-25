@@ -258,7 +258,7 @@ test('garrisonHooks widens a garrison to extra hooks ("<进入休整期时><休�
   reg.garrison(g.effectKey, { garrisonHooks: (gar) => (gar.garrisonId === g.garrisonId ? ['onPrepStart', 'onPrepEnd'] : null), run(ctx) { hooks.push(ctx.hook); } });
   const { m, ps } = prepSolo({ seed: 912, registry: reg });
   give(m, ps, id, 'board', legalTileFor(m, ps, id));
-  m.dispatch(ps, 'onRoundStart', { round: 1 });   // 「进入休整期时」 is the prep start (DESIGN §35.53): nothing here
+  m.dispatch(ps, 'onRoundStart', { round: 1 });   // 「进入休整期时」 is the prep start (DESIGN §37.53): nothing here
   m.dispatch(ps, 'onPrepStart', { round: 1 });
   m.dispatch(ps, 'onPrepEnd', { round: 1 });
   m.dispatch(ps, 'onRefresh', {});

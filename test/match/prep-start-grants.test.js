@@ -42,10 +42,10 @@ test('#851 single NORMAL (R3 not a 机变 round): 老鲤 still grants at the R3 
   m.dispose();
 });
 
-// DESIGN §35.53: the operators' traits with 「<进入休整期时>」 (SERVER_PREP_START) run at the prep start as well — research 01
+// DESIGN §37.53: the operators' traits with 「<进入休整期时>」 (SERVER_PREP_START) run at the prep start as well — research 01
 // §4.1 step 6 and appendix A1 (「进入此阶段时，触发<进入休整期时>的效果」), after the round's 机变 draft. Until 0.3.2 they ran
-// on the round start, before the draft opened (the strategies' grants moved in §35.24).
-test('§35.53 同盟 NORMAL: an operator\'s 「进入休整期时」 trait (缄默德克萨斯: a free refresh) runs at the R3 prep start, after the 机变 draft', () => {
+// on the round start, before the draft opened (the strategies' grants moved in §37.24).
+test('§37.53 同盟 NORMAL: an operator\'s 「进入休整期时」 trait (缄默德克萨斯: a free refresh) runs at the R3 prep start, after the 机变 draft', () => {
   const h = makeMatch({ mode: 'coop', difficulty: 'NORMAL', humans: 1, bots: 1, seed: 5, registry: REG, fake: true }).start();
   const m = h.m;
   h.toPrep(2);

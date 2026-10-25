@@ -42,7 +42,7 @@ export function createPrepSteps(actions, { maxRefreshes, arrangeBeforeLevel = fa
       if (job && job.done && job.best !== job.plans[0]) yield* ops.applyPlanSteps(m, ps, job.chosen, job.best);
       ops.resolveTemp(m, ps);
       if (!ops.hasHandRoom(ps)) ops.freeHandSlot(m, ps);
-      // Advisor plans (§35.13–35.14): final-placement sales can leave new expiring funds. Recheck before Ready.
+      // Advisor plans (§37.13–35.14): final-placement sales can leave new expiring funds. Recheck before Ready.
       if (ops.economyPlan(m, ps)) {
         const before = ps.allChess().map(p => p.uid).join();
         yield* ops.advisorSpendSteps(m, ps);

@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-folnic.js — 亚叶 (char_345_folnic), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-folnic.js — 亚叶 (char_345_folnic), 第一期 (DESIGN §37.22.9).
 // Her chess id in that version is today's 泥岩. This file is keyed by charId and does not edit the 泥岩 kit.
 // S1's attack range is the skill trigger's custom grid (the physician range plus one forward column).
 // [ASSUMED] S2 fires only at an enemy: with nobody to hit, the shell is not thrown.

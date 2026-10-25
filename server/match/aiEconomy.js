@@ -1,10 +1,10 @@
-// §35.13, maintainer 2026-10-19. [ASSUMED] Procurement/bank policy, not a gameplay rule.
+// §37.13, maintainer 2026-10-19. [ASSUMED] Procurement/bank policy, not a gameplay rule.
 // Prices, carry bands and freeze mechanics remain PlayerEconomy/GameData's official-data rules.
 import { advisorPlan, planContains, planBuyTarget, planCopyUseful, ownsElite } from './aiPlan.js';
 import { computeBonds } from './bondsMeta.js';
 import { countFree } from './board.js';
 
-// An explicitly empty plan remains the legacy delegation escape hatch (§35.9).
+// An explicitly empty plan remains the legacy delegation escape hatch (§37.9).
 export function economyPlan(m, ps) {
   const plan = advisorPlan(m, ps);
   return plan && Object.keys(plan).length ? plan : null;
@@ -19,7 +19,7 @@ export function advisorWanted(m, ps, id) {
     && !!plan.bonds?.some(b => !gd.modeInactiveBonds.has(b.id) && gd.chess(id)?.bonds?.includes(b.id));
 }
 
-// Maintainer 2026-10-20 (§35.14), [ASSUMED] execution policy: incidental bond/keep matches never freeze.
+// Maintainer 2026-10-20 (§37.14), [ASSUMED] execution policy: incidental bond/keep matches never freeze.
 export function advisorFreezeTarget(m, ps, id) {
   return !ownsElite(m, ps, id) && (planBuyTarget(m, ps, id) || ps.completesChessMerge(id));
 }
@@ -27,7 +27,7 @@ export function advisorFreezeTarget(m, ps, id) {
 export function advisorProtected(m, ps, piece) {
   const plan = economyPlan(m, ps), gd = ps.gd || m.gd;
   if (!plan || piece?.kind !== 'chess') return false;
-  // §35.63 [ASSUMED]: from R9 with at most one free hand slot, a benched normal piece of tier <= 4 that completes no
+  // §37.63 [ASSUMED]: from R9 with at most one free hand slot, a benched normal piece of tier <= 4 that completes no
   // merge and was not bought this prep stops being untouchable (keep list, tier 4 singles): LLM benches filled with 3.2
   // protected tier-4+ singles and 3.6 keep-listed pieces, the shed then fell through to tier 5/6 carries.
   const crowded = m.round >= 9 && countFree(ps.hand) <= 1 && ![...ps.board.values()].some(p => p.uid === piece.uid);

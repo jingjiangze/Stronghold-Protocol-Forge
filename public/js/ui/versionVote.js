@@ -1,4 +1,4 @@
-// ui/versionVote.js — the room's version vote strip (DESIGN §35.23, M1; protocol §4–§6), modelled on the 重刷本局 strip
+// ui/versionVote.js — the room's version vote strip (DESIGN §37.23, M1; protocol §4–§6), modelled on the 重刷本局 strip
 // (ui/setupReroll.js): the host proposes a version (ui/versionPicker.js, room.proposeVersion), every human seated at that
 // moment votes (room.state.versionVote: its voters and who agreed — the host counts as agreed), a single decline cancels
 // it, the host may cancel it (room.cancelVersionVote), it runs out after 60 s and any seat change voids it (the server

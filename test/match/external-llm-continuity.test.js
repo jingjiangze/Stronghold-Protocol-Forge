@@ -17,8 +17,8 @@ test('example repair preserves reasoned level holds and drops an unexplained hol
   assert.ok(repaired.repairs.some(r => r.path === 'economy.holdLevel'));
 });
 
-test('§35.62 repair drops level holds below the slow curve unless a candidate holds that level; item buys move', () => {
-  // §35.63: L2 by R4 (not R3) and L6 by R11.
+test('§37.62 repair drops level holds below the slow curve unless a candidate holds that level; item buys move', () => {
+  // §37.63: L2 by R4 (not R3) and L6 by R11.
   assert.deepEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13].map(holdFloor), [1, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6, 6]);
   const economy = { level: 2, holdLevel: true, why: 'Price drops next round.' };
   const late = { ...fixture.digest, round: 5, economy: { ...fixture.digest.economy, level: 2 } };
@@ -35,7 +35,7 @@ test('§35.62 repair drops level holds below the slow curve unless a candidate h
   assert.deepEqual(repairPlan({ buy: ['item'] }, pack, fixture.digest, []).plan, { buy: [], items: { buy: ['item'] } });
 });
 
-test('§35.62 a strategy candidate main may lead the plan before a member is held; the model sees two prep candidates', () => {
+test('§37.62 a strategy candidate main may lead the plan before a member is held; the model sees two prep candidates', () => {
   const digest = { ...compactDigest(fixture.digest, pack), bonds: [] };
   const plan = { bonds: [{ id: 'a', priority: 5 }] }, repairs = [];
   focusPlan(plan, { pivot: false }, digest, null, repairs, ['a']);

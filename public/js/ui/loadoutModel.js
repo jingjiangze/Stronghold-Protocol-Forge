@@ -12,7 +12,7 @@
 // per operator, so the normal, elite and 自选 forms share them; only values that differ from the defaults (潜能 6,
 // 精英2 Lv.60) are kept; stored beside the entries (`sp.pref.loadout` = { v: 1, entries, ops }; an older stored loadout
 // has none = the defaults) and sent with `room.loadout { entries, ops }` (shared/protocol.js checkLoadoutOps).
-// By operator (DESIGN §35.23, M1): official versions reuse chess ids for other operators (第一期's chess_char_1_02_a is
+// By operator (DESIGN §37.23, M1): official versions reuse chess ids for other operators (第一期's chess_char_1_02_a is
 // 讯使, 第二期's 角峰), so the stored choices are keyed by charId — `sp.pref.loadout` = { v: 2, byChar, ops }, shared by
 // every version — and the screens keep working on chess ids: ui/loadoutSync.js shows `entries` as a view of `byChar`
 // for the data on screen (charKeyMap / entriesView) and writes an edit back through the map of the data the view was
@@ -109,7 +109,7 @@ export const toStored = (byChar, ops = {}, entries = undefined) => ({ v: LOADOUT
 /** The v1 form (by chess id), written only while a v1 store still waits for its migration (ui/loadoutSync.js). */
 export const toStoredV1 = (entries, ops = {}) => ({ v: 1, entries: entries || {}, ops: ops || {} });
 
-// ---- by operator (DESIGN §35.23) -----------------------------------------------------------------------------------
+// ---- by operator (DESIGN §37.23) -----------------------------------------------------------------------------------
 
 /**
  * chess id ↔ charId of a data set's normal chess (see the header): `toChar` every normal chess's operator, `toChess`
@@ -260,7 +260,7 @@ export const LOADOUT_EXPORT_KIND = 'stronghold.loadout';
 export const LOADOUT_IMPORT_MAX_BYTES = 256 * 1024;
 
 /**
- * Portable payload of a loadout, as downloaded / copied by 导出 — v2 (DESIGN §35.23): the choices by operator
+ * Portable payload of a loadout, as downloaded / copied by 导出 — v2 (DESIGN §37.23): the choices by operator
  * (`byChar`, every version's), with the per-operator 潜能 / 练度 (`ops`, 0.2.2).
  * @param {Record<string, any>} byChar the stored choices by charId
  * @param {{ now?: number, ops?: Record<string, any> }} [o]
@@ -292,7 +292,7 @@ export function serializeExport(byChar, opts) {
  * chess / skills / modules this build does not have. `__proto__` / `constructor` keys are skipped (see parseStored).
  * A payload with `ops` (0.2.2) brings the per-operator 潜能 / 练度 too (`ops` in the result — absent when the payload has
  * none: an older export leaves the current settings alone); a payload of settings only imports.
- * A v2 payload (DESIGN §35.23) gives `byChar` (choices by operator) instead of `entries`; a v1 one gives `entries` by
+ * A v2 payload (DESIGN §37.23) gives `byChar` (choices by operator) instead of `entries`; a v1 one gives `entries` by
  * 第二期下半's chess ids (the caller maps them: ui/loadoutSync.js).
  * @param {any} input payload object or serialised text
  * @returns {{ ok: true, entries?: Record<string, any>, byChar?: Record<string, any>, ops?: Record<string, any> } | { ok: false, error: string }}

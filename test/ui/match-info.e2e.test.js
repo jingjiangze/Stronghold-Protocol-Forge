@@ -19,7 +19,7 @@
 //    and scrolls at every width and closing it keeps the highlighted strategy.
 // 4. The dev mock's 确认本局信息 and 本局信息 dialog at 1440×900 (hover) and on phones 667×375 / 844×390 (long press): each
 //    special enemy's tooltip sits 8 px above or below its own icon, over it, inside the dialog and the screen, and covers
-//    nothing of the leader block (§35.18's leftover: in the dialog it was centred over the whole row, over the 战场 line).
+//    nothing of the leader block (§37.18's leftover: in the dialog it was centred over the whole row, over the 战场 line).
 // Zero console errors / page errors / failed requests. Screenshots: test/e2e/out/match-info-*.png
 
 import { test, describe, before, after } from 'node:test';

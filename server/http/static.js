@@ -52,7 +52,7 @@
 //                cached for good — for this server's vanilla `cs` (its first 16 hex digits) and, from P1c (DESIGN §32.6),
 //                a content set with gameplay plugins a room uses or used lately (server/plugins/contentSets.js: the same
 //                shape with `vanilla: false`, its plugins, settings and modes)
-//     /cs/<cs16>/index.json, /cs/<cs16>/bounds/official.json of an official version this server enables (DESIGN §35.23,
+//     /cs/<cs16>/index.json, /cs/<cs16>/bounds/official.json of an official version this server enables (DESIGN §37.23,
 //                server/versions.js file): its manifest (`version`, data URLs under /data/versions/<slug>/) and its
 //                official-bounds snapshot, cached for good
 //     /data/versions/<slug>/<file>.json → another official version's data — only an enabled version's directory
@@ -204,7 +204,7 @@ function resolvePackRelativeKit(decoded, kitDirs) {
  *   workshopPanelFiles?: Map<string, string>|null, workshopAssets?: Map<string, string>|null,
  *   workshopRoutes?: Map<string, object>|null, workshopResourceFiles?: Map<string, object>|null,
  *   versions?: { servedDirs: () => string[], file: Function } | null
- *   versions: 本服务器启用的官方版本（server/versions.js，DESIGN §35.22/§35.23）；null ⇒ /data/versions/ 不服务
+ *   versions: 本服务器启用的官方版本（server/versions.js，DESIGN §37.22/§37.23）；null ⇒ /data/versions/ 不服务
  *   resourcePolicy?: 'serve'|'cache-only' }} dirs
  *   packs: the server's pack registry (default: one over publicDir, dataDir and packsDir — ROOT/packs)
  *   workshop*: the 创意工坊 tables `server/index.js` builds once per process (empty maps on a plain install, and every
@@ -274,7 +274,7 @@ export function createStaticHandler({
     m.name === 'sim' ? { ...m, only: new Set(['.js']), deny: SIM_PRIVATE } : m
   ));
 
-  // another official version's data (data/versions/<slug>/, DESIGN §35.22, §35.23): the release carries every version,
+  // another official version's data (data/versions/<slug>/, DESIGN §37.22, §37.23): the release carries every version,
   // but only the directories of the versions this server enables are served (versions.servedDirs()); the on-disk path
   // decides (case-insensitive disks, Windows short names), as for the studio below
   let versionsReal = null;
@@ -339,7 +339,7 @@ export function createStaticHandler({
       if (decoded !== `/cs/${csUrlPart(c.cs)}/index.json`) {
         // a content set with gameplay plugins (DESIGN §34.6, server/plugins/contentSets.js): its manifest and its patched
         // data files — a URL naming its content, so cached for good; 404 for a set this server does not keep
-        // an official version's manifest and bounds (DESIGN §35.23, server/versions.js), else a content set with gameplay
+        // an official version's manifest and bounds (DESIGN §37.23, server/versions.js), else a content set with gameplay
         // plugins (DESIGN §32.6, server/plugins/contentSets.js): its manifest and its patched data files — a URL naming
         // its content, so cached for good; 404 for a set this server does not keep
         const m = CS_FILE.exec(decoded);

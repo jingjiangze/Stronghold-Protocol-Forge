@@ -1,4 +1,4 @@
-// Maintainer decision 2026-10-23 (§35.66): until LLM-played seats clear 终极 near 100%, the external-AI /
+// Maintainer decision 2026-10-23 (§37.66): until LLM-played seats clear 终极 near 100%, the external-AI /
 // LLM integration stays on dev. Release zips (full, lite, update) and the Docker image omit the files below
 // and carry server/release-without-llm. The #673 strategy framework and the built-in bots are not in this list.
 // [ASSUMED] server/match/aiPlan.js and server/match/aiEconomy.js stay. The built-in bot calls them on the
@@ -12,7 +12,7 @@ import path from 'node:path';
 export const LLM_RELEASE_MARKER = 'server/release-without-llm';
 
 /** The marker's bytes. The packager and omitLlmFromRelease write the same text. */
-export const LLM_RELEASE_MARKER_TEXT = 'external AI is development-only (maintainer 2026-10-23, §35.66)\n';
+export const LLM_RELEASE_MARKER_TEXT = 'external AI is development-only (maintainer 2026-10-23, §37.66)\n';
 
 /**
  * Files, and directory prefixes ending in `/`, that a release must not contain.

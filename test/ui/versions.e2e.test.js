@@ -1,4 +1,4 @@
-// Real-server browser E2E — the official versions (DESIGN §35.23, M1) on a server that enables them all (SP_VERSIONS=all):
+// Real-server browser E2E — the official versions (DESIGN §37.23, M1) on a server that enables them all (SP_VERSIONS=all):
 //   * the lobby switch: 第一期下半 picked in the version picker → S.W.E.E.P. 18 盟约 / 30 策略, 干员调配's 95 operators,
 //     three difficulty cards (no 终极); the choice survives a reload;
 //   * a co-op room created in that version shows its tag; a guest whose lobby is 第二期下半 joins, loads the version (the

@@ -75,7 +75,7 @@ describe('干员持有 model (ui/ownershipModel.js)', () => {
     assert.deepEqual(M.parseStoredOwnership(null), []);
     assert.deepEqual(M.parseStoredOwnership({ v: 1, notOwned: [SILVER, 'bad id', SILVER, '__proto__', 7, SARIA] }), [SILVER, SARIA].sort());
     assert.deepEqual(M.parseStoredOwnership([MLYSS]), [MLYSS], 'a bare array of an older build');
-    // v2 (DESIGN §35.23): by operator; the v1 form only while a store waits for its migration
+    // v2 (DESIGN §37.23): by operator; the v1 form only while a store waits for its migration
     assert.deepEqual(M.toStoredOwnership(['char_202_demkni', 'char_172_svrash']), { v: 2, notOwnedChars: ['char_172_svrash', 'char_202_demkni'] });
     assert.deepEqual(M.parseStoredOwnershipChars(M.toStoredOwnership(['char_202_demkni'])), ['char_202_demkni']);
     assert.deepEqual(M.parseStoredOwnership(M.toStoredOwnership(['char_202_demkni'])), [], 'a v2 store has no chess ids');

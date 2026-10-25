@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-mberry.js — 桑葚 (char_473_mberry), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-mberry.js — 桑葚 (char_473_mberry), 第一期 (DESIGN §37.22.9).
 // The trait element-heal ratio (and the hidden talent that repeats it) is the wandermedic profile.
 // S2's element-injury cut is the strongest on the hit, the same slot as 哈洛德's 我即军营.
 

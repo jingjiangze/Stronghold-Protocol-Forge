@@ -613,7 +613,7 @@ function dmgZone(b, src, x, y, r, life, iv, amount, type = 'arts', kind = 'zone'
 
 /**
  * A cooldown skill ability (`id` labels it for tests / other abilities). `turn`: the attack-turn fields of an attack-class
- * skill (helpers.js attackSkillOf — `atk`, `clip`, `own`; DESIGN §35.52), cast in the attack's turn instead of on its own.
+ * skill (helpers.js attackSkillOf — `atk`, `clip`, `own`; DESIGN §37.52), cast in the attack's turn instead of on its own.
  */
 const skill = (s, fire, { cond = null, sil = false, cd = null, icd = null, id = null, turn = null } = {}) => (s || cd != null) && fire ? ({
   id: id ?? null, sil, cd: cd ?? s.cd, icd: icd ?? s.icd, cond, fire, sk: s || null,   // sk: its slot for the 'cast' event

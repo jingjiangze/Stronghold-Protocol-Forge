@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// §35.12: offline regeneration/audit. Writes JSON only to stdout; no network or game mutations.
+// §37.12: offline regeneration/audit. Writes JSON only to stdout; no network or game mutations.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';

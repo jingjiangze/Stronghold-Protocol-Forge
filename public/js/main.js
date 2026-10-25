@@ -38,7 +38,7 @@
 // Cosmetic plugins (DESIGN §34 P1a): installContent (content.js) lays the room's visual set and the player's personal
 // plugins over the art manifest every screen reads. Gameplay plugins (§32.6): installContentSet (content.js) downloads and
 // checks a room's content set and makes it the data every screen and the battle runner read.
-// Official versions (DESIGN §35.23, versions.js): welcome.versions turns the lobby's version switch on; installContentSet
+// Official versions (DESIGN §37.23, versions.js): welcome.versions turns the lobby's version switch on; installContentSet
 // also loads and checks the version the page shows (the lobby's choice, a room's version). A room whose version changes
 // while a result is on screen drops that result (the server dropped the room's replay: its chess ids are the old
 // version's), and a result that arrives after the room is gone keeps the version its frames name (m.result / m.public
@@ -344,7 +344,7 @@ function onRoomState(msg) {
   const prevRoom = store.get().room;
   // A (new) match starts: forget the previous match's state so stale results never show.
     if (room.inMatch && !(prevRoom && prevRoom.inMatch && prevRoom.code === room.code)) { publicState = null; store.set({ match: emptyMatch() }); }
-  // The room switched its version (DESIGN §35.23): a result still on screen (a settlement, a spectator's view) names the old
+  // The room switched its version (DESIGN §37.23): a result still on screen (a settlement, a spectator's view) names the old
   // version's chess ids, and the server dropped the room's replay — it closes, back to the room.
   else if (prevRoom && prevRoom.code === room.code && !room.inMatch && roomVersion(prevRoom) !== roomVersion(room) && store.get().match.public) store.set({ match: emptyMatch() });
   store.set({ room });
@@ -460,7 +460,7 @@ function wireNet() {
     // replays dedupe by content id inside recordResult (spectator seats' copies build no record at all)
     // (`vs`: the room's cosmetic plugins, recorded — such a match still counts as the original game: ui/stats.js)
     // (`content`: the room's content set when it played gameplay plugins — such a match is unofficial: ui/stats.js)
-    // (`version`: the official version the match played, DESIGN §35.23 — the room's, or the result's own `version` when
+    // (`version`: the official version the match played, DESIGN §37.23 — the room's, or the result's own `version` when
     // it arrives after the room is gone, also to a freshly loaded page; only a non-default one is written)
     const s = store.get();
     const version = s.room ? roomVersion(s.room) : matchFrameVersion({ result: res, public: s.match.public });
@@ -508,8 +508,8 @@ function wireNet() {
 function warmGameData() {
   // a room with gameplay plugins: content.js downloads its content set's files instead (DESIGN §32.6). With the art list
   // in, the pre-game sprites (协议启动！ and the 请选择策略 band, ui/protocolBoot.js) start too: a solo player who starts
-  // at once and skips through the briefing meets the band draft's first turn with them at hand (§35.18's leftover)
-  // Another official version's room (DESIGN §35.23): its version set brings those files (content.js) — the server's
+  // at once and skips through the briefing meets the band draft's first turn with them at hand (§37.18's leftover)
+  // Another official version's room (DESIGN §37.23): its version set brings those files (content.js) — the server's
   // default ones would race it; only the art list the sprites need is fetched.
   const go = () => {
     const room = store.get().room;
@@ -625,7 +625,7 @@ async function boot() {
 
   wireNet();
   installStatsRecorder(store); // follows the match on screen, so a 放弃模拟 can be recorded (ui/stats.js)
-  // the loadout / 干员持有 / 自选 settings by operator, shown for the data on screen (DESIGN §35.23; a v1 store migrates)
+  // the loadout / 干员持有 / 自选 settings by operator, shown for the data on screen (DESIGN §37.23; a v1 store migrates)
   installSettingsViews();
   installLoadoutSync({ net });
   installSupportSync({ net });

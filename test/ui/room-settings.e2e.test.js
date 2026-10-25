@@ -61,7 +61,7 @@ describe('co-op room settings (real server)', { skip: !ENABLED && 'set SP_E2E=1 
         note: document.querySelector('.rs-opts .ailast')?.textContent.includes('由创建者设置'),
       }));
       assert.ok(v.diff.includes('标准模拟') && v.diff.includes('由创建者选择') && !v.diff.includes('更改'), v.diff);
-      // §35.100 adds the default-off spectator handover setting; both switches are read-only for the guest.
+      // §37.100 adds the default-off spectator handover setting; both switches are read-only for the guest.
       assert.deepEqual(v.sw, [['允许观战者接替 AI', true], ['AI 队友最后选择', true]]);
       assert.equal(v.note, true);
       await guest.shot('guest-options');

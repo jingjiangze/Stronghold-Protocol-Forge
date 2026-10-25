@@ -1,4 +1,4 @@
-// test/ui/versions.test.js — which official version the page shows (public/js/versions.js, DESIGN §35.23 M1): the lobby's
+// test/ui/versions.test.js — which official version the page shows (public/js/versions.js, DESIGN §37.23 M1): the lobby's
 // preference against welcome.versions (the server's default, else 第二期下半), a room's version, a result's after its room
 // is gone, the preference saved; the difficulties a version offers and the server's fallback rule; needsContent; the
 // season; the period lines; the welcome list sanitised. Plus a guard: the client renders no research texts of the data

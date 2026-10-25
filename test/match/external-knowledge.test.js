@@ -35,7 +35,7 @@ test('knowledge is immutable, cached, content-addressed, language-aware and inde
   assert.notEqual(knowledgePack(DATA, { ...opts, rules: { unequip: 'allow' } }).version, a.version);
 });
 
-test('another official version\'s data names it (gameVersion, DESIGN §35.23); the default pack has no such key', () => {
+test('another official version\'s data names it (gameVersion, DESIGN §37.23); the default pack has no such key', () => {
   const a = knowledgePack(DATA, opts);
   assert.equal(Object.hasOwn(a, 'gameVersion'), false);
   const v = knowledgePack(getVersionData('act1autochess'), opts);

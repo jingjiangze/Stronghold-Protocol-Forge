@@ -392,7 +392,7 @@
   background: repeating-linear-gradient(90deg, rgba(0, 0, 0, .3) 0 1px, transparent 1px 4px); }
 .achv__logo { position: relative; height: .42rem; width: auto; max-width: 2.4rem; object-fit: contain; opacity: .85; }
 .achv__logo-text { position: relative; font-family: var(--font-num); font-size: calc(.16 * var(--t)); font-weight: 700; letter-spacing: .08em; color: #cfd3d2; }
-/* the decorative ALLIANCE above the name, both right of the mark, the banner as tall as they need (§35.51: the ALLIANCE sat
+/* the decorative ALLIANCE above the name, both right of the mark, the banner as tall as they need (§37.51: the ALLIANCE sat
    under the name at every 文字大小, and at 大 / 特大 on a phone the name ran 13–18 px past the banner's fixed height) */
 .achv__title { position: relative; margin-left: auto; display: grid; grid-template-columns: auto auto; grid-template-areas: "mark en" "mark name";
   align-content: center; align-items: center; column-gap: .12rem; align-self: stretch; padding: .04rem .9rem .04rem 0; }
@@ -423,7 +423,7 @@
   .modal__box.achv, .achv__scroll > * { animation: none; }
 }
 
-/* official versions (DESIGN §35.23): the version filter under the note lines */
+/* official versions (DESIGN §37.23): the version filter under the note lines */
 .st-verfilter { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: .06rem; padding: .08rem .36rem; font-size: calc(.14 * var(--t)); }
 .st-verfilter__k { color: var(--text-lo); margin-right: .06rem; }
 .st-verfilter .dpick__opt { --d-color: #9fd3ff; height: .4rem; padding: 0 .14rem; border: 1px solid var(--line-2); font-size: calc(.14 * var(--t)); letter-spacing: .02em; }

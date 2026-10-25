@@ -1,4 +1,4 @@
-// shared/versions.js — the official versions this remake can play (DESIGN §35.22, docs/DATA.md "Official versions
+// shared/versions.js — the official versions this remake can play (DESIGN §37.22, docs/DATA.md "Official versions
 // (M0)"). Pure ESM, no Node APIs: the server, the browser and the tools read the same table.
 //
 //   id         the official activity id (activity_table AUTOCHESS_SEASON key), plus `@<versionInfoDict id>` for a
@@ -16,7 +16,7 @@
 //
 // The default is a code constant, never a server setting: data, rooms and logs without a version mean act2autochess.
 // tools/versions/<slug>.mjs holds each version's build profile (pins, adapters, expected counts). M0 built the data;
-// M2 tools bootstrap a selected version per process/worker (DESIGN §35.22.7–§35.22.9). Since M1 (DESIGN §35.23) a
+// M2 tools bootstrap a selected version per process/worker (DESIGN §37.22.7–§37.22.9). Since M1 (DESIGN §37.23) a
 // server serves the versions it enables, plays their rooms in version match hosts, and the page loads their data
 // (server/versions.js, public/js/versions.js). Nothing set enables every id here; SP_VERSIONS or the `versions`
 // option narrows the list.

@@ -29,7 +29,7 @@
 //   decision of 2026-10-14, after the review).
 //   stats() → { workers, matches, transport } (/healthz); close() terminates every worker (server shutdown).
 //
-// Official versions (DESIGN §35.23, M1; option `kind: 'version'`): the same hosts run a non-default official version's
+// Official versions (DESIGN §37.23, M1; option `kind: 'version'`): the same hosts run a non-default official version's
 //   matches (server/index.js builds a second pool over server/versions.js — one host per version `cs`, counted apart
 //   from the plugin hosts: `maxWorkers` is the server's maxHosts). Its log lines say `[versions]` and name the version;
 //   its matches end with 'version-crash' / 'version-hang' / 'version-start' (proxy.js: the version msgids), and a full

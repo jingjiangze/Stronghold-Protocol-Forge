@@ -190,7 +190,7 @@ describe('名片干员 seat cards (real server)', { skip: !ENABLED && 'set SP_E2
       await waitArt(guest, '凯尔希', plain, 'the outfit taken off');
       assert.equal(await guest.page.evaluate(() => 'skins' in globalThis.__SP__.store.get().room.seats.find((s) => s?.name === '凯尔希')), false);
       // an outfit whose picture fails to load (a broken file) gives way to the default portrait, not the avatar frame
-      // (§35.18's leftover)
+      // (§37.18's leftover)
       const BROKEN = `${PICK}@e2e#broken`;
       const brokenUrl = await host.page.evaluate(async (charId, skinId) => {
         const { data } = await import('/js/data.js');

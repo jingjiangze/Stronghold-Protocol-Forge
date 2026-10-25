@@ -102,7 +102,7 @@ function kitBlackCloud(ab, e) {
         hurt(b, e2, t, e2.s.atk * num(f.bb.atk_scale, 1), 'phys');
       }
     }, { sil: true, cond: (b, e2) => (e2.mem.ab.ammo ?? 0) >= Math.max(1, num(f.sp, 1)) && allTargets(b, e2).length > 0,
-      turn: attackSkillOf('enemy_9009_acfort', 'FireWeapon') }),   // the attack's turn (DESIGN §35.52)
+      turn: attackSkillOf('enemy_9009_acfort', 'FireWeapon') }),   // the attack's turn (DESIGN §37.52)
   ];
 }
 

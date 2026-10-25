@@ -1,4 +1,4 @@
-// §35.63: 终极 cycle 2 — the example agent's choice-only calls, length retry and choice-name check, the digest's copy /
+// §37.63: 终极 cycle 2 — the example agent's choice-only calls, length retry and choice-name check, the digest's copy /
 // level / enemy-scale rows, core-bond mains for carries, the executor's guards for plan seats, and the bots' level
 // curve and layer trade.
 import { test } from 'node:test';

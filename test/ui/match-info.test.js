@@ -245,7 +245,7 @@ test('特训敌人 description in a tooltip only (the maintainer, 2026-10-22): h
   }
 });
 
-test('特训敌人 tooltip at its icon (§35.18 leftover): the cell keeps the triggers, the box points at the icon, inside the dialog, clear of the leader block', () => {
+test('特训敌人 tooltip at its icon (§37.18 leftover): the cell keeps the triggers, the box points at the icon, inside the dialog, clear of the leader block', () => {
   const pub = { bossId: null, stageId: null, lastRound: 14, factions: ['FLY', 'TIMES', 'SPECIAL'] };
   const tips = [...walk(MatchEnemies({ pub, gd: makeLookups() }))].filter((v) => v.type === Tooltip);
   assert.equal(tips.length, 3);
@@ -363,7 +363,7 @@ test('the briefing, the strategy draft and the in-game 本局信息 tab all read
   // (+ the viewer's 自选 pieces out of the shop: priv / diyData, 0.2.0 WE2)
   assert.match(brief, /const info = matchInfoModel\(pub, \{ bonds: gd\.list\('bonds'\), chess: gd\.chess, mode, priv, diyData: \{ chess: data\.get\('chess'\), backups: data\.get\('backups'\) \} \}\);/);
   assert.doesNotMatch(brief, /brief-legend|brief-banned|function BondRow|bannedPerBond|disabledBondSets/, 'no own copy of the blocks');
-  // (#484 / §35.6: the 本局遭遇敌方 section is ui/matchEnemies.js, also the draft dialog's enemy column)
+  // (#484 / §37.6: the 本局遭遇敌方 section is ui/matchEnemies.js, also the draft dialog's enemy column)
   assert.match(brief, /<section class="brief-sec brief-sec--enemy" style="--i:1">\s*<\$\{MatchEnemies\} pub=\$\{pub\} gd=\$\{gd\} \/>\s*<\/section>/);
   assert.doesNotMatch(brief, /enemyIconUrl|factionIconUrl|brief-boss|brief-faction/, 'no own copy of the enemy section');
   const draft = read('public/js/screens/bandDraft.js');

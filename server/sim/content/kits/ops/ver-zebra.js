@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-zebra.js — 暴雨 (char_304_zebra), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-zebra.js — 暴雨 (char_304_zebra), 第一期 (DESIGN §37.22.9).
 // Elite block 4 is already on the stats. S1 is the next attack; the camou and the regen last the skill record's duration.
 
 import { RING1, alliesInGridOf, num, talentBb, up } from '../shared/tier1.js';

@@ -358,7 +358,7 @@ export const SPECIAL_KITS = Object.freeze({
           .sort((p, q) => q.hpRatio - p.hpRatio)[0];
         if (t) { b.fx('explode', { x: t.x, y: t.y, r: 0.5, kind: 'cannon' }); hurt(b, e, t, e.s.atk * (ab.sk.Cannon.bb.atk_scale ?? 0), 'arts'); }
       }, { owner: e });
-    }, { cond: (b, e) => inRange(b, e).length > 0, turn: attackSkillOf('enemy_1273_stmgun_2', 'Cannon') })];   // the attack's turn (DESIGN §35.52)
+    }, { cond: (b, e) => inRange(b, e).length > 0, turn: attackSkillOf('enemy_1273_stmgun_2', 'Cannon') })];   // the attack's turn (DESIGN §37.52)
   },
   // 萨卡兹骸骨拷打者 · heals + ATK stack when a unit within Attack.range_radius is knocked out; leaves 2 血珀 on death — they
   // stay where it fell, uncounted, and bleed out (enemy_1367_dseed). This mode has no 唤血祭坛 to pulse them.

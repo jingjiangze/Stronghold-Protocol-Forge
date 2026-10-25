@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-spikes.js — 芳汀 (char_271_spikes), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-spikes.js — 芳汀 (char_271_spikes), 第一期 (DESIGN §37.22.9).
 // The lord ranged penalty is the profession (`atk_scale`). The hidden "2名及以上敌人攻速+12" is traitMods. Neither is repeated.
 // 「攻击【无人机】时攻击力+N%」with atk_scale 1.43 is ×1.43 (+43% is how the blackboard stores it).
 

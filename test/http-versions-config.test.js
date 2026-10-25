@@ -1,4 +1,4 @@
-// test/http-versions-config.test.js — which official versions a server offers (DESIGN §35.23, M1, §35.23.11;
+// test/http-versions-config.test.js — which official versions a server offers (DESIGN §37.23, M1, §37.23.11;
 // server/http/config.js versionsFrom): the `versions` option, else SP_VERSIONS / SP_VERSION_DEFAULT /
 // SP_MAX_VERSION_HOSTS. Nothing set enables every registry id (default act2autochess); a set list narrows it.
 // Unknown ids and a default that is not enabled are warned about.

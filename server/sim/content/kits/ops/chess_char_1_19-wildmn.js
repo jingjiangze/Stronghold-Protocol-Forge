@@ -12,12 +12,12 @@ export default {
   // Knockback {_useSourceDirection: true, _decreaseForceLevelWhenNotInDirection: 2} — along her deploy direction,
   // and 受力等级 −2 when the target is > 45° off it or < 0.25 tile away (特殊修正). PRTS 推与拉 also turns that push
   // radial (away from her), including behind her. Maintainer decision 2026-10-19 and the official recordings
-  // (#782, DESIGN §35.10) supersede round 40's `keepDir` exception. Her visual attack turn does not change `fwd`.
+  // (#782, DESIGN §37.10) supersede round 40's `keepDir` exception. Her visual attack turn does not change `fwd`.
   // Rear weight-1 hits move ~14 px / ~154 px per tile = ~0.09 tile: the PRTS 特效 row at level −2 (0.085).
   // [ASSUMED] Use that column only behind her to preserve the task's explicit front-unchanged scope. The footage
   // also suggests the 特效 column in front (~1.56 tiles); it does not establish an official rear-only classification.
   // Other rear weights / unrecorded angles use the same PRTS column [ASSUMED].
-  // Side / near-front hits retain their existing distances. See §35.10.
+  // Side / near-front hits retain their existing distances. See §37.10.
   // 一致向前: after deploying (normal flag 0: first deployment only; elite flag 1: every deployment) every undeployed
   // 【近卫】 operator of the player costs `value` less DP to deploy (≤ max_stack_cnt per operator until it deploys).
   // Alternate S1 骑枪刺击 (PASSIVE, ON_DEPLOY): for `duration` s after every deployment ASPD +attack_speed.

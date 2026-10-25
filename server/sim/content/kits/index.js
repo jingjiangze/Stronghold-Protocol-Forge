@@ -28,7 +28,7 @@
 // 再把行插进**下一个** `]);` 所属的数组 —— 结果是两个字符串字面量之间没有逗号、`server/index.js` 起不来，
 // 而补丁自己的自检只查「名字在不在文件里」，于是全绿。2026-10-09 实测发生过（社区「克莱门莎」mod）。
 // 规矩：**靠文本定位的名字，第一次出现必须在它的声明行**。守卫在 test/modSurface.test.js。
-// Version kits (第一期 shop operators with no tier file, DESIGN §35.22.9): VERSION_KIT_FILES lists `ops/ver-<codename>.js`,
+// Version kits (第一期 shop operators with no tier file, DESIGN §37.22.9): VERSION_KIT_FILES lists `ops/ver-<codename>.js`,
 // one charId each, merged into KITS after the 自选 operators and NOT added to KITTED_CHARS (they are shop chess). The 25
 // 自选 picks whose hand-written kit is a tier kit (24 in 第一期, plus 银灰, who is only in V2_1's pool) live in one file,
 // `ops/ver-diy.js` (DIY_BORROW_KIT_FILES): those charIds are in KITTED_CHARS (DIY_BORROW_CHARS, the ones whose file loaded)
@@ -320,7 +320,7 @@ export const KIT_CHAR_IDS = Object.freeze({
 });
 
 /**
- * 第一期 shop operators whose kit is keyed by charId (`ops/ver-<codename>.js`, DESIGN §35.22.9). Order is the old
+ * 第一期 shop operators whose kit is keyed by charId (`ops/ver-<codename>.js`, DESIGN §37.22.9). Order is the old
  * pending order. Not shop-chess files: those chess ids belong to other operators today.
  */
 export const VERSION_KIT_FILES = Object.freeze([
@@ -384,14 +384,14 @@ export const DIY_BORROW_CHARS = Object.freeze([
 ]);
 
 /**
- * Operators of another official version that have no kit yet. Empty after §35.22.9 (the 19 第一期 operators are
+ * Operators of another official version that have no kit yet. Empty after §37.22.9 (the 19 第一期 operators are
  * VERSION_KIT_FILES). test/versions-keying.test.js accepts a chess without a kit only when its charId is listed here,
  * and fails once a listed operator gets a kit (it then leaves the list).
  */
 export const PENDING_KIT_CHARS = Object.freeze([]);
 
 /**
- * 自选 picks of another official version that still have no charId kit. Empty after §35.22.9 (the 25 of
+ * 自选 picks of another official version that still have no charId kit. Empty after §37.22.9 (the 25 of
  * DIY_BORROW_CHARS: 24 in 第一期, plus 银灰 who is only in V2_1's pool). test/versions-keying.test.js accepts a 自选 pick without a kit only when its charId is a 预备干员
  * (GENERIC_KIT_CHARS) or listed here, and fails once a listed operator gets a 自选 kit or loses its tier kit.
  */
@@ -418,7 +418,7 @@ export const TIER_KITS = Object.freeze(MODULES.map((group) => Object.assign({}, 
 
 /**
  * charId → the tier kit keys written for it whose file loaded, in KIT_FILES order (the 8 operators V2_2 re-tiered — 锡人,
- * 耶拉, 录武官, 白面鸮, 百炼嘉维尔, 魔王, 华法琳, 妮芙; DESIGN §35.22.4 — have one kit per tier they appear at).
+ * 耶拉, 录武官, 白面鸮, 百炼嘉维尔, 魔王, 华法琳, 妮芙; DESIGN §37.22.4 — have one kit per tier they appear at).
  */
 export const TIER_KIT_KEYS_BY_CHAR = (() => {
   const out = {};

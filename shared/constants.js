@@ -455,7 +455,7 @@ export const ERR = Object.freeze({
   TEST_CONFIRM: 'TEST_CONFIRM',
   TEST_DISABLED: 'TEST_DISABLED',
   TEST_FORBIDDEN: 'TEST_FORBIDDEN',
-  // official versions (DESIGN §35.23, M1): a version this server does not enable (room.create, room.proposeVersion); a
+  // official versions (DESIGN §37.23, M1): a version this server does not enable (room.create, room.proposeVersion); a
   // version that cannot serve the room (its roomModes, or the room's gameplay plugins — they play 第二期下半 only); a room
   // action refused while the room's version vote is open (room.start, room.setPlugins, room.setMode, room.proposeVersion)
   VERSION_UNKNOWN: 'VERSION_UNKNOWN',

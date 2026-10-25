@@ -243,7 +243,7 @@ test('items: 信标 on a bench single; both 博士投影 on a normal operator ev
   const fresh = (tier) => Object.values(DATA.chess).find((c) => c.visible && !c.isGolden && c.tier === tier && m.pool.left(c.chessId) >= 3 && !owned.has(c.chessId)).chessId;
   for (const p of ps.hand) if (p && p.kind === 'chess') ps.returnCopies(p);
   ps.hand.fill(null);
-  // a bot may deploy two copies of one operator (§35.63 boards): keep one, so the hand pair below is the only pair
+  // a bot may deploy two copies of one operator (§37.63 boards): keep one, so the hand pair below is the only pair
   const seen = new Set();
   for (const [key, p] of [...ps.board.entries()]) {
     if (p.kind !== 'chess') continue;
@@ -565,7 +565,7 @@ test('bench shed: the buy loop never sells a piece that came this prep (it used 
   PlayerState.prototype.sell = function (uid) {
     const loc = this.find(uid);
     const p = loc && loc.piece;
-    // §35.63's layer trade (tradeOnce) sells a 获得时 layer unit right after buying it on purpose; the shed never does
+    // §37.63's layer trade (tradeOnce) sells a 获得时 layer unit right after buying it on purpose; the shed never does
     const stack = new Error().stack;
     if (p && p.boughtRound === this.m.round && /buyLoopSteps/.test(stack) && !/tradeOnce/.test(stack)) shed.push(`${p.id} R${this.m.round}`);
     return oSell.call(this, uid);

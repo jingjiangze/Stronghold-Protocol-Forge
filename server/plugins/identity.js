@@ -16,7 +16,7 @@
 // Like the build tag (server/http/buildTag.js) it describes the files at start: a file changed on disk afterwards is
 // not seen before the next start (every update restarts the server, DEPLOY.md). Line endings are part of the bytes;
 // .gitattributes checks code and data out with LF everywhere, so a Windows clone has the same `cs` as Linux.
-// An official version's content (DESIGN §35.23, M1; server/versions.js): versionContentOf — the same code files, the
+// An official version's content (DESIGN §37.23, M1; server/versions.js): versionContentOf — the same code files, the
 // version's own data/versions/<slug>/ files, a `cs` of its own; its manifest names the version and its data URLs.
 
 import fs from 'node:fs';
@@ -132,7 +132,7 @@ export function computeVanillaContent({ simDir, sharedDir, dataDir, shim, app = 
  * contentHashOf over app, sim, data's hashes, plugins, settings, and, for a content selection, the sha256 fields of
  * index.i18n) and to check every data file a browser downloads. Vanilla omits i18n. index.json itself is not an input.
  * A file the set does not change points at its plain URL with `?v=` (the first 8 digits of its hash: immutable there).
- * An official version's manifest (DESIGN §35.23; server/versions.js) passes `dataUrl` (its data/versions/<slug>/ URL),
+ * An official version's manifest (DESIGN §37.23; server/versions.js) passes `dataUrl` (its data/versions/<slug>/ URL),
  * `version` (its registry id) and `bounds` (its official-bounds snapshot's { url, sha256, bytes }); neither key is
  * written without them, so the vanilla manifest is unchanged.
  * @param {VanillaContent} content
@@ -150,7 +150,7 @@ export function contentIndexOf(content, { dataUrl = '/data/', version = null, bo
 }
 
 /**
- * The content of an official version (DESIGN §35.23, M1): the vanilla content's code (`app`, `sim`, `simFiles` — the
+ * The content of an official version (DESIGN §37.23, M1): the vanilla content's code (`app`, `sim`, `simFiles` — the
  * browser runs the same sim) with the version's own data files (gameplayDataFiles of its directory: the 16 gameplay
  * tables, no art manifest) and `cs = contentHashOf({ app, sim, data })`. Hashes the bytes only (no JSON parse). No index:
  * server/versions.js writes it (contentIndexOf with the version's URL and bounds). Null when the directory has no data file.

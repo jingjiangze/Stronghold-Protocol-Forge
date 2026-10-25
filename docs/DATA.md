@@ -42,7 +42,7 @@ Unknown options or a missing option value are errors (exit code 2); `--refresh` 
 Promotion indicators read the resolved record's `status.phase` and `status.level` (chess or a backup form), not
 `isGolden` or tier. `status.phase` is the numeric suffix of official `status.evolvePhase`; the UI uses the matching
 `assets.ui[elite/elite_<phase>]`. The four shipped versions agree: tiers I/II normal E1 Lv.55/60, elite E2 Lv.50/55;
-tiers III–VI normal E2 Lv.1, elite E2 Lv.60. This is a data observation, not a substitute UI lookup (§35.18).
+tiers III–VI normal E2 Lv.1, elite E2 Lv.60. This is a data observation, not a substitute UI lookup (§37.18).
 
 | Convention | Meaning |
 |---|---|
@@ -536,7 +536,7 @@ Glyph legend (`rows`):
 | `variants[o].byModule[m]` | `{"stats":{…},"immunities":{…},"trait":{…},"talents":[…]}` | golden owner with another module `m` or `'none'`: the token as that module makes it (module `tokenAttributeBlackboard`, `isToken` trait/talent parts) |
 | `assets` | `{"avatar":"token_10028_vigil_wolf","spine":"token_10028_vigil_wolf"}` | |
 | mapChar extras | `phase`, `level`, `trait`, `talents`, `positions:[{"alias":"char_613_acmedc#2_multi_only","pos":[10,10],"dir":"RIGHT","multiOnly":true}]`, `source` | |
-| bondSummon extras | `bondId`, `motion`, `skills`, `talents`, `assets.isEnemyModel` | 炎佑 base template (600 ATK / 12000 HP; 第一期上半 V1_1: 300 / 6000, skills' cooldown 25 s instead of 15 s and `2.ep_damage_scale` 1.15 instead of `2.damage_scale` (its 炎 text: 15% 元素脆弱), DESIGN §35.22.5); at battle start 30 % of the 炎 operators' ATK / HP sums are **added** to it (PRTS "（最终加算）", bonds.yanShip; the 9-炎 ATK ×1.5 on the whole ATK [ASSUMED]) |
+| bondSummon extras | `bondId`, `motion`, `skills`, `talents`, `assets.isEnemyModel` | 炎佑 base template (600 ATK / 12000 HP; 第一期上半 V1_1: 300 / 6000, skills' cooldown 25 s instead of 15 s and `2.ep_damage_scale` 1.15 instead of `2.damage_scale` (its 炎 text: 15% 元素脆弱), DESIGN §37.22.5); at battle start 30 % of the 炎 operators' ATK / HP sums are **added** to it (PRTS "（最终加算）", bonds.yanShip; the 9-炎 ATK ×1.5 on the whole ATK [ASSUMED]) |
 
 ---
 
@@ -778,21 +778,21 @@ See PLUGINS.md for namespaces, limits and the local-table version recorded by Fo
 
 Presentation is shared across the official builds: `tools/assets/versions.mjs` reads their rosters by charId,
 enemyKey and iconId, including backups/DIY, rather than merging reused chess ids. `fetch-assets` plans the union;
-`local-extract` fills missing official art and effects. See [ASSETS.md](ASSETS.md#id-scope) and §35.109. Gameplay
+`local-extract` fills missing official art and effects. See [ASSETS.md](ASSETS.md#id-scope) and §37.109. Gameplay
 data and the default version's existing presentation entries remain unchanged by this asset expansion.
 
-The data side of the official version switch (0.3.2, DESIGN §35.22): besides today's game, 第二期下半, the build produces
+The data side of the official version switch (0.3.2, DESIGN §37.22): besides today's game, 第二期下半, the build produces
 the three earlier versions, named by period as the maintainer named them (2026-10-22): 第一期 is the official
 `act1autochess` (「卫戍协议：盟约」 上半期活动), 第二期 `act2autochess` (下半期活动), and each period's 上半 / 下半 are its
 sub-versions V1_1 / V1_2 and V2_1 / V2_2. (PRTS's 「第一期」 is the 2024 卫戍协议, `act1vautochess`, which is not done.)
 A bare 上半 / 下半 here and in code comments keeps the official activity sense (上半 = 第一期 / `act1autochess`, 下半 =
 第二期 / `act2autochess`); a period's halves are always written with the period (第一期上半 …) or as V1_1 … V2_2.
-**M2 core and kits are in** (DESIGN §35.22.7–§35.22.9): golden and botbench load a selected version, and a version room plays that version's rules and kits. **M1 serves enabled versions** (DESIGN §35.23; "Serving the versions (M1)" below): `server/http/static.js` serves `data/versions/<slug>/` only when the server enables that version. Nothing set enables all four, so those files are served (§35.23.11); a version the server does not enable, and a server narrowed to 第二期下半 alone, still answer 404. `data/versions/` is tracked, so the release zips and Docker carry it (48 files, 15.0 MB on disk, about 1.3 MB zipped). The default version is unchanged — `data/*.json`, `data/i18n/`, the golden corpus, the `cs` formula and a default room's `room.state` are pinned: `test/data.test.js` and `test/golden.test.js` guard the data and the goldens, `test/versions-default-guard.test.js` (G2–G4) the `cs` inputs, the formula, the default room and the welcome's versions list. Its file hashes (G1) were the M0 merge check and were deleted when M1 started (DESIGN §35.22.2, §35.23).
+**M2 core and kits are in** (DESIGN §37.22.7–§37.22.9): golden and botbench load a selected version, and a version room plays that version's rules and kits. **M1 serves enabled versions** (DESIGN §37.23; "Serving the versions (M1)" below): `server/http/static.js` serves `data/versions/<slug>/` only when the server enables that version. Nothing set enables all four, so those files are served (§37.23.11); a version the server does not enable, and a server narrowed to 第二期下半 alone, still answer 404. `data/versions/` is tracked, so the release zips and Docker carry it (48 files, 15.0 MB on disk, about 1.3 MB zipped). The default version is unchanged — `data/*.json`, `data/i18n/`, the golden corpus, the `cs` formula and a default room's `room.state` are pinned: `test/data.test.js` and `test/golden.test.js` guard the data and the goldens, `test/versions-default-guard.test.js` (G2–G4) the `cs` inputs, the formula, the default room and the welcome's versions list. Its file hashes (G1) were the M0 merge check and were deleted when M1 started (DESIGN §37.22.2, §37.23).
 
 **M2 research and rules:** `docs/research/versions/<slug>/02-bonds.json` and `04-items.json` use each snapshot's own
 text. First-season `01-core-data.json` supplies the 11-18 blackboard multipliers and preserves 300-second solo prep;
 `config.version.rules` is read by the engine/match. Other absent research files still fall back with warnings and are
-[ASSUMED], including unmeasured ban/stock/schedule values. See [history §35.22.7](history/0.3.2.md#35227-historical-core-rules-m2)
+[ASSUMED], including unmeasured ban/stock/schedule values. See [history §37.22.7](history/0.3.2.md#35227-historical-core-rules-m2)
 for the complete list and [the exhaustive blackboard review](research/versions/blackboard-review.json). The following
 profile notes describe M0's original fallbacks; the M2 overrides take precedence.
 
@@ -828,9 +828,9 @@ every file system and URL).
 
   | version | default pin | other pins | why |
   |---|---|---|---|
-  | `act1autochess` | `21b1f240` (2025-12-05, 上半 final; its autochess sections equal `fdf34ff5` … `3421eaff`, its levels equal the V1_2 update `23c99d5d`, its range table equals `dcc057f6`) | `enemy: ee2cabff` (the last enemy change inside the season, 12-05) | 第一期下半 is V1_2's final state (DESIGN §35.22): V1_2 opened on 11-25 with `23c99d5d`, and the 12-05 commit added 莎草's module `uniequip_002_papyrs` (elite ATK 412 → 450, DEF 150 → 173), 娜斯提 `char_4212_nasti` to the owned 自选 pool (71 → 72, with 3 tokens), the 自选 modules `uniequip_003_ray` and Mon3tr's `uniequip_001_monstr` / `_002_monstr`, and 10 bond texts. The commit also changed three 上半 battle templates, which the build does not read (灵巧's range check `x-1` → `x-4`, 回收利用's 地面 check, 迅捷作战粮's `_forceFlag`). Whether 11-25 → 12-05 is a sub-version of its own is open for the maintainer |
+  | `act1autochess` | `21b1f240` (2025-12-05, 上半 final; its autochess sections equal `fdf34ff5` … `3421eaff`, its levels equal the V1_2 update `23c99d5d`, its range table equals `dcc057f6`) | `enemy: ee2cabff` (the last enemy change inside the season, 12-05) | 第一期下半 is V1_2's final state (DESIGN §37.22): V1_2 opened on 11-25 with `23c99d5d`, and the 12-05 commit added 莎草's module `uniequip_002_papyrs` (elite ATK 412 → 450, DEF 150 → 173), 娜斯提 `char_4212_nasti` to the owned 自选 pool (71 → 72, with 3 tokens), the 自选 modules `uniequip_003_ray` and Mon3tr's `uniequip_001_monstr` / `_002_monstr`, and 10 bond texts. The commit also changed three 上半 battle templates, which the build does not read (灵巧's range check `x-1` → `x-4`, 回收利用's 地面 check, 迅捷作战粮's `_forceFlag`). Whether 11-25 → 12-05 is a sub-version of its own is open for the maintainer |
   | `act1autochess@V1_1` | `8303c922` (2025-11-14, launch: range, enemies, levels) | `activity` and `character: ea164ef7` (the 11-18 hotfix); no enemy pin: `enemy_database` changed again at `23c99d5d`, so V1_2's `ee2cabff` would leak V1_2 enemies | the maintainer's decision of 2026-10-22: V1_1 includes the hotfix (see below). V1_1's levels are the launch's; the V1_2 update `23c99d5d` changed only the three solo hidden-core levels `h08_0X_s`, whose routes end at the 传送 entrance (1,3) instead of the protection point (2,2) (`waves.json` `routes[].end`, 22 values) |
-  | `act2autochess@V2_1` | `1457587e` (2026-03-14, the 下半 launch) | none: no file the build reads changed before V2_2 (`86b6e749`; GitHub history per path), the levels changed next at `a24a8ad1` (04-08) | `987b4cd5` (2026-03-17) changed only the battle templates (`battle/buff_template_data.json`, not a build input; among them 精准's ATK, which the sim already gives as the text says), so the directory is the same with or without it: 第二期上半 stands for V2_1 with the 03-17 fix [ASSUMED], as V1_1 includes its hotfix; whether 03-17 is the maintainer's 「第一次改动」 is open (DESIGN §35.22) |
+  | `act2autochess@V2_1` | `1457587e` (2026-03-14, the 下半 launch) | none: no file the build reads changed before V2_2 (`86b6e749`; GitHub history per path), the levels changed next at `a24a8ad1` (04-08) | `987b4cd5` (2026-03-17) changed only the battle templates (`battle/buff_template_data.json`, not a build input; among them 精准's ATK, which the sim already gives as the text says), so the directory is the same with or without it: 第二期上半 stands for V2_1 with the 03-17 fix [ASSUMED], as V1_1 includes its hotfix; whether 03-17 is the maintainer's 「第一次改动」 is open (DESIGN §37.22) |
 
   **The V1_1 hotfix**: `versionInfoDict` counts the 11-18 hotfix (`ea164ef70736ca2d1a356b3bf7b1cd7540960dc1`) as
   V1_1, and 7 of V1_1's 11 days (11-18 → 11-25 16:00) ran on it, so V1_1 is built with it (the maintainer, 2026-10-22).
@@ -903,7 +903,7 @@ every file system and URL).
   悬赏·频次III `enemyeffect_11_6` (initial pool) targets 沉沙 `enemy_1207_sfji` in 上半, `enemy_1209_sfden` in 下半; and
   “鼠王”·悬赏 `enemyeffect_b_11` (boss pool) is tier 3 / 3 coins in 上半, 2 / 2 in 下半.
   Two more build rules come only from 下半's PRTS record 「卫戍协议：盟约 下半/PRTS盟约记录」 and are carried into 上半
-  [ASSUMED] (DESIGN §35.22.3; M2 checks both against 上半): `DIY_EXTRA_PROTOTYPES`, the tier-5 自选 slots' six extra 4★
+  [ASSUMED] (DESIGN §37.22.3; M2 checks both against 上半): `DIY_EXTRA_PROTOTYPES`, the tier-5 自选 slots' six extra 4★
   prototypes (先锋 / 特种 left out: `backups.json` `diy.prototypes` 15 at tier 5, 9 at tier 6, as the default; PRTS's 上半
   page says nothing of 4★ prototypes in 自选), and `BAND_SWAP_LPR` 1, 鸭爵's swapped-in enemies costing 1 LP
   (§策略 鸭爵 备注: both 上半 builds' `enemy_2001_duckmi_2` / `enemy_2002_bearmi_2` get `lpr` 1; V1_1's table already
@@ -914,12 +914,12 @@ every file system and URL).
 - **`config`**: `hiddenCore` single / multi (下半 350 / 1200, V2_1 too; 上半 300 / 1000, PRTS 卫戍协议：盟约); `rules` — V2_1:
   `{}`, the default's (every 下半 switch dates from 2026-03-14); 上半:
   `deployOrder 'rowBottomUp'`, `soloTimed true`, `benchEquip false`, `benchFullSwap false`, `bossMirrorShare false`
-  (PRTS 卫戍协议/帮助; news 5114 lists the last three as 下半 additions). M2 reads `rules` (§35.22.7): a first-season
-  solo is timed unless the room opts into `soloUnlimited` (§35.23.10).
+  (PRTS 卫戍协议/帮助; news 5114 lists the last three as 下半 additions). M2 reads `rules` (§37.22.7): a first-season
+  solo is timed unless the room opts into `soloUnlimited` (§37.23.10).
   `constants.singleReconnectTime` is `null` in a version whose constData lacks it: 上半's has none (the 2026-03-10
   rewrite `12e0a020` added it), so the build writes no 下半 value as official data. The lobby's own fallback then keeps a
   dropped solo run resumable for 24 h (`server/lobby.js SOLO_RECONNECT_FALLBACK_SEC`). That 24 h window is a carried-over
-  convenience [ASSUMED], not official 第一期 data: M2 did not add the constant, and the code path is unchanged (§35.23.10).
+  convenience [ASSUMED], not official 第一期 data: M2 did not add the constant, and the code path is unchanged (§37.23.10).
   **Carried over unreviewed [ASSUMED]**: the rule constants `tools/build-data.mjs` writes as literals (its `buildConfig`
   return block is the full set; a script comparing `data/config.json` with both 上半 configs finds them equal) go into
   上半's `config.json` as measured on 下半. Among them: `bans` (NORMAL / HARD 3 core + 4 addon: 下半 has 8 core bonds, 上半 6, so the same
@@ -933,7 +933,7 @@ every file system and URL).
   {10, 1, 99}; the timer literals `timers.spFirst` 30, `bandTurn` 50 (the owner's official-play report of 2026-10-10,
   下半) and `soloPrepTimeData` 300 (it bears on 上半's timed solo, `rules.soloTimed`); and the title stat rules
   (`titles[].stat` / `rule`, `titleRule`). They equal the default, so `tools/bb-audit.mjs` cannot list them; `bans` is
-  an M2 item (DESIGN §35.22.5).
+  an M2 item (DESIGN §37.22.5).
 - **`config.version`**: a non-default build appends `version: { id, family, rules }` as the last key of `config.json`;
   `data/config.json` never has it. A non-default directory also carries `tuning.json`, a byte copy of the hand-maintained
   `data/tuning.json` (a gameplay file `loadData` and the content hash read) [ASSUMED] the same tuning.
@@ -953,7 +953,7 @@ there):
   operator there), so `pool_char_pinus` is empty). A profile's `pools` replaces the operators of a hand-written chess pool
   where the version's trait text names others: both 第一期 builds list 斯卡蒂 / 幽灵鲨 / 安哲拉 in `pool_chess_glady`, as
   their `garrison_39` says (下半: 深巡, who is shop chess in 第一期 too, so the charId lookup alone kept him; DESIGN
-  §35.22.3).
+  §37.22.3).
 - `TRIGGER_DEVIATIONS` (`server/plugins/officialUnitBuilder.js`) by the operator's `charId` and skill id, and like
   `STANDIN_TRIGGER_DEVIATIONS` applied only over an official `TAKE_DAMAGE` row — the row they override (DESIGN §21.29,
   §22.10). Every 下半 entry meets one (V2_1: all but 雷蛇's, who joined with V2_2); in 上半 none applies.
@@ -971,7 +971,7 @@ there):
 
 `stages` counts the battle fields plus the 2 escaped levels' maps (default: 11 + 2, §16; 上半: 7 + 2). The 6 MB limit
 applies per version (the 15 built files). V2_1 also differs from today's data under the same ids, and
-the data carries each difference (no code change; DESIGN §35.22.5, pinned by `test/data-versions.test.js`): 节日气球
+the data carries each difference (no code change; DESIGN §37.22.5, pinned by `test/data-versions.test.js`): 节日气球
 `enemy_10040_cnvbln` does not count in the total (no LP for its leak) and 圆仔 `enemy_2085_skzjxd` / `_2` is NORMAL (today
 ELITE; `level_autochess_enemy_data` changed on 04-14, `86da4cfa`); 卢西恩's `act2autochess_h07_05` / `_s` patrol routes
 have 3 checkpoints, not today's 19-checkpoint loops (04-14); 13 elite records lack a module added after 03-14
@@ -988,7 +988,7 @@ V2_1's warnings: the research name annotation dropped from 战场#01 (as the def
 下半 (6 files, [ASSUMED]); `DIY_EXCLUDED_TEAMS` team `sees` has no owned-6★ pick; two `STATIC_BODIES` enemies (`hummbd`,
 `cnvbln`) absent from the 上半 modes; the 6 上半-only enemies whose model `data/assets.json` lacks (墨浪 `enemy_1201_sfzhi`,
 `enemy_1249_lysdb`, `enemy_1254_lypa`, `enemy_1275_dwlock`, `enemy_1373_ltnhor_2`, `enemy_1376_ltndru`: no `attackAnim`,
-one warning each, DESIGN §35.22.5); the research name annotation dropped from 战场#01; the 野鬃 / 灰毫 / 远牙 pool
+one warning each, DESIGN §37.22.5); the research name annotation dropped from 战场#01; the 野鬃 / 灰毫 / 远牙 pool
 entries.
 
 **Build and verify**:
@@ -1006,7 +1006,7 @@ and names the missing `.cache/gamedata@<sha>/`. **Hidden inputs**: a version bui
 `data/assets.json` (the enemies' attack clips: a manifest of 下半's models, so the 6 上半-only enemies above have no
 `attackAnim` and the sim keeps `ATTACK_PAUSE` for them — 墨浪, 萨卡兹王庭军术师 and 巫王乐团圆号手 are ranged, so their
 attack timing is off — until M2 adds their models; `data/assets.json` is a default data file, so that change rebuilds
-every version directory; G1, which also pinned it, was deleted when M1 started, DESIGN §35.22.2),
+every version directory; G1, which also pinned it, was deleted when M1 started, DESIGN §37.22.2),
 `data/tuning.json` (its byte copy; `test/data-versions.test.js` fails
 while a copy differs) and `docs/research/*.json` (the default's research, which V2_1 reads by id and 上半 uses as its fallback) — a default-side change to those makes
 the version directories stale with no version-related cause. Rebuild every version then
@@ -1016,13 +1016,13 @@ another version loads its directory once, frozen, with `VERSION_DATA_FILES`, nev
 
 ### Serving the versions (M1)
 
-DESIGN §35.23. A server offers the versions its owner enables; rooms play one of them (server/lobby.js header "Official
+DESIGN §37.23. A server offers the versions its owner enables; rooms play one of them (server/lobby.js header "Official
 versions"), and their matches run in a match host whose data singleton is that version's.
 
 **Configuration** (`server/http/config.js` versionsFrom): the startServer option `versions: { enabled, default, maxHosts }`
 wins over the environment — `SP_VERSIONS` (`all` or a comma list of registry ids), `SP_VERSION_DEFAULT`,
 `SP_MAX_VERSION_HOSTS`. Nothing set enables every registry id (the lobby switch on; the default version stays
-`act2autochess`, §35.23.11). `SP_VERSIONS=act2autochess`, or `versions.enabled` of that one id, is 第二期下半 alone (the
+`act2autochess`, §37.23.11). `SP_VERSIONS=act2autochess`, or `versions.enabled` of that one id, is 第二期下半 alone (the
 switch off). An unknown id is warned about and dropped (none left: `act2autochess`); a default that is not enabled is
 warned about and replaced by the first enabled id in registry order; `maxHosts` defaults to the number of enabled
 non-default versions (at least 1 when there is one). Version match hosts are forked on the first match of a version,

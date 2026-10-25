@@ -194,7 +194,7 @@ test('服务端不许用 t() 翻文案：服务端从不 setLang，t() 在那里
   assert.deepEqual(offenders, [], 'server code must send msg()/dn(), never translate with t()');
 });
 // GitHub #849 (docs: PR #850): a computed msgid — t(flag ? '甲' : '乙'), t(table[k] || '默认') — is invisible to extract and
-// check, so its strings could go untranslated silently. The ternary goes around the calls instead (DESIGN §35.49).
+// check, so its strings could go untranslated silently. The ternary goes around the calls instead (DESIGN §37.49).
 test('tools/i18n.mjs: a ternary inside t() is not extracted; the 0.3.2 call sites put it around literal t() calls', async () => {
   const inside = await scanSource("export const f = (x) => t(x ? '参数甲' : '参数乙');", 'x.js');
   assert.deepEqual(inside.msgids.map((m) => m.msgid), [], 'the rule docs/I18N.md §1 states: neither string is seen');

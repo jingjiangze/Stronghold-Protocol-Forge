@@ -21,7 +21,7 @@ const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Conte
 const ENABLED = process.env.SP_E2E === '1' && existsSync(CHROME);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const INSIDE = 'chess_char_1_01_a';
-/** 隐现's operator: the stored loadout is by operator (sp.pref.loadout v2, DESIGN §35.23), what is sent by chess id. */
+/** 隐现's operator: the stored loadout is by operator (sp.pref.loadout v2, DESIGN §37.23), what is sent by chess id. */
 const INSIDE_CHAR = 'char_498_inside';
 /** Whether this machine has the extracted module type icons (local-client art is optional, DESIGN §13). */
 function localModuleIcons() {
@@ -247,7 +247,7 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     assert.ok(Math.abs(box.y + box.h / 2 - box.vh / 2) < 2, `centred vertically (${JSON.stringify(box)})`);
     const payload = JSON.parse(await page.$eval('[data-testid="loadout-io-text"]', (t) => t.value));
     assert.equal(payload.kind, 'stronghold.loadout');
-    assert.equal(payload.v, 2, 'v2: by operator (DESIGN §35.23)');
+    assert.equal(payload.v, 2, 'v2: by operator (DESIGN §37.23)');
     assert.deepEqual(payload.byChar, stored.byChar, 'what is exported is what is stored');
     await page.screenshot({ path: path.join(OUT, 'loadout-export.png') });
     await page.evaluate(() => [...document.querySelectorAll('.modal__actions .btn')].find((b) => b.textContent.trim() === '关闭').click());

@@ -1,4 +1,4 @@
-// Shared briefing and strategy-draft enemy information (GitHub #484, DESIGN §35.6): only the match's announced leader,
+// Shared briefing and strategy-draft enemy information (GitHub #484, DESIGN §37.6): only the match's announced leader,
 // battlefield and special enemy types. Read the current localized data; no gameplay actions or round previews.
 // The event's 本局遭遇敌方 layout (PR #643, video 6:29–7:51): the leader's framed portrait over 敌方领袖, its text — name,
 // final-assault round, abilities, the battlefield — and the 特训敌人 as round icons with their names.
@@ -6,7 +6,7 @@
 // the name under each icon, the description in a Tooltip on hover, keyboard focus (the icon is focusable) and a long press
 // (≥ 450 ms) on touch; for screen readers the icon names the type and points at the description (aria-describedby an
 // .sr-only copy). The tooltip points at the icon, not at the cell (in the dialog a cell is a whole row, and the box
-// centred over it sat far from the icon, over the 战场 line — §35.18's leftover): above it, or below when it does not
+// centred over it sat far from the icon, over the 战场 line — §37.18's leftover): above it, or below when it does not
 // fit there or would cover the leader block (portrait and text), inside the dialog and the screen (components.js
 // placeTooltip). [ASSUMED] no official screenshot of INFO_CHECK's 特训敌人 is in the repo; the placement rule.
 // One copy for both screens: the briefing's .brief-sec--enemy (css/screens/briefing.css, scoped under .brief) and the
@@ -31,7 +31,7 @@ export const factionDescId = (scope, type) => `${scope}-fdesc-${String(type).rep
 export const leaderBlockOf = (el) => el.closest('.brief-enemy')?.querySelectorAll('.brief-boss, .brief-boss__text > *') || [];
 
 /** A faction's name with a break opportunity after each '/' (「特训敌人/飞行」: English 「Tactical Training/Flying」 broke
- * inside 「Flying」, a slash between letters giving none — §35.51 review); its text and accessible name unchanged. */
+ * inside 「Flying」, a slash between letters giving none — §37.51 review); its text and accessible name unchanged. */
 const slashBreaks = (s) => String(s).split('/').flatMap((part, i) => (i ? [html`/<wbr />`, part] : [part]));
 
 /**

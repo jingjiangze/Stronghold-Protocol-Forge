@@ -48,7 +48,7 @@ export class BattleDisplacement {
    * knockback[dir], Knockback {_useSourceDirection: true, _decreaseForceLevelWhenNotInDirection: 2}: 推击手, 野鬃 S2
    * "往攻击方向"); a directional push on a target more than 45° off `dir` or nearer than 0.25 tile becomes radial with
    * 受力等级 −2 ("特殊修正"), including behind the pusher. The maintainer's 2026-10-19 official recordings (#782,
-   * DESIGN §35.10) supersede round 40's Wild Mane-only `keepDir` exception; no other kit used it.
+   * DESIGN §37.10) supersede round 40's Wild Mane-only `keepDir` exception; no other kit used it.
    * `fixed` waives both corrections (圣聆初雪 S1 "朝部署方向": KnockBackWithCharacterDirection,
    * PRTS 备注 "不会因角度过大或距离过近而变化方向与力度"); `fixedAngle` only the angle one (PRTS 见行者 S2 备注 "不会因为角度过大
    * 而改变推动的方向或削减力度" — the < 0.25 tile rule still applies). `inward` = a radial push towards `from` (薄绿 S2's "拖拽", PRTS 备注 "实际为

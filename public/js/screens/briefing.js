@@ -4,7 +4,7 @@
 // rows of bond discs (disabled bonds greyed with the banned-member badge), the legend and the 本局禁用干员 avatars, with
 // the player's own 自选 pieces out of the shop (m.private.diyBanned), are ui/matchInfo.js MatchBondRow / MatchLegend /
 // BannedOperators, the blocks the strategy draft's 本局信息 dialog shows (screens/bandDraft.js). The enemy section is shared too:
-// ui/matchEnemies.js MatchEnemies (GitHub #484, DESIGN §35.6).
+// ui/matchEnemies.js MatchEnemies (GitHub #484, DESIGN §37.6).
 // The event's layout (PR #643, video 6:29–7:51): one scrolling column of sections under grey header bars — 本局遭遇敌方
 // (MatchEnemies: the leader's framed portrait over 敌方领袖, its text with the battlefield, the 特训敌人 as round icons
 // with their names, the description in a tooltip — the maintainer's decision of 2026-10-22), 核心盟约, 附加盟约 (the legend

@@ -7,7 +7,7 @@
 // [ASSUMED] for solo, the footage shows a co-op draft) —, once the sprites are in (turnPopupArtReady); never with
 // prefers-reduced-motion — the draft's header says 当前轮到你决策. Styles: css/screens/game-panels.css (.sptp).
 // The cue (the disc and its sound) waits while a phase banner or plate is on screen — the 机变阶段 banner opens every
-// 机变 draft, and the disc that started with it played under it, its words hidden (§35.18's leftover) —, at most
+// 机变 draft, and the disc that started with it played under it, its words hidden (§37.18's leftover) —, at most
 // TURN_CUE_WAIT_MS per banner and TURN_CUE_PLATE_WAIT_MS for the round plate still up from ROUND_START (it holds the
 // banner back: the wait restarts as each one mounts), so a draft that opens on the player's turn shows the plate, the
 // banner, then the disc.

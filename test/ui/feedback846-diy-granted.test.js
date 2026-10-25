@@ -1,8 +1,8 @@
-// GitHub #846 — 自选干员头像在部分界面显示为「甄」. The damage panel was fixed by B6 (§35.4); the bond popup's rows granted
+// GitHub #846 — 自选干员头像在部分界面显示为「甄」. The damage panel was fixed by B6 (§37.4); the bond popup's rows granted
 // through 变形同构体 were not: gameLogic bondMembers built them from the slot id alone (no record), so ui/bondStrip.js's
 // UnitThumb fell back to the empty 甄选干员 slot record (charId null → the 「甄」 glyph) and a watched teammate's row was
 // also named 「甄选干员」. A 自选 piece's granted row now carries its operator — the normal form `rec` and a teammate's
-// `pick` — like a 自选 member row (DESIGN §35.50).
+// `pick` — like a 自选 member row (DESIGN §37.50).
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

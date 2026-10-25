@@ -1,4 +1,4 @@
-// A release package omits the external-AI / LLM integration (§35.66). A dev checkout still registers it.
+// A release package omits the external-AI / LLM integration (§37.66). A dev checkout still registers it.
 // Run: node --test test/package-llm-gate.test.js
 
 import { test } from 'node:test';

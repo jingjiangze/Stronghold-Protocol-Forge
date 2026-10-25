@@ -66,7 +66,7 @@ export class BattleStatus {
 
   removeBuff(unit, keyOrBuff) {
     if (!unit) return 0;
-    // [ASSUMED] API contract (DESIGN §35.5): snapshot reverse-order matches; buffs added by callbacks wait.
+    // [ASSUMED] API contract (DESIGN §37.5): snapshot reverse-order matches; buffs added by callbacks wait.
     // onRemove can synchronously remove another buff, so locate each survivor in the current list.
     const matches = unit.buffs.filter((b) => b === keyOrBuff || b.key === keyOrBuff).reverse();
     let n = 0;

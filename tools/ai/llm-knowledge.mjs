@@ -1,4 +1,4 @@
-// §35.15. [ASSUMED] System-prompt view of an sp-knowledge/1 pack. The pack itself is unchanged:
+// §37.15. [ASSUMED] System-prompt view of an sp-knowledge/1 pack. The pack itself is unchanged:
 // strategyCandidates still reads the full local playbook. Third-party agents still receive the full hello pack.
 const capsOf = (op, byId) => {
   const row = byId.get(op.id) || byId.get(op.baseId);

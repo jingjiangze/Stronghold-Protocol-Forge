@@ -11,12 +11,12 @@ LOBBY(room, whose SEAT COUNT is set when it is created — the host's slider at 
 → loop r = 1..lastRound:
      ROUND_START   (income, upgrade price −1 (floor 0), temp NOT wiped — what overflowed after the last prep's deadline is shown in this
                     prep (§6.2 temp overflow), unfrozen shop slots rerolled, frozen kept; a strategy's 「进入休整期时」 grants and the
-                    traits' <进入休整期时> effects wait for PREP, DESIGN §35.24 / §35.53)
+                    traits' <进入休整期时> effects wait for PREP, DESIGN §37.24 / §37.53)
      [SP_DRAFT]    (if r ∈ spRounds: 机变 draft; co-op: random order (「AI 队友最后选择」, off by default: humans first, the same partition as the strategy draft), 30 s first picker / 16 s others; solo 3 cards; solo / single human untimed;
                     a card is picked with two taps, §18.2)
      PREP          (onPrepStart: the strategies' 「进入休整期时」 grants — 老鲤, 松桐, 杜宾, 娜仁图亚, the preparation_start_* keys —
-                    and the traits' <进入休整期时> effects (META.md §2.3), after the 机变 draft, GitHub #851, DESIGN §35.24 /
-                    §35.53; co-op: timer from config, ends when all alive humans+bots ready;
+                    and the traits' <进入休整期时> effects (META.md §2.3), after the 机变 draft, GitHub #851, DESIGN §37.24 /
+                    §37.53; co-op: timer from config, ends when all alive humans+bots ready;
                     solo / single human: untimed, ends on ready)
      PREP_END      (<休整期结束时> effects; unfrozen shop cleared; Ready is blocked while a personal choice or temp overflow is pending;
                     at the deadline personal choices are auto-picked first, then
@@ -39,9 +39,9 @@ LOBBY(room, whose SEAT COUNT is set when it is created — the host's slider at 
 ```
 Solo FUNNY has 9 rounds (boss at R9); everything is read from `data/config.json → modes[modeId]`.
 
-A first-season solo (`config.version.rules.soloTimed`, DESIGN §35.22.7) is not `soloUntimed` unless the room's
+A first-season solo (`config.version.rules.soloTimed`, DESIGN §37.22.7) is not `soloUntimed` unless the room's
 「不限时」 is on (`room.setSoloUnlimited`, default off; `room.state` omits `soloUnlimited` unless true; the match is built
-with `opts.soloUnlimited`, DESIGN §35.23.10). While it is off, INFO_CHECK, the strategy draft, 机变 and preparation use
+with `opts.soloUnlimited`, DESIGN §37.23.10). While it is off, INFO_CHECK, the strategy draft, 机变 and preparation use
 their clocks (preparation 300 s, 机变 150 s; the other two use the co-op lengths, because they read `soloUntimed`). A
 co-op match with one human stays untimed. A second-season solo stays untimed.
 
@@ -74,7 +74,7 @@ Equipment (research 04 §2 + addendum, 09 §1.2): 2 slots per chess; a third ite
 
 Economy/shop/pool/merge/hand rules: exactly as research 00-INDEX §3–§4 (income `min(3+r,12)`; prices by tier; refresh 1; freeze toggles all; sell +1; items not sellable; upgrade prices per mode with −1/round; single-player pool copies 12/14/18/16/8/5 plus measured exceptions; co-op shared operators use twice those counts, while equipment has separate shared stock (DESIGN §31.8); elite = 3 copies; odds = copy-weighted draw over unbanned visible chess with tier ≤ level; merge 3 (风丸 2) → elite onto the consumed deployed copy's tile, else to the hand (§20.11) + reward offer of 3 **different** free chess of tier `min(level+1, 6)` (copy-weighted; a tier short of different chess tops up from the tier below [ASSUMED], §20.6); full hand blocks every buy / reward pick, a merge-completing one too (PRTS 卫戍协议/帮助 §手牌区, GitHub #82); overflow to temp; a free hand slot pulls the temp pieces back in at once, right → left (`PlayerState._fillHandFromTemp`); temp blocks ready).
 
-**Advisor economy (§35.13–§35.14).** With a nonempty advisor plan, `economy.level` is a minimum: complete
+**Advisor economy (§37.13–§37.14).** With a nonempty advisor plan, `economy.level` is a minimum: complete
 merges, meet an affordable floor before fill purchases, then resume legacy leveling. `holdLevel:true` requires
 an explicit level and nonblank `economy.why`; it caps only this prep, including one-round deferrals. `keep`/`sell`
 match exact forms; `buy` and bond priority stop wanting normal copies once that elite is owned. Non-carry seats
@@ -88,7 +88,7 @@ Absent/empty plans and AI takeover without an advisor retain legacy behavior (ma
 This is **[ASSUMED] AI policy**, not an official economy change. Bounds and sources:
 [EXTERNAL_AI](../EXTERNAL_AI.md#advisor-mode-and-readable-observations-359).
 
-**Temp overflow (临时整备区, row 8; user playtest #3 item 3).** Passive gains that find the hand full (merge elites, grants — the operator a 突变细胞 transformation gains included, §21.1 —, battle-result rewards, equipment returned by a merged / sold / transformed carrier) overflow into an expandable queue with five visible temp slots. The first five pieces fill right-to-left; later pieces wait behind them and refill freed slots in order. No passive gain is discarded for exceeding fifteen visible bench slots (owner correction, 2026-10-14, §32.14.21). Hidden pieces participate in merges, stock accounting, reconnect state and deadline resolution; Ready is refused while any is occupied (official "直到溢出情况排除才可开始进行作战"). A temp piece is resolved — a chess sold back to the pool with its summons removed, items destroyed, a summon stack removed (it comes back at the next round start, PRTS "干员所属召唤物会于下一回合返还", §20.1) — only at the deadline of the **first prep in which its player could act on it** (`PlayerState.tempDue(piece)` vs `prepsEnded`; every write into a temp slot goes through `_putTemp`, which records it): a piece that arrived during a prep before Ready is due at that prep's end; one that arrived after Ready or during the `<休整期结束时>` effects, or outside PREP (COMBAT, 联防, SETTLE — battle-result grants, a SETTLE merge's elite, returned equipment —, the next ROUND_START, 机变) is kept, visible and usable (move to a free hand slot, place, equip, use, destroy, sell) through the **next** prep. Un-readying (`setReady(false)`) makes whatever arrived while ready due at the current prep. ROUND_START no longer wipes temp (it used to destroy what SETTLE had put there before the player ever saw it). A merge's elite whose merge consumed a deployed copy takes that copy's tile and facing (§20.11); otherwise it goes to the hand, overflowing into temp (also outside PREP). `server/match/audit.js` (`tools/matchrun.mjs --check`) tracks the arrivals itself and flags any temp piece that outlives its due prep. The UI frames the row on the board with the rule (§17.5).
+**Temp overflow (临时整备区, row 8; user playtest #3 item 3).** Passive gains that find the hand full (merge elites, grants — the operator a 突变细胞 transformation gains included, §21.1 —, battle-result rewards, equipment returned by a merged / sold / transformed carrier) overflow into an expandable queue with five visible temp slots. The first five pieces fill right-to-left; later pieces wait behind them and refill freed slots in order. No passive gain is discarded for exceeding fifteen visible bench slots (owner correction, 2026-10-14, §34.14.21). Hidden pieces participate in merges, stock accounting, reconnect state and deadline resolution; Ready is refused while any is occupied (official "直到溢出情况排除才可开始进行作战"). A temp piece is resolved — a chess sold back to the pool with its summons removed, items destroyed, a summon stack removed (it comes back at the next round start, PRTS "干员所属召唤物会于下一回合返还", §20.1) — only at the deadline of the **first prep in which its player could act on it** (`PlayerState.tempDue(piece)` vs `prepsEnded`; every write into a temp slot goes through `_putTemp`, which records it): a piece that arrived during a prep before Ready is due at that prep's end; one that arrived after Ready or during the `<休整期结束时>` effects, or outside PREP (COMBAT, 联防, SETTLE — battle-result grants, a SETTLE merge's elite, returned equipment —, the next ROUND_START, 机变) is kept, visible and usable (move to a free hand slot, place, equip, use, destroy, sell) through the **next** prep. Un-readying (`setReady(false)`) makes whatever arrived while ready due at the current prep. ROUND_START no longer wipes temp (it used to destroy what SETTLE had put there before the player ever saw it). A merge's elite whose merge consumed a deployed copy takes that copy's tile and facing (§20.11); otherwise it goes to the hand, overflowing into temp (also outside PREP). `server/match/audit.js` (`tools/matchrun.mjs --check`) tracks the arrivals itself and flags any temp piece that outlives its due prep. The UI frames the row on the board with the rule (§17.5).
 
 Pointing Stick creates at most one pending offer per alive, non-Ready player in PREP. The owner confirms it with
 `g.choice { idx, choiceId }`; confirmation validates its ID, round and index, adds one bounty and clears the offer.
@@ -136,10 +136,10 @@ See [the strategy guide](../BOT_STRATEGIES.md) for the contract, registration an
 
 The opt-in `ioleta` strategy applies [ASSUMED] staged Russell procurement to Russell seats and legacy prep to other
 bands. Its seat-local plan, core-merge/reward ordering and affordable search rules are recorded in
-[§35.83](../history/0.3.2.md#3583-optional-bot-strategies-pr-742-lidong1793). Placement candidates remain independently selectable.
+[§37.83](../history/0.3.2.md#3583-optional-bot-strategies-pr-742-lidong1793). Placement candidates remain independently selectable.
 
-Maintainer decision 2026-10-17, requested 2026-10-19 (§35.8): `external`, a strategy of @HankDUMPLINGZhong's
-#673 framework (§35.7), sends the seat's existing public/private views to operator-configured HTTP(S) or stdio,
+Maintainer decision 2026-10-17, requested 2026-10-19 (§37.8): `external`, a strategy of @HankDUMPLINGZhong's
+#673 framework (§37.7), sends the seat's existing public/private views to operator-configured HTTP(S) or stdio,
 accepts human intents through the same schema and semantic validators, and falls back to legacy on failure.
 Requests run asynchronously within existing phase timers; default selection and golden results stay unchanged.
 [ASSUMED] Engineering policy: version `sp-ai/1`, 1000 ms total decision/request cap, half the remaining phase
@@ -147,19 +147,19 @@ reserved for fallback, 64 intents, 64 KiB response, 3 consecutive failures to ma
 1000 ms child restart backoff; limits configurable. One stdio child per match, no HTTP redirects, no client-set
 endpoint/command, gameplay actions only. Test journals record replies/failures; offline replay performs no IO.
 The complete policy and scope are in [External AI API](../EXTERNAL_AI.md).
-Maintainer decision 2026-10-23 (§35.66): a release package does not include this strategy. The zip, the update
+Maintainer decision 2026-10-23 (§37.66): a release package does not include this strategy. The zip, the update
 package and the Docker image omit the host, and a packaged server ignores external-AI settings.
 
-Maintainer request 2026-10-19 (§35.12): the example advisor's static knowledge includes a regenerable playbook
+Maintainer request 2026-10-19 (§37.12): the example advisor's static knowledge includes a regenerable playbook
 from the active data and a sourced community overlay. [ASSUMED] Per-seat scoring uses only announced
-bans/enemies, public teammate boards and own progress. §35.15: the band draft returns at most eight
+bans/enemies, public teammate boards and own progress. §37.15: the band draft returns at most eight
 directions and prefers uncontended community/maintainer mains; prep collapses the same band and main into
 one candidate with `subOptions`. It does not inspect remaining stock or change execution. Mechanical facts, timing
 estimates, score weights and cross-version regeneration are specified in [AI strategy](../AI-STRATEGY.md).
-The §35.12 follow-up requires detailed sourced play for named builds: separate freeze/redeployment recipes
+The §37.12 follow-up requires detailed sourced play for named builds: separate freeze/redeployment recipes
 check reachable core roles and distinct main thresholds, retaining current-data disagreements and substitutes.
 
-Maintainer approval 2026-10-19 (§35.9) adds owner-selected `mode: 'plan'` beside default `direct`.
+Maintainer approval 2026-10-19 (§37.9) adds owner-selected `mode: 'plan'` beside default `direct`.
 One prep plan per seat/round weights legacy procurement/lineup/placement; existing sliced rehearsal and legal
 handlers execute it. Draft/card/offer plans may select an observation-local action ID. Invalid plans clear
 preferences and resume ordinary legacy. [ASSUMED] Plan schema, weights and conservative action shortcuts are
@@ -179,14 +179,14 @@ These placement assumptions are tracked in [issue #315](https://github.com/sgang
 and one tile farther; the record's `skills[].rangeGrid`). `attackRangeGrid` — the deploy overlay, the card and
 `summonRange` — stays on the base line: the skill text is 「攻击范围扩大」 without 「被动效果：」. SPT-Y's 攻击距离 +1 does not
 grow this planned grid (PRTS 备注: the skill range ignores 攻击距离). S1 and S2 keep `attackRangeGrid`. [ASSUMED] The
-skill is ammo and is not up for the whole fight; the plan still uses the skill-on grid (#31, §35.106).
+skill is ammo and is not up for the whole fight; the plan still uses the skill-on grid (#31, §37.106).
 
 [ASSUMED] Blocking medics prefer legal tiles outside the enemy road, then road tiles supported by allied damage,
 then any legal fallback when neither exists (#577). The supported-road test is the same as the guard repair above:
 every incoming ground route needs an ally covering both the medic's tile and its preceding contact tile; different
 routes may use different allies, and healing never counts as fire support. Within each preference group the existing
 exposure score chooses the tile. On boss rounds the planner still places wider healing ranges first; the last
-arrangement of the prep rehearses those layout variants against the already-planned boss wave (§35.64). Equal exposure
+arrangement of the prep rehearses those layout variants against the already-planned boss wave (§37.64). Equal exposure
 scores prefer estimated allied DPS **not already covered by a previously placed medic**, before the tile-noise tie-break.
 
 [ASSUMED] Purchase scores within `1e-9` tie in favour of the cheaper offer; genuine score advantages still win.
@@ -199,7 +199,7 @@ enemy replacements, teammate effects and in-battle layer gains. A Final Assault 
 `startRound` already planned, an independent seed `deriveSeed(0xA11CE, fa:round:seat)` (not the match seed and not the
 live fight's seed), a fresh boss pool per candidate, the teammate's currently deployed board, and the visible
 countdown on the combat clock (`bossLevelTime` real seconds × `combatTimeScale`, 240 game seconds when the data
-says 120; §35.64). Counted leaks still rank first; leader damage breaks a leak tie (#315). Each candidate uses an independent copy of the current
+says 120; §37.64). Counted leaks still rank first; leader damage breaks a leak tie (#315). Each candidate uses an independent copy of the current
 meta RNG. Candidate boards and events are detached; preview contexts expose copied reads and no-op state writers,
 including contexts reached through teammates/player. A separate dispatcher owns the preview script budget and drops
 preview errors; no live script quota, diagnostics or settlement is affected. Actual starts retain the original RNG
@@ -212,7 +212,7 @@ and before Ready. The prep's deadline — and the scheduler's fallback when a st
 
 Deterministic-ish heuristic player used for (a) AI teammates, (b) auto-play for disconnected humans (only auto-ready + auto-picks, not shopping, unless "AI 托管" is toggled), (c) tests. Strategy (§21.6): pick a band (weighted by starting LP; never one built around a bond the mode switches off — `gd.bandBondIds`, §21.26); each prep: take offers, sell dead bench weight, fill the board, complete affordable merges, level on the curve, then buy only merge progress / lineup upgrades worth more than the refreshes their price would buy (shop odds of completing held pairs), freeze for an unaffordable third copy (坎诺特 keeps 5 funds back); build around a committed focus core bond (a teammate's main bond on its strip counts against it; bonds the mode switches off never) + a second bond; value dealers by DPS vs the round's DEF / RES (an attack on every enemy in range counts double — 阵法术师 / 轰击术师), with the range the unit is deployed with; place by the exposure model + rehearsal on the server's deploy map (no 深水区; a blocker whose range is its own tile only — range 0-1 — takes a free tile of the enemy road first; a tactician's 援军 within `PlayerState.summonRange`; a melee chess whose trait reads 「可以放置于远程位」 (钩索师 / 推击手) on a 高台 whose range covers the enemy road, else on the ground, counted as a blocker in the lineup either way — §3; `g.move` judges legality); items by effect (META §1.5: 突变细胞 on the least valuable normal single below 6阶, a cell left in temp gets a hand slot made for it, the operator its transformation gains is deployed by the next prep's lineup step like any owned unit — AI 托管 too; the buy loop's bench shed never sells a piece gained since the bot's last prep, §21.1); 机变 bounties by expected payout − expected LP loss over the offered cards; resolve temp — on a human seat under AI 托管 never by destroying an item while a bench operator can be sold for the slot —; ready. A bot's whole prep — shop decisions and layout planning (`botPrepBeginSteps`, 25–70 ms late in a 4-bot match), the layout rehearsal and `botPrepEndSteps` — runs in wall-clock slices of `botSliceMs` (8 ms) per scheduler callback on a real host (step generators that yield between whole actions, never with a transient board; the same actions in the same order, so decisions are unchanged; at once in virtual time). Under AI 托管 a human's own 自选 pieces score `DIY_PIECE_BONUS` (12) more in the shop / reward choice and the 调度中心 is levelled one round earlier for the step that opens a slotted tier (`levelUp`, `diyOpensAt`; 0.2.0 — bots field no 自选 piece).
 
-### 6.7 Where a match runs: match hosts (§32.6, §35.23)
+### 6.7 Where a match runs: match hosts (§32.6, §37.23)
 
 A room of 第二期下半 (`act2autochess`) without gameplay plugins runs its `Match` in the server process, as always. Two kinds
 of rooms run it in a match host (`server/match/host/`: a child process by default, `SP_MATCH_HOST=worker` a worker
@@ -221,9 +221,9 @@ singleton (the kits, builtinMeta, the meta registry, the official-bounds cache) 
 
 - **plugin hosts** (`kind: 'plugins'`, §32.6): one per content set of gameplay plugins, at most `limits.maxSets` (4);
   stop reasons 'plugin-crash' / 'plugin-hang' / 'plugin-start';
-- **version hosts** (`kind: 'version'`, §35.23, M1): one per enabled official version other than 第二期下半 (its `cs`,
+- **version hosts** (`kind: 'version'`, §37.23, M1): one per enabled official version other than 第二期下半 (its `cs`,
   `server/versions.js`), at most `maxHosts` (default: one per such version; `SP_MAX_VERSION_HOSTS`), counted apart from
-  the plugin hosts. Nothing set enables all four, so that cap is three (§35.23.11). A host is forked on the first match
+  the plugin hosts. Nothing set enables all four, so that cap is three (§37.23.11). A host is forked on the first match
   of that version, never at boot; an idle server has zero version workers. Log lines `[versions]` with the version's id
   as the host label; stop reasons 'version-crash' /
   'version-hang' / 'version-start' (the room is told `本局模拟出错，已结束` / `本局模拟长时间无响应，已结束` /
@@ -284,14 +284,14 @@ fresh window, a cancelled or rejected vote does not give the cooldown back; the 
 reroll cooldown`, which the client shows as 「每人 30 秒内只能发起一次重刷投票」), and stale revisions or vote identities
 are refused. With one human (solo, or co-op with bots) every start completes at once and so clears the cooldown; there
 `room.rerollSetup` is throttled by the connection's heavy bucket (server/net.js `HEAVY_TYPES`, 2 per second after a
-burst of 6; plain RATE), since each reroll rebuilds the opening and resends `m.public` (§35.47).
+burst of 6; plain RATE), since each reroll rebuilds the opening and resends `m.public` (§37.47).
 All new setup data and player DIY stocks are prepared before mutation; data preparation failure leaves the old opening
 intact. This is a remake convenience, not an official mode rule. Unrelated result-screen changes from PR #408 are not
 included.
 
 The shared DIY detail preview (stats, range, trait, talents, potential, cultivation and matching normal/elite skill descriptions) follows roster loadout resolution. Jessica shield placement is limited to her four orthogonal neighbors. The two Ptilopsis prep-gift copy exceptions are defined in §29.3 and META; no generic change to all copied conditions is implied.
 
-Shared-stock corrections (§30.1–2, §32.14.24): fixed `SERVER_GAIN_EQUIP` gifts still occupy ordinary/advanced 1/2 copies but
+Shared-stock corrections (§30.1–2, §34.14.24): fixed `SERVER_GAIN_EQUIP` gifts still occupy ordinary/advanced 1/2 copies but
 may exceed capacity; `requirePool:false` bypasses equipment limits only for these fixed families. Already displayed
 operator and equipment shop cards, and already displayed operator and equipment reward offers, remain valid after
 exhaustion and record the deficit (operators: a negative raw left; equipment: `SharedItemPool.debt`, #624, the
@@ -302,7 +302,7 @@ grants that are not an already-shown card stay stock-limited. Rockrock and Flame
 subsets described in DATA and §30.2.
 
 
-Content-plugin exceptions to the official match rules are opt-in (§34.15): `shopBias=bondBias` filters shop item candidates within their drawn tier by active bond/giveBondId after stock checks, falling
+Content-plugin exceptions to the official match rules are opt-in (§36.15): `shopBias=bondBias` filters shop item candidates within their drawn tier by active bond/giveBondId after stock checks, falling
 back within that tier; morphPairing=plus uses shared pairing and slot policies (zero-slot morph, one per operator,
 only the leftmost bond item grants); unequip=allow moves one equipped item back to the hand then visible temp,
 atomically refusing HAND_FULL if both are full. A validated prepLoadout=prep change reconciles affected owners'

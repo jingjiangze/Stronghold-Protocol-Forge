@@ -94,7 +94,7 @@ test('the committed manifest carries her three mode attacks under the skill inde
 test('every manifest attacks entry is a skill-mode file, or the mode\'s own plain file; the slot is not the filename letter (#679)', () => {
   // The letter used to be the slot (d/h/s = 技能1/2/3). 玛恩纳's S2 file is `_d` and his S3 file is `_h`, so that
   // guess dropped S3. Slots now follow the operator's mode list (assignSkillModeSfx); the file is `_d/_h/_s`, or (PR #848,
-  // DESIGN §35.38) a plain mode bank's file that differs from the unit's normal swing (寒芒克洛丝's S1 `p_atk_krossbow_n`).
+  // DESIGN §37.38) a plain mode bank's file that differs from the unit's normal swing (寒芒克洛丝's S1 `p_atk_krossbow_n`).
   const units = manifest.audio.sfx.units;
   let both = 0;
   for (const [id, u] of Object.entries(units)) {

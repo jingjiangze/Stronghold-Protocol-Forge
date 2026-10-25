@@ -10,7 +10,7 @@
 // { v: 1, notOwned }) and sent with C2S `room.ownership { notOwned }` (the server keeps the droppable ids and drops the
 // rest — shared/protocol.js checkNotOwned — so a stale list never gets refused). 导出 / 导入 use a versioned envelope
 // like the loadout presets.
-// By operator (DESIGN §35.23, M1): stored as charIds — `sp.pref.ownership` = { v: 2, notOwnedChars } — so 第一期's reused
+// By operator (DESIGN §37.23, M1): stored as charIds — `sp.pref.ownership` = { v: 2, notOwnedChars } — so 第一期's reused
 // chess ids never mark another operator; ui/loadoutSync.js shows `notOwned` (chess ids of the data on screen) as a view
 // (notOwnedView) and writes an edit back by operator (rebaseChars). A v1 list (chess ids of 第二期下半) is migrated
 // through 第二期下半's chess.json; 导出 writes v2, 导入 reads v1 and v2. A v2 store also carries `notOwned` (the same list by

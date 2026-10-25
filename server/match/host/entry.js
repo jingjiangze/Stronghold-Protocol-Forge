@@ -24,7 +24,7 @@
 //                                           onEnd }) and start() — send / broadcast / onEnd post 'send' / 'broadcast' /
 //                                           'end' back; a match that cannot be created posts 'failed', and so does one whose
 //                                           opts.version (absent: act2autochess) is not the installed data's version
-//                                           (shared/versions.js versionOfData; DESIGN §35.23 — an official version's host)
+//                                           (shared/versions.js versionOfData; DESIGN §37.23 — an official version's host)
 //   { type: 'call', matchId, method, args, id? }   one MATCH INTERFACE call; with `id` its answer is posted as 'reply'
 //   { type: 'dispose', matchId }            the match is disposed and forgotten
 // Logs go to the main process ('log': its logger prefixes them with the set's `[cs:<8 hex>]`).
@@ -213,7 +213,7 @@ function diag(match) {
 }
 
 function create(matchId, opts) {
-  // an official version's match runs on that version's data only (DESIGN §35.23): never another version's data set
+  // an official version's match runs on that version's data only (DESIGN §37.23): never another version's data set
   const want = typeof opts.version === 'string' ? opts.version : DEFAULT_VERSION;
   if (want !== versionOfData(installed)) {
     log.error(`[host] match ${matchId} asks for version ${want}, this host runs ${versionOfData(installed)}`);

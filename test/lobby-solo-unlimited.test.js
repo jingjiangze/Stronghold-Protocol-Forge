@@ -1,4 +1,4 @@
-// 「不限时」 for a version whose solo is timed (DESIGN §35.23.10): room.create's optional flag, room.setSoloUnlimited,
+// 「不限时」 for a version whose solo is timed (DESIGN §37.23.10): room.create's optional flag, room.setSoloUnlimited,
 // room.state only while it is on, and startMatch / wireOptions passing it only then. A default or 第二期上半 solo, and
 // co-op, ignore a stray true. Lone-human co-op is unchanged (it never reads this flag).
 

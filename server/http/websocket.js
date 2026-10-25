@@ -167,7 +167,7 @@ export function transportPolicy(policies, { log = null } = {}) {
  *   versionHosts?: ReturnType<typeof import('../match/host/index.js').createMatchHosts> | null }} deps the game data the lobby's
  *   matches use, the logger, the vanilla content (server/plugins/identity.js: welcome / room.state content, BattleSpec
  *   cs), the room sets a room's host chooses from (room.setPlugins: visual and content sets), the match hosts a room with
- *   gameplay plugins plays in (DESIGN §32.6), the official versions and their match hosts (DESIGN §35.23)
+ *   gameplay plugins plays in (DESIGN §32.6), the official versions and their match hosts (DESIGN §37.23)
  * @returns {{ registry: SessionRegistry, lobby: Lobby, network: Network }}
  */
 export function createSessionStack(opts, { data, log, content = null, plugins = null, hosts = null, versions = null, versionHosts = null, simPool = null }) {

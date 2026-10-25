@@ -1,4 +1,4 @@
-// Release gate for the external-AI / LLM integration (maintainer 2026-10-23, §35.66).
+// Release gate for the external-AI / LLM integration (maintainer 2026-10-23, §37.66).
 // A dev checkout has no marker and still has server/match/externalAI.js, so this module loads that
 // implementation and the server behaves as before. A release package has the marker (and the
 // implementation files are not in the package): external-AI configuration is ignored, one log line,

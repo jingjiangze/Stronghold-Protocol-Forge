@@ -1,4 +1,4 @@
-// server/versions.js — the official versions this server offers (DESIGN §35.23, M1; the registry: shared/versions.js;
+// server/versions.js — the official versions this server offers (DESIGN §37.23, M1; the registry: shared/versions.js;
 // which ones: server/http/config.js versionsFrom). One service per server, built at boot:
 //
 //   * at boot, each enabled non-default version's content identity: its data/versions/<slug>/ files hashed (bytes only,
@@ -22,7 +22,7 @@
 //                                          (the default: { cs, vanilla: true, plugins: [] }, no `version`)
 //   data(id), dataOfCs(cs)                 the version's data (lazy), null for a disabled id
 //   offered(id, roomMode)                  the DIFFICULTIES whose official mode the version has for that room mode
-//   welcome()                              welcome.versions (DESIGN §35.23), or null when only act2autochess is enabled
+//   welcome()                              welcome.versions (DESIGN §37.23), or null when only act2autochess is enabled
 //   file(cs16, rel)                        GET /cs/<cs16>/index.json and /cs/<cs16>/bounds/official.json of a version
 //   servedDirs()                           the absolute data directories /data/versions/ may serve (static.js, buildTag)
 //   stats()                                { enabled, default, loaded }

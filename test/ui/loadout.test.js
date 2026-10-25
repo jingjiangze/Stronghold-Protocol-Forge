@@ -36,7 +36,7 @@ test('parseStored: tolerant of junk, keeps structurally valid entries; toStored 
   assert.deepEqual(parseStored({ v: 1, entries: { [INSIDE]: { skill: 0, module: 'none', junk: 1 }, 'bad id': { skill: 1 }, [SWIRE]: { skill: -1 } } }),
     { [INSIDE]: { skill: 0, module: 'none' } });
   assert.deepEqual(parseStored({ [INSIDE]: { skill: 1 } }), { [INSIDE]: { skill: 1 } }, 'bare map (older build)');
-  // v2 (DESIGN §35.23): by operator — parseStoredByChar reads it back; parseStored (by chess id) reads only v1 / bare maps
+  // v2 (DESIGN §37.23): by operator — parseStoredByChar reads it back; parseStored (by chess id) reads only v1 / bare maps
   const e = { char_2023_ling: { skill: 0 } };
   assert.deepEqual(parseStoredByChar(JSON.parse(JSON.stringify(toStored(e)))), e);
   assert.deepEqual(parseStored(toStored(e)), {}, 'a v2 store has no chess-id entries');

@@ -26,7 +26,7 @@ export const BUILD_INPUTS = Object.freeze(['public/index.html', 'public/js', 'pu
 const isIgnoredBuildName = (name) => name.startsWith('.') || name.endsWith('~');
 
 /**
- * Trees under BUILD_INPUTS the browser is served only in part: the official versions' data (DESIGN §35.22, §35.23) — a
+ * Trees under BUILD_INPUTS the browser is served only in part: the official versions' data (DESIGN §37.22, §37.23) — a
  * child of data/versions/ counts only when this process serves it (`servedVersionDirs`: the enabled versions'
  * directories, server/versions.js), so rebuilding a version the server does not offer is no new build.
  */

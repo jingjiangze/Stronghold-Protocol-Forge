@@ -1,5 +1,5 @@
 // test/versions-default-guard.test.js — the default version (第二期下半, act2autochess) stays exactly as it was before
-// the official version switch (DESIGN §35.22.2, docs/DATA.md "Official versions (M0)"). The fixture
+// the official version switch (DESIGN §37.22.2, docs/DATA.md "Official versions (M0)"). The fixture
 // test/fixtures/versions-default-guard.json pins:
 //   G2  the default config.json has no `version`, and cs reads exactly the top-level gameplay files
 //   G3  the cs formula (known-answer vectors of shared/plugins/identity.js), not the vanilla cs itself, which changes with
@@ -7,7 +7,7 @@
 //   G4  a fresh co-op/NORMAL room's room.state (code, ids, name and content.cs normalised; no `version` key) and the
 //       welcome's `versions` list (each cs normalised: the default as <vanilla cs>, the others as <cs:id>)
 // G1 (the sha256 of every tracked default data file and of the golden corpus) was the M0 merge check; it was deleted when
-// M1 started (DESIGN §35.22.2, §35.23): test/golden.test.js and test/data.test.js guard the data and the goldens now.
+// M1 started (DESIGN §37.22.2, §37.23): test/golden.test.js and test/data.test.js guard the data and the goldens now.
 // An intended change of the default must regenerate the fixture on purpose and say why in the commit:
 //   SP_UPDATE_GUARD=1 node --test test/versions-default-guard.test.js
 

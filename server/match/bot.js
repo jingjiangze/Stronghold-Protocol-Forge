@@ -114,7 +114,7 @@ export function runSteps(gen) {
 }
 
 /**
- * [ASSUMED] §35.63: share of an advisor plan's unit weight (aiPlan planUnitWeight, up to +48) in a piece's lineup and
+ * [ASSUMED] §37.63: share of an advisor plan's unit weight (aiPlan planUnitWeight, up to +48) in a piece's lineup and
  * bench value. Unit power runs 10-25 and computeBonds already scores the plan's bonds exactly, so the full weight
  * benched tier 5/6 carries for tier 1-2 plan members (27 of 38 LLM preps from R10).
  */
@@ -122,15 +122,15 @@ const PLAN_UNIT_SHARE = 0.25;
 /** Lineup value of each deployed member of the focus bond (up to its top threshold). */
 const FOCUS_MEMBER = 4;
 /**
- * [ASSUMED] §35.62: lineup value of a core bond at its second tier or above (6 拉特兰 / 叙拉古 …, 5 阿戈尔), on top of the
+ * [ASSUMED] §37.62: lineup value of a core bond at its second tier or above (6 拉特兰 / 叙拉古 …, 5 阿戈尔), on top of the
  * linear tier weight. The guides build around a 6-member main (handoff/round51 RESEARCH §2); measured on ABYSS solo, a
  * linear weight never fielded one (boards stayed 3 + 3 + 3) even with 6 distinct members owned.
  */
 const CORE_TOP_TIER = 30;
-/** [ASSUMED] §35.62: bench members of a core bond with at least this many distinct owned members are not sold as junk. */
+/** [ASSUMED] §37.62: bench members of a core bond with at least this many distinct owned members are not sold as junk. */
 const CORE_KEEP_OWNED = 4;
 /**
- * [ASSUMED] §35.63 commitment to a 6-member core: last round's focus keeps CORE_LOCK (was 6) once 3 members are owned, a
+ * [ASSUMED] §37.63 commitment to a 6-member core: last round's focus keeps CORE_LOCK (was 6) once 3 members are owned, a
  * new focus member is worth CORE_MEMBER more on the way to the top threshold, and a refresh that may show one is worth
  * CORE_HIT × P(shown) (coreGap).
  */
@@ -138,7 +138,7 @@ const CORE_LOCK = 16;
 const CORE_MEMBER = 10;
 const CORE_HIT = 20;
 /**
- * [ASSUMED] §35.63 sustain floor: from HEAL_FROM the lineup values its first healer at HEAL_FIRST and a second one from R9
+ * [ASSUMED] §37.63 sustain floor: from HEAL_FROM the lineup values its first healer at HEAL_FIRST and a second one from R9
  * at HEAL_SECOND (buyScore: the first healer +14, a second from R8 +4). Bots fielded 0.1–0.5 healers in R4–R13 and died
  * to DOT / ELEMENT / SPECIAL rounds; 终极 co-op seats alive at the Final Assault rose with it.
  */
@@ -163,7 +163,7 @@ const MAX_REFRESHES = 16;
 /** Spare bench units kept beyond the lineup at the prep start (pairs first). */
 const BENCH_BUDGET = 6;
 /**
- * Shop level the bot aims for at the start of round r (index = round). §35.63: L5 at R9 and L6 at R11 (were R10 / R12),
+ * Shop level the bot aims for at the start of round r (index = round). §37.63: L5 at R9 and L6 at R11 (were R10 / R12),
  * the community rhythm 3-5-7-9 (BV19UXZBJExQ reply; handoff/round51 RESEARCH §3.2) plus one step: 终极 solo boards
  * reached the Final Assault short of leader damage, and bots on this curve dealt about 40 % more of it.
  */
@@ -417,7 +417,7 @@ function mainCoreBond(m, p) {
  * its public bond strip, mainCoreBond — the shop pool is shared) or has selected that bond's opening strategy, even
  * before anyone is deployed. The strategy reservation ends when that teammate is eliminated. `second` = the other live
  * bond (core or add-on) with the most owned members whose next threshold is within reach (≥ 1 owned member).
- * `ps._botFocusId` keeps the focus across rounds. §35.62: an accepted advisor plan's primary core bond (its highest
+ * `ps._botFocusId` keeps the focus across rounds. §37.62: an accepted advisor plan's primary core bond (its highest
  * priority) is the focus, owned members or not: the plan's direction leads legacy's procurement instead of competing with
  * it at +6..+30 per member.
  */
@@ -466,12 +466,12 @@ export function bondPlan(m, ps, owned = ownedBonds(m, ps)) {
 }
 
 /**
- * §35.63 layer trade: buy an operator whose 获得时 trait adds layers to every bond it has (SERVER_GAIN
+ * §37.63 layer trade: buy an operator whose 获得时 trait adds layers to every bond it has (SERVER_GAIN
  * SERVER_ADD_BOND_CHESS_ALL: 野鬃 / 角峰 / 艾丝黛尔 / 深靛 +2, 雪猎 / 灵知 +5, 忍冬 +6, 星熊 / 锏 +8) when it carries the focus or
  * an active bond, and sell it again unless it starts a pair, fills the board or makes the lineup. The community stacks this way: 「买卖
  * 灵知／野鬃／忍冬／角峰／雪猎」 doubles their stacking under 投资人 (BV1qkDsBtEER pinned; cv47352364; handoff/round51
  * RESEARCH §3.3). [ASSUMED] From R4, outside banking bands, and only when layers per net fund (price − the 1 refund) ×
- * the bonds it reaches is at least TRADE_MIN. Measured on 终极 with the other §35.63 rules (seeds 1–100): see history.
+ * the bonds it reaches is at least TRADE_MIN. Measured on 终极 with the other §37.63 rules (seeds 1–100): see history.
  */
 const TRADE_MIN = 3;
 const TRADE_FROM = 4;
@@ -513,7 +513,7 @@ function tradeOnce(m, ps, ctxOf) {
 }
 
 /**
- * §35.63: the focus core bond (bondPlan) between 2 owned members and its top threshold (6; 阿戈尔 5), when buys and
+ * §37.63: the focus core bond (bondPlan) between 2 owned members and its top threshold (6; 阿戈尔 5), when buys and
  * refreshes still build toward it (null otherwise). Measured on 终极 bots: boards owning 6 members of one core at R11
  * went from 2/18 to 11/19, co-op seats alive at the Final Assault rose (handoff/round51 cycle 3, EXP_CORE).
  */
@@ -673,7 +673,7 @@ function lineupScore(m, ps, set, ctx, handSlots = countFree(ps.hand)) {
 }
 
 /**
- * Best deployable set of at most `cap` owned chess: greedy seed + swap hill-climbing on lineupScore. §35.62: one swap at
+ * Best deployable set of at most `cap` owned chess: greedy seed + swap hill-climbing on lineupScore. §37.62: one swap at
  * a time cannot carry a core bond from 3 to 6 deployed members (every intermediate swap scores lower), so each core bond
  * with enough distinct owned members for a threshold above 3 also seeds a climb from that full threshold; the best
  * climb wins.
@@ -998,7 +998,7 @@ function dpsVs(rec, def, res) {
  * The record a chess fights with for range purposes: its range grid replaced by the one it is deployed with under the
  * player's loadout — a passive 攻击范围扩大 skill, a module's range or 攻击距离 (shared/loadoutRecord.js attackRangeGrid:
  * what the server's summonRange, the deploy wheel and the card use since 0.1.1) — else the record itself. 信仰搅拌机 S3
- * is the exception: the planner uses that skill's own grid and does not grow it (§35.106). Cached per player and loadout.
+ * is the exception: the planner uses that skill's own grid and does not grow it (§37.106). Cached per player and loadout.
  */
 export function rangeRec(ps, rec) {
   if (!rec || !rec.chessId || typeof ps.loadoutFor !== 'function') return rec;
@@ -1590,7 +1590,7 @@ function refreshValue(m, ps, ctx) {
     if (k + 1 >= mergeNeed(m, b)) v += pShop * MERGE_HIT;
     else if (ctx.keep.has(b)) v += pShop * PAIR_HIT;
   }
-  // §35.63: a refresh may also show a missing member of the focus core bond on its way to the top threshold
+  // §37.63: a refresh may also show a missing member of the focus core bond on its way to the top threshold
   if (coreGap(m, ctx.focus, ctx.owned)) {
     let miss = 1;
     for (const [id, e] of m.pool.entries) {
@@ -1626,7 +1626,7 @@ export function sellWeakestHand(m, ps, { keepPairs = true, below = Infinity, han
     const base = m.gd.baseIdOf(p.id);
     if (keepPairs && !m.gd.isGolden(p.id) && (ctx.copies.get(base) || 0) >= 2) continue;
     if (keepFresh && (p.boughtRound === m.round || unseen(ps, p))) continue;
-    // §35.63: an advisor's full hand of protected pieces may still give up a tier <= 4 one (legal room), never an
+    // §37.63: an advisor's full hand of protected pieces may still give up a tier <= 4 one (legal room), never an
     // elite, a tier 5/6 carry or a merge piece (cycle 2: 11 tier 5/6 sales for 1 fund each, 荒芜拉普兰德 for a tier-1 copy)
     const guarded = advisor && advisorProtected(m, ps, p);
     if (guarded && (m.gd.isGolden(p.id) || m.gd.tierOf(p.id) >= 5 || ps.completesChessMerge(p.id))) continue;
@@ -1781,7 +1781,7 @@ function maybeFreeze(m, ps, policy = null) {
     && (!policy || policy.core(m, ps, s.id) || buyScoreOf(m, ps, s.id, policy) >= 60))) tryDo(() => ps.freeze());
 }
 
-/** §35.14, maintainer 2026-10-20. [ASSUMED] Sell unprotected clutter before destroying cheap hand items.
+/** §37.14, maintainer 2026-10-20. [ASSUMED] Sell unprotected clutter before destroying cheap hand items.
  * One real action at a time: sales can return equipment / refill temp, so callers recheck the actual hand.
  */
 function advisorRoomStep(m, ps, { handOnly = false, below = Infinity, extra = [], keepFresh = false, keepPairs = true } = {}) {
@@ -1901,10 +1901,10 @@ function fundsReserve(m, ps) {
 }
 
 /**
- * §35.63: funds left after the buy loop (it keeps 2 for a purchase after each refresh) expire at the prep end
+ * §37.63: funds left after the buy loop (it keeps 2 for a purchase after each refresh) expire at the prep end
  * (PlayerState.endPrep): spend them on refreshes that may show a copy completing a held pair, which maybeFreeze then
  * keeps for the next round. Never refreshes away such a copy or a frozen shop; banking bands keep their funds. [ASSUMED]
- * At most 4 refreshes. Measured: funds lost per prep 0.78 → 0.25 (终极 solo, seeds 1–100, with the other §35.63 rules).
+ * At most 4 refreshes. Measured: funds lost per prep 0.78 → 0.25 (终极 solo, seeds 1–100, with the other §37.63 rules).
  */
 function spendDown(m, ps) {
   if (economyPlan(m, ps) || m.gd.leftoverKeptBands.includes(ps.bandId)) return;
@@ -1949,7 +1949,7 @@ export function* buyLoopSteps(m, ps, { fillOnly = false, maxRefreshes = 0, polic
     }
     // Do not cash a bank for a non-merge during the initial merge-only pass: the intervening level-up
     // could consume its refund before this pass is allowed to buy the target.
-    // §35.14: complete merges first, then the affordable floor, before any fill-only single can spend it.
+    // §37.14: complete merges first, then the affordable floor, before any fill-only single can spend it.
     const floorPending = advisor && advisorEconomy?.level > ps.shop.level && ps.funds >= Math.max(0, ps.shop.upgradePrice);
     if (advisor) for (const slot of ps.shop.slots) {
       if (!fillOnly || (!floorPending && ps.allChess().length < ps.deployCap) || (slot?.kind === 'chess' && ps.completesChessMerge(slot.id)))
@@ -2008,7 +2008,7 @@ export function* buyLoopSteps(m, ps, { fillOnly = false, maxRefreshes = 0, polic
         }
         if (boardFull && !merges && ps.funds - price < reserve) return; // banked (坎诺特)
         sc = buyScore(m, ps, s.id, ctx) - price;
-        // §35.63: a missing member of the focus core bond is bought even when one swap does not raise the lineup yet,
+        // §37.63: a missing member of the focus core bond is bought even when one swap does not raise the lineup yet,
         // while the bench keeps room for it and the members a later swap withdraws (3 free hand slots)
         const coreStep = !ctx.owned.bases.has(base) && countFree(ps.hand) >= 3 && (chessRec(m, s.id, ps)?.bonds || []).includes(ctx.focus)
           && !!coreGap(m, ctx.focus, ctx.owned);
@@ -2074,7 +2074,7 @@ export function* buyLoopSteps(m, ps, { fillOnly = false, maxRefreshes = 0, polic
 }
 
 /**
- * Maintainer 2026-10-19 (§35.13): expiring funds buy useful pieces, preserve unaffordable targets, search,
+ * Maintainer 2026-10-19 (§37.13): expiring funds buy useful pieces, preserve unaffordable targets, search,
  * then hold cheap spare pieces for their sale value. [ASSUMED] 64 actions per pass bound free/effect loops;
  * leave one bench slot for next round, never trade bank pieces merely to buy more bank pieces.
  * Uses the ordinary buy/refresh/freeze/sell primitives (same handlers as g.*), preserving shared pool accounting.

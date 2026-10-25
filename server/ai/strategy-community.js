@@ -128,7 +128,7 @@ export const COMMUNITY = {
       ],
     },
   ],
-  // §35.63: core bonds the 终极 community names against the two roaming Final Assault leaders (handoff/round51 RESEARCH
+  // §37.63: core bonds the 终极 community names against the two roaming Final Assault leaders (handoff/round51 RESEARCH
   // §5.1-§5.2). Bosses are matched by enemyKey so the 隐秘 copies (boss_8 … boss_10) count too.
   bossCounters: [
     { enemyKey: 'enemy_2016_csphtm', bonds: ['siracusaShip'], why: 'Not immune to fear: a Siracusa fear box keeps it circling inside the board.', // 卢西恩

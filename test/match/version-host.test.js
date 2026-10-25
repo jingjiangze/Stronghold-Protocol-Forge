@@ -1,4 +1,4 @@
-// test/match/version-host.test.js — the match hosts of the official versions (DESIGN §35.23, M1; server/match/host/
+// test/match/version-host.test.js — the match hosts of the official versions (DESIGN §37.23, M1; server/match/host/
 // kind 'version', server/versions.js): a version's matches run in a child process whose data singleton is that version's.
 //
 //   (a) an all-AI co-op 绝境 match of 第一期下半 (four AI seats, virtual time) ends: no engine error, the host reports the
@@ -227,9 +227,9 @@ test('(f) no official blackboard value of a version is over the cap of its own s
 });
 
 test('a test room of a version plays in its host: test commands through the proxy against that version\'s data', { timeout: 120_000 }, async () => {
-  // 第一期 solo preparation is the official 300 s (DESIGN §35.22.7). Under virtual time that prep ends during the
+  // 第一期 solo preparation is the official 300 s (DESIGN §37.22.7). Under virtual time that prep ends during the
   // first round trip and the next g.test is WRONG_PHASE. soloUnlimited holds the quiet phase for this item check.
-  // The room's 「不限时」 defaults off (§35.23.10), so this test still forces it through matchOptions.
+  // The room's 「不限时」 defaults off (§37.23.10), so this test still forces it through matchOptions.
   const versionHosts = createMatchHosts({ contents: versions, log: quiet, options: { kind: 'version', virtualTime: true, matchOptions: { botRehearsal: 0, soloUnlimited: true } } });
   const registry = new SessionRegistry();
   const lobby = new Lobby({ registry, log: quiet, content: { cs: vanilla.cs }, getData, versions, versionHosts, options: { testMode: '1', testHost: '127.0.0.1' } });

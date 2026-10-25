@@ -43,7 +43,7 @@ test('operators that number their default mode (attack.0 …) keep the earlier r
     { attack: P('p_atk_whtolfdrksl_n') });
 });
 
-// The #848 merge review (DESIGN §35.38): firstMatching orders numbered banks by depth, so 弑君者's S3 `attack.3` impact and S2
+// The #848 merge review (DESIGN §37.38): firstMatching orders numbered banks by depth, so 弑君者's S3 `attack.3` impact and S2
 // `attack.4` swing (plain-named) outranked her normal `attack.0.1`; 莱伊's S3 reload `attack.3` outranked `attack.0.3`. The default
 // mode's banks (attack.0, attack.0.N) now come first for an operator, as assignSkillModeSfx already counts them.
 test('弑君者 / 莱伊 / 望: the default mode\'s numbered banks (attack.0 …) beat a shallower skill-mode bank', () => {

@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-pudd.js — 布丁 (char_4004_pudd), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-pudd.js — 布丁 (char_4004_pudd), 第一期 (DESIGN §37.22.9).
 // The resting chain (count, falloff, sluggish) is the chain profile. S2 replaces it for the skill's attacks.
 
 import { num, statBuff, talentBb } from '../shared/tier1.js';

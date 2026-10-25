@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // tools/bb-audit.mjs — blackboard audit of another official version's data against the default (versions M0,
-// DESIGN §35.22.5, docs/SIM.md §7.2).
+// DESIGN §37.22.5, docs/SIM.md §7.2).
 //
 // The hand-written content reads blackboard fields with a default for a missing one (`num(bb.no_attack_duration, 10)`).
 // When another version's record lacks a field the default data has, that default — the 下半 meaning — silently applies
@@ -26,7 +26,7 @@
 //     atk_normal_equip / atk_golden_equip (read with default 0), so the gap looks neutral and the clause is inert. Not
 //     filtered by the reads: a field name the code reads elsewhere (silence, power_atk) is no proof its handler reads it.
 // Not seen by any class: a record whose text changed under the same keys and blackboard fields (下半 V2_1's 陈
-// 以己之长 reaches 高台 operators only, the code every operator as in V2_2); DESIGN §35.22.5 lists those by hand.
+// 以己之长 reaches 高台 operators only, the code every operator as in V2_2); DESIGN §37.22.5 lists those by hand.
 // Code reads: server/sim/content/**/*.js (but the operator kits, which read skill blackboards) and server/match/**/*.js
 // — `num|int|numOr(<expr>.<field>, <default>)`, `<expr>.<field> ?? <default>`, and plain mentions (`.field`,
 // `'field'`, no default). Field names are matched by name, so a read of the same name in another table is listed too.

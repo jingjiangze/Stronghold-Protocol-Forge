@@ -1,5 +1,5 @@
-// test/render/enemy-turn-clip.test.js — DESIGN §35.57: an attack-class skill cast in the attack's turn (server/sim/content/
-// enemies.js attackTurnSkill: §35.19 / §35.29 / §35.52; the sim sends ['cast', id, slot, dur, clip] and no 'atk') plays
+// test/render/enemy-turn-clip.test.js — DESIGN §37.57: an attack-class skill cast in the attack's turn (server/sim/content/
+// enemies.js attackTurnSkill: §37.19 / §37.29 / §37.52; the sim sends ['cast', id, slot, dur, clip] and no 'atk') plays
 // its slot's official clip once in place of the attack — 迷路的巨像 StunAttack `Skill` 2.333 s, 鼠王 唱沙 `Skill_1`,
 // 昆图斯's tide `Skill_02` —, or the attack clip when its ability names none (clip 0: 重弩突袭者's 直击). Until then the
 // swing it replaced showed nothing (the model stood idle). Real manifest entries, headless fake PIXI.

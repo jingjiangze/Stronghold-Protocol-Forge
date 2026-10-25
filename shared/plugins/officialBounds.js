@@ -200,7 +200,7 @@ export function exportOfficialBounds(bounds) {
 
 /**
  * The snapshot of `data`'s official maxima (exportOfficialBounds of a fresh scan) — an official version's own bounds
- * (DESIGN §35.23: its match host and its pages install them). Never reads or fills the cache.
+ * (DESIGN §37.23: its match host and its pages install them). Never reads or fills the cache.
  * @param {object} data
  */
 export function officialBoundsOf(data) {

@@ -100,7 +100,7 @@ test('the outfit a seat card wears (decision 4 of 2026-10-21): one\'s own choice
   assert.equal(chessPortraitUrl(without, rec, { skin: seatCardSkin(mate, OP, ctx) }), '/p/skadi_2.png');
 });
 
-test('a picture that fails to load: the outfit gives way to the default portrait, that to the avatar frame (§35.18)', () => {
+test('a picture that fails to load: the outfit gives way to the default portrait, that to the avatar frame (§37.18)', () => {
   const OUTFIT = '/assets/chars/outfit.png';
   const PLAIN = '/assets/chars/plain.png';
   assert.equal(seatArtSrc([OUTFIT, PLAIN]), OUTFIT, 'the outfit first');
@@ -134,14 +134,14 @@ test('room.css: the seat cards and the picker follow 文字大小, no !important
   const block = readFileSync(path.join(ROOT, 'public/css/screens/room.css'), 'utf8');
   const sizes = [...block.matchAll(/font-size:\s*([^;}]+)[;}]/g)].map((m) => m[1].trim());
   assert.ok(sizes.length >= 30, sizes.join(' | '));
-  // (a capped size still follows 文字大小 below the cap — §35.18 review: the room's big button, and on a short screen the
+  // (a capped size still follows 文字大小 below the cap — §37.18 review: the room's big button, and on a short screen the
   // seat cards, the top bar's text, the status line, 独立模拟's briefing and the picker's names)
   const STEP_CAP = /^calc\((\d+)px \+ var\(--t-step\)( \/ 2)?\)$/;
   for (const v of sizes) assert.match(v, /^(calc\(\.\d+ \* var\(--t\)\)|min\(calc\(\.\d+ \* var\(--t\)\), (\.\d+rem|\d+px|calc\(\d+px \+ var\(--t-step\)( \/ 2)?\))\))$/, v);
   const caps = sizes.filter((v) => v.startsWith('min('));
   assert.ok(caps.length >= 19, `the GoButton's label, rook and mark, and the short screen's caps (${caps.length})`);
   // the short screen's px caps keep the text readable (11–20 px at 中) and still grow above 中 (+ --t-step, theme.css;
-  // §35.18 review: 中, 大 and 特大 had been the same) — but the picker's 11 px names, which reach it only at 特大
+  // §37.18 review: 中, 大 and 特大 had been the same) — but the picker's 11 px names, which reach it only at 特大
   for (const v of caps) {
     const cap = v.slice(v.indexOf('), ') + 3, -1);
     if (/rem$/.test(cap)) continue;
@@ -152,7 +152,7 @@ test('room.css: the seat cards and the picker follow 文字大小, no !important
   assert.ok(!/!important/.test(block) && !/:has\(/.test(block));
   assert.match(block, /\.rseat__art img \{[^}]*object-fit: cover/);
   assert.match(block, /\.cardpick__grid[\s\S]*overflow-y: auto/);
-  // the review of the text-fit fixes (§35.18): Korean breaks between words; the short screen's avatar frame 2rem at 小 and
+  // the review of the text-fit fixes (§37.18): Korean breaks between words; the short screen's avatar frame 2rem at 小 and
   // smaller only as the text grows (not 1rem at every size); 复制's line height after `font` (which resets it); the phone
   // footer's status and pill at the start; 独立模拟's card 2.7 × --t (2.7rem at 小, as before)
   const plain = block.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -192,7 +192,7 @@ test('room.css: the seat cards and the picker follow 文字大小, no !important
   assert.match(short, /\.rseat__state \{ gap: 3px; margin-inline: -2px;/);
   assert.match(short, /\.rseat__box \{ width: 16px; height: 16px; \}/);
   assert.match(short, /\.rseat__who \.seat__you \{ display: none; \}/);
-  // §35.51: on a phone at least 370 px tall a long name takes two lines (then its ellipsis), every plate two lines tall
+  // §37.51: on a phone at least 370 px tall a long name takes two lines (then its ellipsis), every plate two lines tall
   assert.match(plain, /@media \(max-height: 520px\) and \(min-height: 370px\) \{\n  \.rseat__plate/);
   assert.match(short, /\.rseat__who \.seat__name \{ white-space: normal;[^}]*-webkit-line-clamp: 2;/);
   assert.match(short, /\.rseat__plate \{ min-height: max\(32px, calc\(36px \* var\(--sp-ui, 1\)\), calc\(2\.2 \* min\(calc\(\.28 \* var\(--t\)\), calc\(18px \+ var\(--t-step\) \/ 2\)\) \+ 8px\)\); \}/);
@@ -209,7 +209,7 @@ test('room.css: the seat cards and the picker follow 文字大小, no !important
   assert.match(short, /\.rs-key__copy:lang\(en\) \{ padding-bottom: calc\(2 \* max\(0px, var\(--t-step\)\)\); \}/);
   assert.match(readFileSync(path.join(ROOT, 'public/js/screens/room.js'), 'utf8'), /\} <span class="num t-dim">\$\{info\.code\}<\/span><\/h2>/,
     'the space before the code outside its nowrap span, so the title can still break there');
-  // the ping pill grows in the room only (§35.18 review: a global min-height outgrew title.css's own height)
+  // the ping pill grows in the room only (§37.18 review: a global min-height outgrew title.css's own height)
   assert.match(plain, /\.rs-clock__ping \.ping \{ height: auto; min-height: \.32rem;/);
   assert.match(readFileSync(path.join(ROOT, 'public/css/components.css'), 'utf8'), /\.ping \{[^}]*\n  height: \.32rem;/);
   // the plugin mode's chip beside the mode name (review of PR #813: its only rule had been deleted)

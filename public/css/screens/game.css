@@ -117,7 +117,7 @@
 .gtop__rules { max-width: 3.4rem; font-size: calc(.11 * var(--t)); line-height: 1.4; color: var(--text-md); overflow-wrap: anywhere; }
 /* the latency pill and, beside it, the 观战席 capsule (ui/hud.js SpectatorPill: an eye + how many are watching; opens the roster) */
 .gtop__net { display: flex; align-items: center; gap: .08rem; }
-/* the ping pill as tall as its value at a big 文字大小 (§35.51: cut 1 px at 特大 on the phones), as in the room and the hub */
+/* the ping pill as tall as its value at a big 文字大小 (§37.51: cut 1 px at 特大 on the phones), as in the room and the hub */
 .gtop__net .ping { height: auto; min-height: .32rem; padding-top: 1px; padding-bottom: 1px; }
 .specpill { --btn-bg: rgba(0, 0, 0, .5); --btn-bg-hover: rgba(0, 0, 0, .66); --btn-bd: var(--line); height: .32rem; min-width: 0; padding: 0 .12rem; gap: .05rem; border-radius: 99px; }
 .specpill .btn__icon { width: .18rem; height: .18rem; color: var(--mint-500); }
@@ -184,7 +184,7 @@
 /* a narrow screen (phone landscape 640×360 / 667×375: the root at its 40 px floor): the halves shrink to their content,
    so a boss round's wide capsule leaves room for the corners (the exit, latency and 观战席 pills at the left; the solo
    clock and pause at the right). The deco type's text stand-in (no art pack) is wider than the sprites it stands in for
-   and ran into itself over the narrowed band (§35.18's leftover): it gives way there — decoration only, aria-hidden; the
+   and ran into itself over the narrowed band (§37.18's leftover): it gives way there — decoration only, aria-hidden; the
    official sprites fit and stay */
 @media (max-width: 767px) {
   .gtop__band { grid-template-columns: minmax(1.2rem, auto) auto minmax(1.2rem, auto); }

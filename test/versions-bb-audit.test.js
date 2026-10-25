@@ -136,13 +136,13 @@ const VERSION_ONLY_SHANG = Object.freeze(Object.entries({
 }).map(([key, spec]) => ({ key, records: rec(spec) })));
 // 第二期上半 V2_1's 远见 (visiShip) carries two discount keys no code reads, bond_layer_char_goods_price_bond_discount
 // (V2_1 only) and bond_layer_char_goods_price_discount (also 上半's 100-layer key), not V2_2's
-// bond_multi_layer_char_goods_price_bond_discount: its 80 / 150-layer discounts are inert there until M2 (DESIGN §35.22.5).
+// bond_multi_layer_char_goods_price_bond_discount: its 80 / 150-layer discounts are inert there until M2 (DESIGN §37.22.5).
 const VERSION_ONLY_V21 = Object.freeze(Object.entries({
   bond_layer_char_goods_price_bond_discount: 'bonds: visiShip | effects: bondeffect_visi',
   bond_layer_char_goods_price_discount: 'bonds: visiShip | effects: bondeffect_visi',
 }).map(([key, spec]) => ({ key, records: rec(spec) })));
 // 上半's fields under keys and buffs 下半 also has (versionOnlyFields), each checked against the code:
-//   inert until M2 (DESIGN §35.22.5) — 维多利亚's 6-member power_atk 0.8 (the code reads 下半's atk_normal_equip /
+//   inert until M2 (DESIGN §37.22.5) — 维多利亚's 6-member power_atk 0.8 (the code reads 下半's atk_normal_equip /
 //     atk_golden_equip), 精准's 3-member 失能 silence 2 s (bonds/addon/battle.js applies only the penetration), 突袭's
 //     30-layer power_respawn_time / power_cost_scale (the code reads 下半's power_attack_speed); the bond records and
 //     their effect mirrors; and 坚守 garrison_69's row gate check_count 3 under SERVER_ADD_BOND (garrisons/meta.js runs

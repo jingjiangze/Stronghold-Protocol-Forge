@@ -122,7 +122,7 @@ export function grantHitShield(battle, enemy, count) {
  * slot's skill clip, render/vfx/skillfx.js: that skill's official effects for the window). `turnClip` (s, ≥ 0): an
  * attack-class skill cast in the attack's turn (enemies.js attackTurnSkill) — ['cast', id, slot, dur, clip], the
  * length of its official clip, 0 when its ability names none: the client plays that clip (or the attack clip) in
- * place of the attack (render/units.js UnitView.onCast; DESIGN §35.57). No gameplay effect: no state, no random draw
+ * place of the attack (render/units.js UnitView.onCast; DESIGN §37.57). No gameplay effect: no state, no random draw
  * (DESIGN §8.2; golden counts the event, nothing else moves).
  */
 export function castSlot(b, e, s, turnClip = null) {
@@ -134,7 +134,7 @@ export function castSlot(b, e, s, turnClip = null) {
 
 /**
  * The attack-class skills of the non-leader enemies and bounty leaders that run on a cooldown (the boss records' leaders
- * and parts: bosses.js ATTACK_SKILL_CLIP; DESIGN §35.29 / §35.52): enemy key → skill prefabKey → the length in s of the
+ * and parts: bosses.js ATTACK_SKILL_CLIP; DESIGN §37.29 / §37.52): enemy key → skill prefabKey → the length in s of the
  * clip its official ability plays (fx/index.json units.<key>.skills.<prefabKey>.abilities[].animKey → data/assets.json
  * enemies.<key>.spine.animations), 0 when the ability names no clip. The class of each official ability (from the
  * client's `battle/enm_pfb_*.ab`): 重弩突袭者 `CrossAttack` RangedAttack; 萨卡兹王庭军精锐术师 `DeathEye` an AbilitySequenceGroup
@@ -402,7 +402,7 @@ export function setHits(e, n) {
 
 const HIT_COUNT_KEY = 'ab:hitCount';
 
-/** 频次 on/off: every damage instance removes exactly 1 HP (engine flag; `artsOnly` = 茶器: only arts and true instances remove 1, phys and 元素伤害 remove 0 — DESIGN §35.32, PRTS 青瓷茶器). */
+/** 频次 on/off: every damage instance removes exactly 1 HP (engine flag; `artsOnly` = 茶器: only arts and true instances remove 1, phys and 元素伤害 remove 0 — DESIGN §37.32, PRTS 青瓷茶器). */
 export function hitCount(b, e, on, artsOnly = false) {
   if (!on) { b.removeBuff(e, HIT_COUNT_KEY); return; }
   b.addBuff(e, { key: HIT_COUNT_KEY, persist: true, flags: artsOnly ? { hitCountArts: true } : { hitCount: true } });

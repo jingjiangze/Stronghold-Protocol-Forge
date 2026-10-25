@@ -1,4 +1,4 @@
-// test/versions-service.test.js — the official versions a server offers (DESIGN §35.23, M1; server/versions.js): each
+// test/versions-service.test.js — the official versions a server offers (DESIGN §37.23, M1; server/versions.js): each
 // version's cs (contentHashOf of the vanilla code and its own data), its manifest and bounds, the match hosts' view, and
 // nothing for a version the server does not enable.
 

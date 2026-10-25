@@ -216,7 +216,7 @@ describe('field view features in headless Chrome', { skip }, () => {
       for (const k of ['battleStart', 'battle']) {
         assert.deepEqual(r[k].band, [6, 13], `${k}: no pen rows`);
         if (r.board3d) assert.equal(r[k].area, FIELD, `${k}: no pen block`);
-        // #595 / §35.69: 3D S/E gates belong to the whole grid even when the pen block is absent.
+        // #595 / §37.69: 3D S/E gates belong to the whole grid even when the pen block is absent.
         // The 2D fallback still collects boxes only from its drawn rows. Boss isolation is checked below.
         assert.deepEqual(r[k].gates, r.board3d ? ['15,7', '18,7'] : [], `${k}: gates follow the board renderer`);
         assert.equal(r[k].visible, 0, `${k}: no pen figure`);

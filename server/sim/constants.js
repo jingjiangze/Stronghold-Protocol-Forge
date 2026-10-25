@@ -142,7 +142,7 @@ export const PALSY_MAX = 3;
  * PRTS 推与拉 gives two columns of 理想移动距离: 弹道 (a push carried by a projectile — "温蒂的23技能、阿消的12技能"; equal
  * to the 游戏数据基础 table above) and 特效 (an effect push, one frame less of travel — "食铁兽的12技能、见行者的12技能"):
  * PUSH_TILES_EFFECT, used by the skills in PUSH_EFFECT_SKILLS (见行者 S1 护身射击 / S2 惊爆射击, the only 特效 pushers of
- * the pool PRTS names). 野鬃 S2 rear hits also use the effect column: #782's official recordings, DESIGN §35.10.
+ * the pool PRTS names). 野鬃 S2 rear hits also use the effect column: #782's official recordings, DESIGN §37.10.
  * [ASSUMED: all remaining pushes of the pool (including 野鬃's front/side hits, unchanged by #782's scope) use
  * the 弹道 column — PRTS does not classify them; rear-only classification is not established by the footage.]
  */

@@ -90,7 +90,7 @@ for (const script of ['process.exit(1)', 'process.stdin.on("data",()=>process.st
   });
 }
 
-// §35.62: replies after `delay` ms, in any order; the child stays up between requests.
+// §37.62: replies after `delay` ms, in any order; the child stays up between requests.
 const ECHO = 'let b="";process.stdin.on("data",d=>{b+=d;let i;while((i=b.indexOf("\\n"))>=0){const o=JSON.parse(b.slice(0,i));b=b.slice(i+1);'
   + 'setTimeout(()=>process.stdout.write(JSON.stringify({id:o.id,done:true})+"\\n"),o.delay||0)}})';
 

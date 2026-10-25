@@ -302,7 +302,7 @@ function phaseOfModeName(name) {
  * `p_imp_sword_n` is that mode's sound, while 银灰's S3 swing `p_atk_silver_n` (no plain swing bank to compare with)
  * still stays out. Judged per kind (swing / impact); without the local fx mode links nothing is assigned, as before.
  * Such a plain bank only fills a skill no lettered bank fills, and only for the skill's own mode, never as a phase
- * fill (PR #848 review, DESIGN §35.38).
+ * fill (PR #848 review, DESIGN §37.38).
  *
  * @param {Map<string,string[]>|undefined} banks unit bank table (indexAudio().unitBanks)
  * @param {{index:number, skillId?:string|null, mode?:number|null, start?:string|null}[]} skills planned skills
@@ -504,7 +504,7 @@ export function pickUnitSfx(banks, opts = {}) {
   // operators: the plain ability of either event before any numbered variant, then the default mode's banks (attack.0,
   // attack.0.1 …) before any other number — firstMatching orders by depth, so 弑君者's S3 `attack.3` (p_imp_asndgrsmk) and S2
   // `attack.4` (p_atk_asndgrbm) outranked her normal `attack.0.1` / `attack.0.2` (p_*_asndgr_n) and rang on every normal
-  // attack; 望 / 莱伊 / 灰毫 kept a skill's START swing over their mode-0 ON swing (the #848 merge review, DESIGN §35.38;
+  // attack; 望 / 莱伊 / 灰毫 kept a skill's START swing over their mode-0 ON swing (the #848 merge review, DESIGN §37.38;
   // assignSkillModeSfx already counts every mode 0 bank as the normal attack)
   const mode0 = (event) => {
     if (!opts.operator) return null;

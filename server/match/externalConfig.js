@@ -1,6 +1,6 @@
 // Maintainer decision 2026-10-17, requested 2026-10-19: external observation → human intents as a #673 strategy.
 // [ASSUMED] Protocol/resource policy (not official gameplay): defaults and bounds documented in EXTERNAL_AI.md.
-// §35.23: timeoutMs up to 300000 so a reasoning model can answer a long prep; the budget stays half the phase.
+// §37.23: timeoutMs up to 300000 so a reasoning model can answer a long prep; the budget stays half the phase.
 export const EXTERNAL_DEFAULTS = Object.freeze({ timeoutMs: 1000, maxIntents: 64, maxBytes: 65536, failureLimit: 3, backoffMs: 1000, mode: 'direct', language: 'zh-CN' });
 
 export function externalConfig(input, env = process.env, replay = false) {

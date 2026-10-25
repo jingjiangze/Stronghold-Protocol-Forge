@@ -1,4 +1,4 @@
-// §35.20. Optional installed art is read at runtime, never copied into test fixtures.
+// §37.20. Optional installed art is read at runtime, never copied into test fixtures.
 // SP_E2E=1 CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" node --test test/render/skill-attack-candidates.browser.test.js
 // RENDER_E2E=1 is an equivalent gate. SP_CLIP_SHOTS=<dir> additionally saves one PNG per case there.
 import { test, describe, before, after } from 'node:test';

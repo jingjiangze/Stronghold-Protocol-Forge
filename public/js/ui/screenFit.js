@@ -10,20 +10,20 @@
 // board is sized from its host element) and computes the layout root 1rem from it instead of the whole viewport. Fixed
 // overlays (dialogs, toasts) keep the full screen.
 //
-// 界面大小 (0.3.2, DESIGN §35.43; reworked from PR #838 by @zasx77771): the same section's last row, a manual size of the
+// 界面大小 (0.3.2, DESIGN §37.43; reworked from PR #838 by @zasx77771): the same section's last row, a manual size of the
 // whole interface, 75–100 % in 5 % steps, default 100 % — never automatic, and nothing reads visualViewport (the soft
 // keyboard would shrink the UI). Stored with the edges (`ui`, a percentage). Applied as --sp-ui on <html> (only while it is
 // not 100 %): theme.css / devices.css multiply the layout root by it, and every max(rem, px) floor in public/css carries
 // it — a size floor never below min(its px, 32 px), so touch targets ≥ 32 px stay ≥ 32 px; the text floors (font-size px
 // floors, the 文字大小 --t floors of 中 / 大 / 特大) never shrink, while 小's text (1rem, no floor) follows the layout
-// (test/ui/ui-size.test.js). Above 100 % is not offered [ASSUMED]: measured on the §35.18 phones it overlaps the
-// screens (the hub's 成就统计 under the mode cards at 150 %), and larger text is what 文字大小 is for (DESIGN §35.43).
+// (test/ui/ui-size.test.js). Above 100 % is not offered [ASSUMED]: measured on the §37.18 phones it overlaps the
+// screens (the hub's 成就统计 under the mode cards at 150 %), and larger text is what 文字大小 is for (DESIGN §37.43).
 // Only at 文字大小 小: the kept 64 / 76 / 88 px text floors of 中 and above outgrew their shrinking boxes (clipped labels,
 // the merge review of 2026-10-23), so there the row is disabled and the interface stays at 100 % — the stored size is
 // kept and applies again at 小 (effectiveUi). While the slider is dragged only its reading follows; the size applies on
 // release (`pointerup` or `change`), so the settings modal does not resize the track under the finger. The reading is
 // dropped on pointercancel / blur and by −, + and 重置, and ignored once the stored size changes (Chrome fires no
-// `change` when a drag ends on its start value; a touch drag can turn into a scroll — DESIGN §35.45).
+// `change` when a drag ends on its start value; a touch drag can turn into a scroll — DESIGN §37.45).
 
 import { useState } from '../../vendor/hooks.module.js';
 import { html, Button, MicroLabel } from './components.js';
@@ -34,7 +34,7 @@ import { t, N_ } from '../../../shared/i18n.js';
 export const FIT_SIDES = ['l', 'r', 't', 'b'];
 /** Pixel offset range (inward positive) and the slider scale: value = MID + px / PX_PER_STEP. */
 export const FIT_MIN = -100, FIT_MAX = 100, MID = 50, PX_PER_STEP = 2;
-/** 界面大小: percent of the design's size — the slider's range and step ([ASSUMED], DESIGN §35.43). */
+/** 界面大小: percent of the design's size — the slider's range and step ([ASSUMED], DESIGN §37.43). */
 export const UI_MIN = 75, UI_MAX = 100, UI_STEP = 5;
 const NONE = { l: 0, r: 0, t: 0, b: 0, ui: 100 };
 
@@ -114,7 +114,7 @@ export function ScreenFitSection() {
   // applies only a new size: a plain click on the thumb, or the `change` after a `pointerup` that already applied it,
   // stores nothing and re-measures nothing (applyFit sends a window resize). Nothing at all while the row is disabled:
   // Chrome still sends pointerup to a disabled range, whose value is the shown 100, and the stored size must survive
-  // 中 and above (DESIGN §35.47).
+  // 中 and above (DESIGN §37.47).
   const setUi = (v) => { setPreview(null); if (allowed && sanitizeUi(v) !== ui) updateFit({ ui: Number(v) }); };
   const any = FIT_SIDES.some((k) => f[k] !== 0) || ui !== 100;
   return html`<section class="set-fit" aria-labelledby="set-fit-title" data-testid="screen-fit">

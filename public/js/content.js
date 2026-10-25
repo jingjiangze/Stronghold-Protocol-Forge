@@ -38,7 +38,7 @@
 //     its seat shows it not ready — a reconnect); a check that fails is said once (a toast) and told too ({ ok: false }).
 //     Leaving the room, or a room back on the original content, gives data.js the server's files again. One content set
 //     at a time (contentSet: its state for the screens — loading with its progress, ready, failed).
-//   * Official versions (DESIGN §35.23, M1; versions.js): the version the page shows — the lobby's choice, a room's
+//   * Official versions (DESIGN §37.23, M1; versions.js): the version the page shows — the lobby's choice, a room's
 //     version — when it is not 第二期下半 is loaded the same way (loadVersionSet): the version's /cs/<cs16>/index.json
 //     (`vanilla: true`, its `version` the id expected, no plugins, no settings), every data file it lists — under
 //     /data/versions/<slug>/ only — and its official-bounds snapshot, each file's bytes against its entry, the manifest's
@@ -399,7 +399,7 @@ export const CONTENT_TIMEOUT_MS = 60000;
 const CONTENT_PARALLEL = 4;
 /** What the page says (once) when the room's content set will not load or check. */
 const CONTENT_FAILED = N_('房间的插件内容未能通过校验，请刷新页面重试');
-/** What the page says (once per set) when an official version's data will not load or check (DESIGN §35.23). */
+/** What the page says (once per set) when an official version's data will not load or check (DESIGN §37.23). */
 const VERSION_FAILED = N_('版本数据未能通过校验，请刷新页面重试');
 /** Checked version sets kept for a lobby ⇄ room round trip (header "Official versions"). */
 export const VERSION_CACHE = 2;

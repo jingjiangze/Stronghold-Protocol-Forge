@@ -242,7 +242,7 @@ test('成就统计 card: the lobby’s only statistics entry (no top-bar 统计�
   assert.match(lobbySrc, /achOpen \? html`<\$\{AchievementDialog\} onClose=/);
   assert.doesNotMatch(lobbySrc, /openStats/, 'the 统计数据 page opens from the window’s 查看完整统计 only');
   assert.doesNotMatch(lobbySrc, /stats-entry|me-chip/, 'the top-bar chip is gone');
-  // (the season of the version shown: DESIGN §35.23 — every record on a server without versions)
+  // (the season of the version shown: DESIGN §37.23 — every record on a server without versions)
   assert.match(lobbySrc, /const records = recordsOfSeason\(peekStatsRecords\(\), season\);\s*return \{ prog: levelProgress\(records/);
   assert.match(lobbySrc, /trophies: aggregateStats\(records\)\.trophies/, 'the same trophy count as the window’s 获得奖杯');
   assert.match(lobbySrc, /\[cfg, statsOpen, season\]/, 'read again when 统计数据 closes (an import or 清空 there) or the version changes');
@@ -278,7 +278,7 @@ test('成就统计 window (screens/stats.js AchievementDialog): the project Moda
 });
 
 test('选择同盟方式 creates the room itself: the lobby never stacks 选择模拟协议 for a 同盟', () => {
-  // (the remembered difficulty, or the server's fallback when the lobby's version lacks it: DESIGN §35.23)
+  // (the remembered difficulty, or the server's fallback when the lobby's version lacks it: DESIGN §37.23)
   assert.match(lobbySrc, /onCreate=\$\{\(\) => create\('coop'\)\} difficulty=\$\{shownCoop\}/);
   assert.match(lobbySrc, /onCreate=\$\{\(\) => create\('solo'\)\}/);
   assert.doesNotMatch(lobbySrc, /setProtocol\('coop'\)/);
@@ -300,7 +300,7 @@ test('lobby.css: text follows 文字大小 (var(--t)), no !important, no :has()'
   assert.doesNotMatch(lobbyCss, /:has\(/);
 });
 
-test('选择同盟方式 on a short screen (≤ 520 px tall): 创建同盟 keeps its difficulty line under the name, the column fits or scrolls (§35.18)', () => {
+test('选择同盟方式 on a short screen (≤ 520 px tall): 创建同盟 keeps its difficulty line under the name, the column fits or scrolls (§37.18)', () => {
   // the name is an element of its own, so the icon and the name stay on the first row (a bare text node became a
   // flex item that wrapped under the icon in English at 大 — the 2026-10-22 review)
   const bar = byClass(find(ally({ difficulty: 'HARD' }), (x) => x.props?.['data-testid'] === 'alliance-create')[0], 'ally-card__bar')[0];
@@ -335,10 +335,10 @@ function shortBlock() {
   return css.slice(at, end);
 }
 
-test('选择模拟协议 on a short screen (§35.18 leftover: at 文字大小 中+ the cards ran under 开始独立模拟): one-line cards, the description in the brief, capped header and label', () => {
+test('选择模拟协议 on a short screen (§37.18 leftover: at 文字大小 中+ the cards ran under 开始独立模拟): one-line cards, the description in the brief, capped header and label', () => {
   const short = shortBlock();
   // ÷ --sp-ui: under 界面大小 the column and the brief keep their unscaled widths (the 16 / 11 px text floors and the px
-  // paddings do not shrink; DESIGN §35.47, the browser case in screen-fit.e2e)
+  // paddings do not shrink; DESIGN §37.47, the browser case in screen-fit.e2e)
   assert.match(short, /\.proto-body \{ grid-template-columns: minmax\(0, 1fr\) min\(calc\(7\.4rem \/ var\(--sp-ui, 1\)\), 50vw\);/, 'the column as wide as 选择同盟方式\'s');
   assert.match(short, /\.ally-body \{ grid-template-columns: minmax\(0, 1fr\) min\(calc\(7\.4rem \/ var\(--sp-ui, 1\)\), 54vw\); \}/);
   assert.match(short, /\.proto-brief \{ max-width: min\(calc\(6\.4rem \/ var\(--sp-ui, 1\)\), 100%\);/);
@@ -402,7 +402,7 @@ function mediaBlock(query) {
   return css.slice(at, end);
 }
 
-test('选择模拟协议 above 520 px tall (§35.18 leftover: the label cut, the cards under the button at 大 / 特大): the label wraps and stops at .46rem, the cards fit by levels', async () => {
+test('选择模拟协议 above 520 px tall (§37.18 leftover: the label cut, the cards under the button at 大 / 特大): the label wraps and stops at .46rem, the cards fit by levels', async () => {
   const { pickCardFit, CARD_FIT_LEVELS } = await import('../../public/js/screens/lobby.js');
   // the first level whose cards do not spill; the last when none fits (the list then scrolls)
   assert.deepEqual(CARD_FIT_LEVELS, ['full', 'brief', 'names']);
@@ -465,7 +465,7 @@ test('选择模拟协议 above 520 px tall (§35.18 leftover: the label cut, the
   assert.match(lobbyCss, /\[ASSUMED\] the\n {3}floor \*\//);
 });
 
-test('the room\'s 开始模拟 / 准备就绪 (screens/room.js GoButton, `.proto-start rs-go`) chooses its own label (§35.18 review: 选择模拟协议\'s wrapping label reached it, and its fixed 46 px on a phone cut every line)', () => {
+test('the room\'s 开始模拟 / 准备就绪 (screens/room.js GoButton, `.proto-start rs-go`) chooses its own label (§37.18 review: 选择模拟协议\'s wrapping label reached it, and its fixed 46 px on a phone cut every line)', () => {
   const css = roomCss.replace(/\/\*[\s\S]*?\*\//g, '');
   const at = css.indexOf('@media (max-height: 520px) {');
   const base = css.slice(0, at);
@@ -491,7 +491,7 @@ test('the room\'s 开始模拟 / 准备就绪 (screens/room.js GoButton, `.proto
   assert.match(roomCss, /\[ASSUMED\] the cap \*\//);
 });
 
-test('选择同盟方式 on a short screen (§35.18 leftover: the key field\'s placeholder ran under 观战 at 特大): the field\'s name as the placeholder, capped sizes', async () => {
+test('选择同盟方式 on a short screen (§37.18 leftover: the key field\'s placeholder ran under 观战 at 特大): the field\'s name as the placeholder, capped sizes', async () => {
   const field = (props) => find(ally(props), (x) => x.type === TextField)[0];
   assert.equal(field({}).props.placeholder, '输入同盟密钥 / 粘贴邀请链接', 'the whole sentence on a taller screen');
   assert.equal(field({}).props.placeholderShort, '同盟密钥', '… the field\'s name where it does not fit the field (TextField, by its width)');
@@ -511,7 +511,7 @@ test('选择同盟方式 on a short screen (§35.18 leftover: the key field\'s p
   assert.match(readFileSync(path.join(ROOT, 'public/js/ui/device.js'), 'utf8'), /m\.addEventListener\('change', sync\); return \(\) => m\.removeEventListener\('change', sync\);/);
 });
 
-test('the hub keeps its text whole (§35.18 review: English 「Solo / Team Simulation」 cut by the cards at 小): the name wraps in a card that follows 文字大小, the plate labels wrap beside their glyph, the title follows 文字大小 while it fits on one line; on a short screen 128 px cards and caps that still grow a step', () => {
+test('the hub keeps its text whole (§37.18 review: English 「Solo / Team Simulation」 cut by the cards at 小): the name wraps in a card that follows 文字大小, the plate labels wrap beside their glyph, the title follows 文字大小 while it fits on one line; on a short screen 128 px cards and caps that still grow a step', () => {
   const css = lobbyCss.replace(/\/\*[\s\S]*?\*\//g, '');
   const rule = (sel) => css.match(new RegExp(`\\n${sel.replace(/[.*()]/g, '\\$&')} \\{[^}]*\\}`))?.[0] || '';
   // the card, its icon and its name follow 文字大小 together (review: the names had been pinned at 小's .3rem)
@@ -532,7 +532,7 @@ test('the hub keeps its text whole (§35.18 review: English 「Solo / Team Simul
   assert.match(css, /\.lobby-hub:lang\(ja\) \.hub-stage \{ line-break: strict; \}/, 'no line starts with a small kana or ー');
   // a last line not a single character: `pretty` on the tips, the protocol dialog's paragraphs and its big button's label;
   // not on the whole lobby nor every dialog (WebKit's `pretty` adds lines to short labels; the other
-  // dialogs not measured); the dialogs' Japanese strict as the room's and the hub's (§35.18 review of the review). The
+  // dialogs not measured); the dialogs' Japanese strict as the room's and the hub's (§37.18 review of the review). The
   // room's big button shares the label's class and wraps plainly: in Safari `pretty` broke its 「シミュレー|ション開始」
   // at 小 on the phones (review of 6f34f380)
   assert.match(css, /\.tips__text, \.proto-brief p, \.proto-hint, \.proto-foot \.proto-start__label \{ text-wrap: pretty; \}/);
@@ -586,7 +586,7 @@ test('the hub keeps its text whole (§35.18 review: English 「Solo / Team Simul
   assert.match(readFileSync(path.join(ROOT, 'public/css/theme.css'), 'utf8'), /:root \{ --t-step: calc\(\(var\(--t\) - 64px\) \/ 12\); \}/);
 });
 
-test('official versions (DESIGN §35.23): the cards of the version shown, the wait while it loads, room.create names the version', () => {
+test('official versions (DESIGN §37.23): the cards of the version shown, the wait while it loads, room.create names the version', () => {
   // 第一期 / 第二期上半 offer three difficulties: the cards follow (versions.js offeredDifficulties)
   const three = proto({ difficulty: 'HARD', difficulties: ['FUNNY', 'NORMAL', 'HARD'] });
   assert.deepEqual(byClass(three, 'diff-card').map((c) => c.props.style.match(/--d-color:(#\w+)/)[1]).length, 3);

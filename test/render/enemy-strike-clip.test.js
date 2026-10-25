@@ -1,4 +1,4 @@
-// test/render/enemy-strike-clip.test.js — DESIGN §35.48: an enemy's attack-class skill (the sim casts it in its attack's
+// test/render/enemy-strike-clip.test.js — DESIGN §37.48: an enemy's attack-class skill (the sim casts it in its attack's
 // `before` hook: ['cast', id, slot] then that attack's 'atk' in the same tick, no skill window) plays its slot's official
 // clip in place of the attack clip when the slot is a `strike` (data/assets.json anims.skills, tools/assets/spine.mjs
 // PREFAB_SPINE_ROLES): 杰斯顿·威廉姆斯 C1_Skill / C2_Skill, “碎铳之簧” Skill_b / Skill_c. 锏's second form keeps its slot clips

@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-wanqin.js — 万顷 (char_4119_wanqin), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-wanqin.js — 万顷 (char_4119_wanqin), 第一期 (DESIGN §37.22.9).
 // Block count 0 during a skill is the bearer profile. The front ally's +block is the trait blackboard.
 
 import { RING1, alliesInGridOf, num, talentBb, traitBb, up } from '../shared/tier1.js';

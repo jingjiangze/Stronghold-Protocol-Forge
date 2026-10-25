@@ -1,4 +1,4 @@
-// Maintainer 2026-10-19 / §35.9. [ASSUMED] Bounded, optional preferences, never a new gameplay rule.
+// Maintainer 2026-10-19 / §37.9. [ASSUMED] Bounded, optional preferences, never a new gameplay rule.
 // Keep this module independent of bot.js so the #673 legacy adapter remains usable without external IO.
 const object = x => !!x && typeof x === 'object' && !Array.isArray(x);
 const keys = (x, allowed) => object(x) && Object.keys(x).every(k => allowed.includes(k));
@@ -16,7 +16,7 @@ export function validPlan(p) {
       || Object.entries(e).some(([k, v]) => ['saveForInterest', 'holdLevel', 'freezeSearch'].includes(k) ? typeof v !== 'boolean'
         : k === 'why' ? typeof v !== 'string' || !v.trim() || v.length > 360
           : !integer(v, k === 'level' ? 6 : k === 'maxRefreshes' ? 16 : 100))) return false;
-    // Maintainer 2026-10-19 (§35.13): holding a low-level build is deliberate, with a stated reason.
+    // Maintainer 2026-10-19 (§37.13): holding a low-level build is deliberate, with a stated reason.
     if (e.holdLevel && (!(e.level >= 1) || !e.why?.trim())) return false;
   }
   if (p.items !== undefined && (!keys(p.items, ['buy', 'keep', 'equip'])
@@ -37,7 +37,7 @@ export function validUsage(u) {
 
 export const advisorPlan = (m, ps) => m.externalAI?.planFor(ps) ?? null;
 const matches = (m, id, want) => id === want || m.gd.baseIdOf(id) === m.gd.baseIdOf(want);
-// Maintainer 2026-10-20 / §35.14: keep/sell refer to the exact normal or elite form.
+// Maintainer 2026-10-20 / §37.14: keep/sell refer to the exact normal or elite form.
 export const planContains = (_m, list, id) => !!list?.includes(id);
 
 export function ownsElite(m, ps, id) {

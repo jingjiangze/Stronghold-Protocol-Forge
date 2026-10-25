@@ -168,7 +168,7 @@ test('#32.6 “庞贝”\'s self-blast while blocked misses its 隐匿 blocker a
 
 test('#32.6 boss: 卢西恩\'s 【aoe】 is not cast for 隐匿 / 迷彩 operators alone; cast, it hits the 迷彩 and plain ones, not the 隐匿 one', REAL, () => {
   const run = (plain) => {
-    // the aoe takes an attack's turn (DESIGN §35.29): 红豆 stands on 卢西恩's tile and blocks it (its blink kept out of the
+    // the aoe takes an attack's turn (DESIGN §37.29): 红豆 stands on 卢西恩's tile and blocks it (its blink kept out of the
     // way, initial cooldown 9999), so it has turns; alone with 隐匿 / 迷彩 operators it has no target, no turn
     const units = [{ chessId: JF, row: 10, col: 5, dir: 'RIGHT' }, { chessId: GM, row: 11, col: 6, dir: 'RIGHT' }];
     if (plain) units.push({ chessId: HD, row: 10, col: 6, dir: 'RIGHT' });

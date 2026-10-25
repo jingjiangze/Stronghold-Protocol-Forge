@@ -1,12 +1,12 @@
 // test/enemy-skill-clips.test.js — the skill slots of enemies whose clip names mislead the resolver play the clip of
-// their official ability (tools/assets/spine.mjs PREFAB_SPINE_ROLES → data/assets.json `anims.skills`; DESIGN §35.19,
-// §35.48).
+// their official ability (tools/assets/spine.mjs PREFAB_SPINE_ROLES → data/assets.json `anims.skills`; DESIGN §37.19,
+// §37.48).
 //
 // The client plays `anims.skills[slot]` for a sim ['cast', id, slot] event, the slot being the skill's index in
 // data/enemies.json `skills[]`. The resolver pairs numbered clips with slots by name (Skill_n = slot n−1); the official
 // prefabs name the clip per ability instead (EnemySkill ability `_animKey`). Until 0.3.2 假想敌：胄's 死亡集群 played the
 // 2.533 s Skill_2 for the 3.833 s Skill_3, 盐风主教昆图斯's 大潮 and 崩坍 swapped clips (the third-form tide on the 3 s
-// Skill_01 of 崩坍), and 阿利斯泰尔's storeA / Suicide played the wrong ones. 0.3.2 (§35.48) adds 泥岩 (its two slots
+// Skill_01 of 崩坍), and 阿利斯泰尔's storeA / Suicide played the wrong ones. 0.3.2 (§37.48) adds 泥岩 (its two slots
 // swapped), “自在” (CrossAttack Skill_01_02; the second form's ShieldBurstReborn had no clip), 斩胄之剑 / 破胄之锤
 // (Launch_Begin / Back_End), 锏 (A_Skill2 / B_Skill2) and the attack-class `strike` slots of 杰斯顿·威廉姆斯 and “碎铳之簧”.
 

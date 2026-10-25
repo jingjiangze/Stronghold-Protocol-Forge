@@ -460,7 +460,7 @@
   box-shadow: 0 .3rem .9rem rgba(0, 0, 0, .65), 0 0 .4rem rgba(23, 249, 183, .06);
   animation: modal-in var(--t-slow) var(--ease-out);
 }
-/* Japanese never starts a line with a small kana or ー in a dialog, as in the room and on the hub (§35.18 review of the
+/* Japanese never starts a line with a small kana or ー in a dialog, as in the room and on the hub (§37.18 review of the
    text-fit fixes: 选择模拟协议's 「シミュレーシ|ョン」 on a phone at 特大 once its paragraph wraps `pretty`, lobby.css) */
 .modal__box:lang(ja) { line-break: strict; }
 .modal__box--red { --bk-c: var(--red-premium); --mstripe: var(--red); }
@@ -1093,7 +1093,7 @@
 .mod-panel { pointer-events: auto; }
 /* ---- plugins (DESIGN §34 P1a): the room's tag 原版 / 插件 ×N (ui/pluginTag.js), its 插件 panel and the title's list (ui/pluginPanel.js) ---- */
 /* ---- plugins (DESIGN §32 P1a): the room's tag 原版 / 插件 ×N (ui/pluginTag.js), its 插件 panel and the title's list (ui/pluginPanel.js) ---- */
-/* (min-height: the tag grows when 大 / 特大 outgrows its .3rem — §35.18 review) */
+/* (min-height: the tag grows when 大 / 特大 outgrows its .3rem — §37.18 review) */
 .plugtag {
   display: inline-flex; align-items: center; gap: .06rem; min-height: .3rem; padding: 1px .12rem;
   border: 1px solid var(--line-2); background: rgba(0, 0, 0, .3); color: var(--text-lo);
@@ -1192,7 +1192,7 @@
 .plugin-settings input, .plugin-settings select { color: var(--text-hi); background: var(--bg-2); border: 1px solid var(--line-2); padding: .03rem .06rem; max-width: 2rem; }
 .plugin-settings input[aria-invalid="true"] { border-color: var(--orange); }
 
-/* ---- official versions (DESIGN §35.23): the tag (ui/pluginTag.js VersionTag), the lobby chip and the picker
+/* ---- official versions (DESIGN §37.23): the tag (ui/pluginTag.js VersionTag), the lobby chip and the picker
    (ui/versionPicker.js), the vote strip (ui/versionVote.js). Names may be long in English: the chip and the tag end in
    an ellipsis, the strip and the picker wrap. ---- */
 .vertag {
@@ -1205,7 +1205,7 @@
 .vertag__label { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .vertag--compact { height: .2rem; padding: 0 .06rem; font-size: calc(.11 * var(--t)); }
 .verchip-wrap { display: inline-flex; align-items: center; gap: .06rem; min-width: 0; }
-/* [ASSUMED] Keep the season and part whole as 文字大小 grows (§35.23.11): a rem cap cut the part in English and
+/* [ASSUMED] Keep the season and part whole as 文字大小 grows (§37.23.11): a rem cap cut the part in English and
    Japanese. The top bar reserves the chip's natural width beside its tools. */
 .verchip {
   display: inline-flex; align-items: center; gap: .06rem; min-width: 0; height: max(.42rem, 28px); padding: 0 .14rem;

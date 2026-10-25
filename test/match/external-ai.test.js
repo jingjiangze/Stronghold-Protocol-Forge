@@ -56,7 +56,7 @@ test('observation keys exactly match the seat wire views; no private opponents, 
   o.private.hand.push({ uid: -100 }); assert.notDeepEqual(o.private.hand, ps.privateView().hand);
 });
 
-test('another official version\'s match names it in the observation context (gameVersion, DESIGN §35.23); the default never', t => {
+test('another official version\'s match names it in the observation context (gameVersion, DESIGN §37.23); the default never', t => {
   const h = makeMatch({ humans: 1, bots: 1, fake: true, version: 'act2autochess' });
   t.after(() => h.m.dispose());
   h.start().toPrep();
@@ -67,7 +67,7 @@ test('another official version\'s match names it in the observation context (gam
   assert.equal(aiObservation(h.m, ps, { id: 'b', kind: 'prep', deadline: 1, remaining: 64 }, []).context.gameVersion, 'act1autochess');
 });
 
-test('another official version\'s m.public / m.result name it (`version`, DESIGN §35.23: a replayed result on a fresh page); the default\'s frames never', t => {
+test('another official version\'s m.public / m.result name it (`version`, DESIGN §37.23: a replayed result on a fresh page); the default\'s frames never', t => {
   const h = makeMatch({ humans: 1, bots: 1, fake: true });
   t.after(() => h.m.dispose());
   h.start().toPrep();

@@ -1,4 +1,4 @@
-// §35.12: public, reproducible advisor catalogue. No match object, RNG or live pool input.
+// §37.12: public, reproducible advisor catalogue. No match object, RNG or live pool input.
 // Rules: activity_table autoChessData + act2autochess, character/skill tables; docs/AI-STRATEGY.md.
 // [ASSUMED] All classifications, text-derived capability hints, graph weights and timing estimates are advisory.
 import { GameData } from '../match/gamedata.js';
@@ -90,7 +90,7 @@ function bandProfile(id, band, data, gd) {
     mechanic: 'Beacon consumes the carrier, offers same-tier replacements, and sends the original next round to the teammate with most matching bond members (random ties).',
     advice: '[ASSUMED] Buy a missing teammate core only when the automatic recipient and delivery timing fit.' });
   const roleClasses = uniq(classes.length ? classes : ['combat-modifier']);
-  // §35.62: starting LP (bands.json totalHp) is the leak budget and, in a Final Assault, the overtime clock.
+  // §37.62: starting LP (bands.json totalHp) is the leak budget and, in a Final Assault, the overtime clock.
   return { id, name: band.name, lp: gd.startLp(id), effect: effective.desc || '', bondIds: bonds, roleClass: roleClasses[0], roleClasses, insights,
     grantedItems: buffs.map(b => b.bbStr?.chess).filter(id => data.items?.[id]),
     carriesFunds: gd.leftoverKeptBands.includes(id), beaconRounds };

@@ -1,4 +1,4 @@
-// The solo 「不限时」 switch and the version's time lines (DESIGN §35.23.10): the gear only for a timed solo, the
+// The solo 「不限时」 switch and the version's time lines (DESIGN §37.23.10): the gear only for a timed solo, the
 // briefing and the lobby card follow the version, and every new msgid has English with no CJK.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

@@ -52,7 +52,7 @@ from pathlib import Path
 
 FX_SUB = 'fx'
 FORMAT_VERSION = 1      # the descriptors and textures.json (§35.4–§35.8)
-MESH_VERSION = 2        # the meshes (§35.9): 2 since Phase 1c — vertex colours 0…1 (version 1 wrote the bytes, 0…255)
+MESH_VERSION = 2        # the meshes (§37.9): 2 since Phase 1c — vertex colours 0…1 (version 1 wrote the bytes, 0…255)
 INDEX_VERSION = 3       # index.json (§35.12): 2 since Phase 1c, 3 since Phase 1d (2026-10-15) — vfx-format.md's changelog
 MANIFEST_VERSION = 1    # data/local-fx.json top-level "version" (the file list; index.json carries INDEX_VERSION)
 FX_MANIFEST = 'local-fx.json'                           # data/local-fx.json: every fx file, served as a hashed view
@@ -953,7 +953,7 @@ class Exporter:
             doc['colors'] = [f6(x) for x in norm_channel(flat(h.m_Colors, 4), color_format(m, h))]
         doc['submeshes'] = [[i for tri in sub for i in tri] for sub in h.get_triangles()]
         bone_i, bone_w = skin_rows(h.m_BoneIndices, h.m_BoneWeights, h.m_VertexCount)
-        if bone_i:                                            # four influences per vertex (skin_rows; §35.9)
+        if bone_i:                                            # four influences per vertex (skin_rows; §37.9)
             doc['boneWeights'] = bone_w
             doc['boneIndices'] = bone_i
             doc['bindPoses'] = [[f6(bp.get(f'e{r}{c}', 0)) for r in range(4) for c in range(4)] for bp in (self.env.tt(o).get('m_BindPose') or [])]
@@ -1620,7 +1620,7 @@ def norm_channel(values, fmt):
 
 
 def skin_rows(indices, weights, count):
-    """A skinned mesh's bone influences as §35.9 writes them: four (index, weight) pairs per vertex, flat —
+    """A skinned mesh's bone influences as §37.9 writes them: four (index, weight) pairs per vertex, flat —
     (boneIndices, boneWeights), or (None, None) without bone indices. UnityPy hands the vertex channels over as they
     are stored: a Unity 2019+ mesh keeps 1–4 influences per vertex (the BlendIndices / BlendWeight channels' dimension —
     2 for 铃兰 S3's fox tails, 琴柳's flags, 森蚺 S2) and drops the BlendWeight channel when every vertex follows a

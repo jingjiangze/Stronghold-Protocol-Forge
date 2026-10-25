@@ -1,4 +1,4 @@
-// §35.12: acquisition-cycle evidence, generated from this version's special traits, not battle SP/DP text.
+// §37.12: acquisition-cycle evidence, generated from this version's special traits, not battle SP/DP text.
 // Sources: chess.garrisonIds → garrisons.eventType/effectKey/bb/bbStr; garrisons/meta.js and effectsMeta.js.
 // [ASSUMED] Classification is deliberately limited to recognized handlers; unknown effects retain raw evidence.
 const ids = s => String(s || '').split(',').map(s => s.trim()).filter(Boolean);

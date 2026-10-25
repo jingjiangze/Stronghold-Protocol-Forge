@@ -1,7 +1,7 @@
 // Synthetic version of the round49 removeBuff reproduction; no official files in the fixtures.
 // Source: activity_table.activity.AUTOCHESS_SEASON.act2autochess.bondInfoDict.sargonShip and
 // effectBuffInfoDataDict.bondeffect_sargon: independent 5+0.22L s stacks, ASPD +12, six members ATK +12%, cap 25.
-// Explicit removal models an extension API call, not a demonstrated vanilla gameplay trigger (DESIGN §35.5).
+// Explicit removal models an extension API call, not a demonstrated vanilla gameplay trigger (DESIGN §37.5).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeBattle, chessRec, checkInvariants } from '../helpers/battleHarness.js';

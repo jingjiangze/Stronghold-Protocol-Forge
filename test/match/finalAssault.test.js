@@ -35,7 +35,7 @@ test('previous boss partners and sides persist; only orphaned survivors form a n
   assert.deepEqual(ids(pairPlayers(all.filter(p => p.seat > 1), createRng(99), previous)), [['s3', 's2']]);
 });
 
-// GitHub #845 (DESIGN §35.27, superseding §30.12's kept partners): the official R15 of BV1VCXyBjEN1 p1 pairs 1-2 / 3-4
+// GitHub #845 (DESIGN §37.27, superseding §32.12's kept partners): the official R15 of BV1VCXyBjEN1 p1 pairs 1-2 / 3-4
 // after an R14 of 1-4 / 2-3 — the Hidden Core draws pairs and sides anew, from a stream of its own (the Final Assault's
 // draw unchanged). Each round's plan drives its prep preview, side checks and fields.
 test('boss preview and actual fields share each round\'s draw; the Hidden Core draws pairs and sides anew (#845)', () => {
@@ -78,7 +78,7 @@ test('boss preview and actual fields share each round\'s draw; the Hidden Core d
 });
 
 // A departure during the Hidden Core's round start / prep re-plans the pairs (platform.js _quit); only the round's first
-// plan draws anew, so the pair the departed player was not in stays whole, as in the Final Assault (DESIGN §35.27).
+// plan draws anew, so the pair the departed player was not in stays whole, as in the Final Assault (DESIGN §37.27).
 test('a departure in the Hidden Core prep keeps the intact pair and re-pairs only the orphan (#845)', () => {
   for (const seed of [31, 32, 33, 34, 35, 36, 37, 38]) {
     const h = makeMatch({ mode: 'coop', difficulty: 'HARD', humans: 4, seed, fake: true,

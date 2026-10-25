@@ -149,7 +149,7 @@ print(json.dumps({'lists': fx.emitter_lists(f), 'live': fx.est_live(ps)}))`);
     assert.equal(out.live, 11, '10/s × 0.6 s + a burst of 5');
   });
 
-  test('skin_rows: four (index, weight) pairs per vertex whatever the client stores (§35.9) — 2 per vertex, 1 without weights, the legacy 4', () => {
+  test('skin_rows: four (index, weight) pairs per vertex whatever the client stores (§37.9) — 2 per vertex, 1 without weights, the legacy 4', () => {
     const out = py(`print(json.dumps([fx.skin_rows([(10, 9), (3, 0)], [(0.503710, 0.496290), (1.0, 0.0)], 2),
                   fx.skin_rows([(4,), (7,)], None, 2), fx.skin_rows([(1, 2, 3, 4)], [(0.25, 0.25, 0.25, 0.25)], 1),
                   fx.skin_rows(None, None, 3), fx.skin_rows([(5,)], None, 2)]))`);

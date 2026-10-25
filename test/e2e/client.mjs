@@ -177,7 +177,7 @@ export async function startRealServer(opts = {}) {
     if (opts.pluginsDir) env.SP_PLUGINS_DIR = opts.pluginsDir;
   }
   // extra environment for the server. Unset enables every official version; { SP_VERSIONS: 'act2autochess' } hides the
-  // switch (DESIGN §35.23). A null value unsets a variable.
+  // switch (DESIGN §37.23). A null value unsets a variable.
   if (opts.env && typeof opts.env === 'object') for (const [k, v] of Object.entries(opts.env)) { if (v == null) delete env[k]; else env[k] = String(v); }
   const child = spawn(process.execPath, [entry], { cwd: ROOT, env, stdio: ['ignore', 'pipe', 'pipe'] });
   const logs = [];

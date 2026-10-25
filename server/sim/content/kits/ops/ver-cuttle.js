@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-cuttle.js — 安哲拉 (char_218_cuttle), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-cuttle.js — 安哲拉 (char_218_cuttle), 第一期 (DESIGN §37.22.9).
 // 优先攻击防御力最低 is the longrange profile. The distance scale is the elite trait blackboard (same shape as 伊芙利特).
 // [ASSUMED]「编入队伍」is the deployed board, not the bench.
 

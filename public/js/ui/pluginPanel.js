@@ -18,7 +18,7 @@
 //     (content.js contentSet: its progress, ready, or failed — 「请刷新页面」). Below them (P4, DESIGN §34.8) the
 //     interface plugins of the server — each player switches them in 设置; the host may mark one 推荐 — and the
 //     room.panel slot.
-//     In a room of another official version (DESIGN §35.23) the gameplay plugins' switches are off — they play 第二期下半
+//     In a room of another official version (DESIGN §37.23) the gameplay plugins' switches are off — they play 第二期下半
 //     only (the server refuses them: VERSION_UNSUPPORTED) —; the cosmetic ones work as anywhere.
 //   * InstalledPlugins — the title screen's 「本服务器安装了 N 个插件」 (screens/title.js; §7.4): every unofficial plugin
 //     the catalogue lists — any class, with what this version does with it (the catalogue fetched when it opens).
@@ -84,7 +84,7 @@ function warningText(w, nameOf, classOf = () => 'cosmetic') {
 /** This page's download and check of the room's content set (content.js contentSet), as one line. */
 function ContentState({ cs }) {
   const c = useStore((s) => s, Object.is, contentSet);
-  // (a version set the page loads is not the room's plugin content: DESIGN §35.23)
+  // (a version set the page loads is not the room's plugin content: DESIGN §37.23)
   if (!cs || c.cs !== cs || c.kind !== 'plugins') return null;
   if (c.status === 'ready') return html`<p class="set-hint plugpanel__content is-ready" data-testid="content-state">${t('插件内容已载入并通过校验')}</p>`;
   if (c.status === 'failed') return html`<p class="set-hint plugpanel__content is-warn" data-testid="content-state">${t('插件内容未能通过校验，请刷新页面重试')}</p>`;
@@ -132,7 +132,7 @@ export function PluginPanel({ open, room, myId, onClose }) {
   const nameOf = (id) => { const p = cat.plugins.find((x) => x.id === id); return p ? pluginName(p) : String(id ?? ''); };
   const classOf = (id) => cat.plugins.find((x) => x.id === id)?.class || f.plugins.find((x) => x.id === id)?.class || 'cosmetic';
   const anyContent = f.modded || offered.some((p) => ['content','script','trusted'].includes(p.class));
-  // another official version (DESIGN §35.23): gameplay plugins play 第二期下半 only
+  // another official version (DESIGN §37.23): gameplay plugins play 第二期下半 only
   const versionRoom = typeof room?.version === 'string';
   /** room.setPlugins with these ids (one request at a time; `what`: the row — or 'reapply' — that shows it busy). */
   const send = async (ids, what, change = null) => {

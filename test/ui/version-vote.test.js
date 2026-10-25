@@ -1,4 +1,4 @@
-// test/ui/version-vote.test.js — the room's version vote strip (public/js/ui/versionVote.js, DESIGN §35.23 M1; protocol §4 /
+// test/ui/version-vote.test.js — the room's version vote strip (public/js/ui/versionVote.js, DESIGN §37.23 M1; protocol §4 /
 // §5): room.state.versionVote read tolerantly; a voter who has not agreed gets 同意切换 / 拒绝切换, one who agreed waits, the
 // host gets 取消投票, a spectator (no voter) only reads it; the count, the voters' chips and the countdown; the room's
 // facts with another version (needsContent gates ready and start, not the 非官方 mark); the pill's and the GoButton's

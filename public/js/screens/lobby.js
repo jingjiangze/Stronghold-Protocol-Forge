@@ -25,7 +25,7 @@
 // screen is complete before data is generated. Rounds: solo 标准 = 9, everything else 14 (+R15
 // hidden core on 险境+), per research 00-INDEX §2. Battlefield pool (`modes[].stages`): 标准 always
 // plays 战场#01, 险境 draws one of 8, 绝境 / 终极 one of 7 (m01 excluded).
-// Official versions (DESIGN §35.23, M1; versions.js): with welcome.versions the top bar shows the version chip (ui/
+// Official versions (DESIGN §37.23, M1; versions.js): with welcome.versions the top bar shows the version chip (ui/
 // versionPicker.js VersionSwitch — this browser's choice, its data loaded and checked by content.js), the title names a
 // version other than 第二期下半, 选择模拟协议 offers the difficulties of the version shown (its config's modes: 第一期 and
 // 第二期上半 have no 终极; the remembered difficulty, when it is not offered, shows as the server's fallback — the highest
@@ -123,7 +123,7 @@ const MODE_CARDS = [
     id: 'coop', name: N_('同盟模拟'), en: 'ALLIANCE SIMULATION', icon: 'users',
     desc: N_('与至多 {n} 名博士组成同盟，共享干员池，联防协作抵御敌潮。'), params: { n: MAX_SEATS - 1 },
     points: [N_('1–{n} 名博士 · 邀请真人队友'), N_('联防阶段 · 最终攻势合并生命值')], pointParams: { n: MAX_SEATS },
-    // the hub's line above the entry on a short screen, where the whole line is wider than the entry (§35.51)
+    // the hub's line above the entry on a short screen, where the whole line is wider than the entry (§37.51)
     pointShort: N_('1–{n} 名博士'),
   },
 ];
@@ -302,7 +302,7 @@ function DifficultyCard({ roomMode, difficulty, selected, onSelect, disabled = f
 }
 
 /**
- * How much 选择模拟协议's cards show on a screen taller than 520 px (§35.18's leftover there: at 大 / 特大, in a small
+ * How much 选择模拟协议's cards show on a screen taller than 520 px (§37.18's leftover there: at 大 / 特大, in a small
  * window or a long language the four cards ran under 开始独立模拟, 终极模拟 out of view, even at 小 in 16:9 by a few px):
  * the first level at which they fit their column — 'full' (the name, the description, the effects, the rounds), 'brief'
  * (the description only in the brief at the left, where the chosen difficulty's already is), 'names' (a line each, as on
@@ -384,7 +384,7 @@ function AchievementCard({ onOpen }) {
   useData('config'); useData('assets');
   const cfg = data.get('config');
   const statsOpen = useStatsOpen();
-  // the LV of the season shown (DESIGN §35.23: 第一期's records count toward 第一期's levels)
+  // the LV of the season shown (DESIGN §37.23: 第一期's records count toward 第一期's levels)
   const season = useStore((s) => seasonOf(lobbyVersion(s)));
   const { prog, trophies } = useMemo(() => {
     const records = recordsOfSeason(peekStatsRecords(), season);
@@ -487,7 +487,7 @@ function HubRadar() {
 function HubTitle() {
   // a title in an alphabetic script (English …) is set like the title screen's: no wordmark above it, ": " between
   const alphabetic = scriptOf(t('卫戍协议')) === 'alphabetic';
-  // another official version (DESIGN §35.23): its name under the title
+  // another official version (DESIGN §37.23): its name under the title
   const version = useStore(lobbyVersion);
   return html`<div class="hub-center">
     <div class="hub-center__mark"><${HubRadar} /><${Sprite} k="entry/season_logo" class="hub-center__logo" fallback=${html`<${Emblem} />`} /></div>
@@ -596,7 +596,7 @@ export function ProtocolSelect({ roomMode, difficulty, onDifficulty, onClose, on
  * 加入同盟). The project's Modal styled to fill the screen. `short`: the screen is at most 520 px tall (the lobby's
  * useMediaQuery(SHORT_SCREEN_QUERY)) — the key field, beside 观战 in a column about 300 px wide, is about 150 px there,
  * so its placeholder is the field's name alone (同盟密钥) instead of the whole 输入同盟密钥 / 粘贴邀请链接, which ran under
- * 观战 at 特大 in English and Japanese (§35.18's leftover); the line under the field still tells where a key comes from.
+ * 观战 at 特大 in English and Japanese (§37.18's leftover); the line under the field still tells where a key comes from.
  * On a taller screen the field's name stands in too wherever the whole sentence does not fit the field (TextField
  * `placeholderShort`, by the field's width: English and Japanese at 特大 on every desktop, the default Chinese at 特大
  * in a 1024 px window — it ended in an ellipsis there).
@@ -739,7 +739,7 @@ export function LobbyScreen() {
     const d = loadPref('lobby.difficulty', 'FUNNY');
     return DIFFICULTIES.includes(d) ? d : 'FUNNY';
   });
-  // 「不限时」 for the next timed solo (DESIGN §35.23.10; default off). The room's 模拟设置 is the authority once the
+  // 「不限时」 for the next timed solo (DESIGN §37.23.10; default off). The room's 模拟设置 is the authority once the
   // room exists; this pref is what the lobby card and the create message say before that.
   const [soloFree, setSoloFree] = useState(() => loadPref('lobby.soloUnlimited', false) === true);
   // the open dialogs: 选择同盟方式 (同盟模拟 / 密钥加入) and 选择模拟协议 (独立模拟)
@@ -771,7 +771,7 @@ export function LobbyScreen() {
 
   const online = conn.status === 'online';
   const codeOk = CODE_RE.test(code);
-  // official versions (DESIGN §35.23): the lobby's version, the difficulties it offers and the one shown — the remembered
+  // official versions (DESIGN §37.23): the lobby's version, the difficulties it offers and the one shown — the remembered
   // one, or the server's fallback when the version lacks it (the pref is only overwritten when the player picks)
   const versions = useStore((s) => s.versions);
   const version = useStore(lobbyVersion);

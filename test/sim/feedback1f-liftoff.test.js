@@ -270,7 +270,7 @@ test('F3 review: the 刺胄之弹 and 斩胄之剑 blasts (flying units — 对�
     });
     h.step();
     h.spawn(LAZERD, { pos: [3, 8.2], routeIndex: 0, mods: { speedMul: 0, hpMul: 1e4, atkMul: 0 } });
-    // 灭顶之灾 takes an attack's turn (DESIGN §35.29): 胄 attacks 角峰 (the ground operator it can pick), harmlessly
+    // 灭顶之灾 takes an attack's turn (DESIGN §37.29): 胄 attacks 角峰 (the ground operator it can pick), harmlessly
     h.spawn(HELM, { pos: [3, 9], routeIndex: 0, mods: { speedMul: 0, atkMul: 1e-6 }, tag: 'boss' });
     const u = h.unit(TIPPI[0]);
     // the shell lands at ≈ 29 s, S1 ends at ≈ 32 s
@@ -440,7 +440,7 @@ test('F3 QA: 卢西恩\'s 【aoe】 (on 不祥幻影, the same ability without t
     const h = makeBattle({
       stageId: 'flat', seed: 3, autoFinish: false, timeLimit: 400,
       units: [{ chessId: BAIT, row: 10, col: 5 }],
-      // the phantom on 角峰's tile: blocked once 角峰 has landed, it has an attack turn (its aoe takes one, DESIGN §35.29)
+      // the phantom on 角峰's tile: blocked once 角峰 has landed, it has an attack turn (its aoe takes one, DESIGN §37.29)
       enemies: [{ key, pos: key === 'enemy_2017_csphts' ? [10, 5.2] : [10, 6], mods: { hpMul: 1e3, speedMul: 0, atkMul: 0.01 } }],
     });
     h.step();
@@ -454,7 +454,7 @@ test('F3 QA: 卢西恩\'s 【aoe】 (on 不祥幻影, the same ability without t
     h.run(40);
     assert.equal(casts, 0, `${key}: no ${kind} while the only ally in range is airborne`);
     h.b.removeBuff(u, 'test:liftoff');
-    // the aoe is attack-class (DESIGN §35.29): at its first attack turn once 角峰 is there; 锏's CircleAttack at once
+    // the aoe is attack-class (DESIGN §37.29): at its first attack turn once 角峰 is there; 锏's CircleAttack at once
     const atkClass = key === 'enemy_2017_csphts';
     h.run(atkClass ? e.s.interval + 2 : 2);
     assert.equal(casts, 1, `${key}: cast ${atkClass ? 'at its next attack turn' : 'at once'} when a target it can hurt is there (the skill was ready all along)`);

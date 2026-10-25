@@ -1,6 +1,6 @@
 // test/data-versions.test.js — the official versions' data (docs/DATA.md "Official versions (M0)"): the registry
 // shared/versions.js, the build profiles tools/versions/<slug>.mjs, the committed data/versions/<slug>/ directories, the
-// build CLI's --version, the field adapters, server/data.js's per-version loader, and (M1, DESIGN §35.23) how a server
+// build CLI's --version, the field adapters, server/data.js's per-version loader, and (M1, DESIGN §37.23) how a server
 // serves an enabled version's data. The default version's bytes are guarded by test/data.test.js and test/golden.test.js,
 // its cs inputs and default room by test/versions-default-guard.test.js.
 
@@ -31,7 +31,7 @@ const OTHERS = VERSIONS.filter((v) => v.id !== DEFAULT_VERSION);
 const REBUILD_ALL = `rebuild every version: ${VERSIONS.map((v) => `node tools/build-data.mjs --version ${v.id}`).join('; ')} `
   + '(a version also reads data/assets.json, data/tuning.json and docs/research/*.json, so a default-side change to those can make it stale)';
 /**
- * The expected counts of each non-default build, written out (DESIGN §35.22.3), independent of the
+ * The expected counts of each non-default build, written out (DESIGN §37.22.3), independent of the
  * profile's `expect` / `config` that the build and validateAll read: a typo in a profile fails here. V2_1: 36 strategies,
  * 120 chess (119 visible with the 4 DIY slots), no 终极 mode (it opened with V2_2): activity_table @1457587e. The 功勋
  * levels: 35 at a launch (levels 36–60 open with the second sub-version, adapter launchMilestones), 60 in V1_2.
@@ -205,7 +205,7 @@ for (const v of OTHERS) {
   });
 }
 
-// 第二期上半's records that keep today's id but differ from today's data (DESIGN §35.22.5 lists each). Today's data is V2_2
+// 第二期上半's records that keep today's id but differ from today's data (DESIGN §37.22.5 lists each). Today's data is V2_2
 // with the 04-14 level and text fixes (86da4cfa) and the modules added after 03-14, so the list is not only V2_2's. A
 // rebuild that changes one of the compared fields fails here, and the hand-written list is reviewed with the new set.
 // Compared: every field of bands, effects, enemies and tokens; the waves' routes; the chess records' whole modules (ids,
@@ -398,7 +398,7 @@ test('HTTP: nothing set enables every version, serves their data, and forks no v
   }
 });
 
-test('HTTP (M1, DESIGN §35.23): an enabled version\'s data is served (immutable with ?v=), a disabled one\'s is 404; its /cs/ manifest and bounds', async () => {
+test('HTTP (M1, DESIGN §37.23): an enabled version\'s data is served (immutable with ?v=), a disabled one\'s is 404; its /cs/ manifest and bounds', async () => {
   const srv = await startServer({ port: 0, host: '127.0.0.1', quiet: true, assetIndex: false, studio: false,
     versions: { enabled: ['act2autochess', 'act1autochess', 'act2autochess@V2_1'] } });
   try {

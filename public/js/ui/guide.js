@@ -12,7 +12,7 @@
 //
 // Global & imperative so every screen can open it: `openGuide(page?)`; <GuideHost/> is mounted once by main.js
 // (and by the dev mock harness); <GuideButton/> is the standard trigger (title, lobby, room, in-match menu).
-// Official versions (DESIGN §35.23): with another version on screen a line under the header says the pictures are
+// Official versions (DESIGN §37.23): with another version on screen a line under the header says the pictures are
 // 第二期下半's and some rules of that version differ [ASSUMED: a remake note until the version notes page of M3]; the
 // tips follow its config.
 

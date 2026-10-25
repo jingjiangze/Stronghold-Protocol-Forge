@@ -44,7 +44,7 @@ const at = (x, y) => `left:${x / 100}rem;top:${y / 100}rem`;
 export const INTRO_MS = 1500;
 const LEAVE_MS = 380;
 
-/** [ASSUMED] Fit translated text into #698's fixed title boxes without enlarging short labels (DESIGN §35.1). */
+/** [ASSUMED] Fit translated text into #698's fixed title boxes without enlarging short labels (DESIGN §37.1). */
 export function titleScale(width, height, textWidth, textHeight) {
   return Math.min(1, width / (textWidth || 1), height / (textHeight || 1));
 }
@@ -114,12 +114,12 @@ export function dailyPointsFor(roundsPassed, table) {
  * a day whose matches reached the daily goal earned the bonus once ([ASSUMED] the bonus is 卫戍认证 too, so it counts
  * toward the level; the day is the local one). `counted` false (gameplay plugins): this match earns
  * nothing. Returns the totals before and after this match, its gain and bonus, my trophies so far, today's daily goal.
- * `season` (DESIGN §35.23): only the records of that activity count (null: every record).
+ * `season` (DESIGN §37.23): only the records of that activity count (null: every record).
  * @param {any[]} records
  * @param {{ id?: string|null, gain?: number, rounds?: number, trophies?: number, at?: number, counted?: boolean, rewards?: any, season?: string|null }} cur
  */
 export function levelProgress(records, { id = null, gain = 0, rounds = 0, trophies = 0, at: now = Date.now(), counted = true, rewards = null, season = null } = {}) {
-  // one season's records (DESIGN §35.23: 第一期 and 第二期 each have their own 卫戍认证 table — ui/stats.js recordsOfSeason)
+  // one season's records (DESIGN §37.23: 第一期 and 第二期 each have their own 卫戍认证 table — ui/stats.js recordsOfSeason)
   records = recordsOfSeason(records, season);
   const daily = rewards?.daily && rewards.daily.need > 0 ? rewards.daily : null;
   const table = rewards?.baseByRoundsPassed;
@@ -628,7 +628,7 @@ export function ResultScreen() {
   const myId = useStore((s) => s.me.playerId);
   const hasRoom = useStore((s) => !!s.room);
   const content = useStore((s) => s.room?.content ?? null);
-  // the official version the match played (DESIGN §35.23): the room's, or the last room's once it is gone
+  // the official version the match played (DESIGN §37.23): the room's, or the last room's once it is gone
   const version = useStore(shownVersion);
   const back = () => store.set({ match: emptyMatch() });
   if (!res) return html`<div class="screen result settle" data-testid="settle-wait"><${Spinner} size="lg" /></div>`;

@@ -59,7 +59,7 @@ function setup(seed = 70) {
   const active = (b) => !!(ps.bonds[b] && ps.bonds[b].active);
   const L = (b) => ps.layers[b] || 0;
   const prepEnd = () => m.dispatch(ps, 'onPrepEnd', { round: m.round });
-  const prepStart = () => m.dispatch(ps, 'onPrepStart', { round: m.round }); // 「进入休整期时」 (DESIGN §35.53)
+  const prepStart = () => m.dispatch(ps, 'onPrepStart', { round: m.round }); // 「进入休整期时」 (DESIGN §37.53)
   const acquire = (id) => ps.acquireChess(id, { source: 'test' });
   const sell = (p) => assert.deepEqual(m.handle('p_0', { t: 'g.sell', uid: p.uid }), { ok: true });
   const gainsNow = () => Object.fromEntries(Object.entries(gains).filter(([, v]) => v > 0));

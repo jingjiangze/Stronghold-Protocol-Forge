@@ -15,7 +15,7 @@
 //     server owner's policy: rooms off / fixed, not in `allow`, the class off), PLUGIN_DEPENDENCY / PLUGIN_CONFLICT (the
 //     load order), PLUGIN_INCOMPATIBLE (a gameplay plugin made for other game versions or another plugin API — unless
 //     the policy allows it), PLUGIN_LIMIT (the visual set's art limits), PLUGIN_BUSY (one content set more than the
-//     server runs at once), VERSION_UNSUPPORTED (`gameplay: false` — a room of another official version, DESIGN §35.23:
+//     server runs at once), VERSION_UNSUPPORTED (`gameplay: false` — a room of another official version, DESIGN §37.23:
 //     a content / script / trusted plugin in the closed list, refused before anything is built; gameplay plugins play
 //     第二期下半 only).
 //   hold / release (vs), holdContent / releaseContent (cs), onStale, unofficial — the visual and content sets'.

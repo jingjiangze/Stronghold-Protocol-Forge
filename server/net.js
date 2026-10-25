@@ -90,8 +90,8 @@ export const NET_DEFAULTS = Object.freeze({
  * re-broadcasts room.state to a waiting room (its seat cards wear it: room.state seats[].skins). room.card (名片干员, PR
  * #643 split 6): every accepted change re-broadcasts room.state to the room. room.rerollSetup (重刷本局): with one human a
  * start completes at once and clears that seat's 30 s cooldown, and each reroll rebuilds the opening and resends m.public
- * to every connection (server/match/match/setupVote.js, DESIGN §35.47). Any seated player may start it (#860).
- * room.proposeVersion (DESIGN §35.23) stays host-proposed: an accepted proposal by a lone human switches the room's
+ * to every connection (server/match/match/setupVote.js, DESIGN §37.47). Any seated player may start it (#860).
+ * room.proposeVersion (DESIGN §37.23) stays host-proposed: an accepted proposal by a lone human switches the room's
  * version — every page then downloads that version's data.
  */
 export const HEAVY_TYPES = new Set(['g.watch', 'g.publicFull', 'room.loadout', 'room.ownership', 'room.diy', 'room.spectate', 'room.queue', 'records.mine', 'room.setPlugins', 'room.skins', 'room.card', 'room.rerollSetup', 'room.proposeVersion', 'state.resync']);

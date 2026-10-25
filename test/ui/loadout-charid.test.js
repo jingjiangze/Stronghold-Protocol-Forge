@@ -1,4 +1,4 @@
-// test/ui/loadout-charid.test.js — the loadout, 干员持有 and 自选 settings by operator (DESIGN §35.23 M1; ui/loadoutModel.js,
+// test/ui/loadout-charid.test.js — the loadout, 干员持有 and 自选 settings by operator (DESIGN §37.23 M1; ui/loadoutModel.js,
 // ui/ownershipModel.js, ui/diyModel.js, ui/loadoutSync.js): 第一期 reuses 第二期下半's chess ids for other operators
 // (chess_char_1_02_a is 角峰 in 第二期下半 and 讯使 in 第一期下半, where 角峰 is chess_char_2_03_a), so the stored choices are
 // keyed by charId and the screens read views by the chess ids of the data on screen:

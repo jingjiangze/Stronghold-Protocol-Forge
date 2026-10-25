@@ -1,6 +1,6 @@
-// test/ui/ui-leftovers-3533.test.js — the §35.18 UI leftovers fixed in 0.3.2 (DESIGN §35.51), pinned in the stylesheets
+// test/ui/ui-leftovers-3533.test.js — the §37.18 UI leftovers fixed in 0.3.2 (DESIGN §37.51), pinned in the stylesheets
 // and the markup; the browser checks are test/ui/room-fit.e2e.test.js and lobby-hub.e2e.test.js (text-fit) and the
-// measurements in §35.51.
+// measurements in §37.51.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -61,7 +61,7 @@ test('short screens: the empty key field takes the placeholder\'s size; 同盟�
 test('text-fit: ellipsis exceptions stay scoped; only player names may break inside a word', () => {
   const src = readFileSync(path.join(ROOT, 'test/e2e/text-fit.mjs'), 'utf8');
   assert.match(src, /webkitLineClamp/);
-  // §35.23.12: callers may allow the compact version pill while checking its accessible name and bounds.
+  // §37.23.12: callers may allow the compact version pill while checking its accessible name and bounds.
   assert.ok(src.includes("export function textProblems(rootSel, extraEllipsis = '')"));
   assert.ok(src.includes("if (!cut.matches(`.seat__name, .specbar__who, .room-mode${extraEllipsis ? `, ${extraEllipsis}` : ''}`)) out.push(`ellipsis ${label}`);"));
   assert.match(src, /!breakOk\(p, c\) && !el\.closest\('\.seat__name'\)/);
@@ -97,7 +97,7 @@ test('the other event screens at a big 文字大小: 成就统计\'s banner, the
   assert.match(draftAll, /\.draft \.stephead__right \{ flex: 1 1 0;/);
   assert.match(draftAll, /\.draft \.dturn__go b \{ white-space: normal; text-wrap: balance;/);
   assert.match(draftAll, /\.draft \.draft-skip \{ height: auto;/, 'above the base rule (`.draft`)');
-  // §35.56: the step's name gives way by text size (大 / 特大) and on short screens, not by window width; 玩法说明 keeps its box
+  // §37.56: the step's name gives way by text size (大 / 特大) and on short screens, not by window width; 玩法说明 keeps its box
   assert.doesNotMatch(draftAll, /@media \(max-width: 1440px\)/);
   assert.match(draftAll, /:root\[data-text="lg"\] \.draft\.has-status \.stephead__name, :root\[data-text="xl"\] \.draft\.has-status \.stephead__name \{ display: none; \}/);
   assert.match(block(draftAll, '@media (max-height: 640px) {'), /\.draft\.has-status \.stephead__name \{ display: none; \}/);

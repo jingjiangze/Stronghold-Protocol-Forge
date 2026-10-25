@@ -155,7 +155,7 @@ function angel2(bb, chess, def) {
         // the bombings land BOMB_GAP apart,
         // radius BOMB_RADIUS around the target (附着型弹道: it follows the target), with the damage computed when the round
         // is made (「预计算的物理普通伤害」). Until 0.3.2 every success chose its own target with the consumer's sort and hit
-        // radius 1 at once (DESIGN §35.28).
+        // radius 1 at once (DESIGN §37.28).
         // [ASSUMED] a bombing whose target has died lands where it last stood; her 视野遮挡 rule is not modelled.
         const hr = num(t0.hp_ratio), prob = num(t0.prob), sc = num(t0.aoe_atk_scale, num(t0.damage_scale));
         const rounds = new Map(); // consumer → { t, target, n, amount }

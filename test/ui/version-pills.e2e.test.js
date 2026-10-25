@@ -1,4 +1,4 @@
-// Room period/difficulty pill geometry and text fit, including the Tooltip wrapper (fix53, §35.111).
+// Room period/difficulty pill geometry and text fit, including the Tooltip wrapper (fix53, §37.111).
 // SP_E2E=1 node --test test/ui/version-pills.e2e.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

@@ -1,4 +1,4 @@
-// server/sim/content/kits/shared/borrow.js — a 自选 kit that reuses tier-kit builders (versions M2, DESIGN §35.22.9).
+// server/sim/content/kits/shared/borrow.js — a 自选 kit that reuses tier-kit builders (versions M2, DESIGN §37.22.9).
 //
 // A tier kit is called once, with the SELECTED skill's blackboard. `alt` (tier4) and `lazySkills` (tier5) put only that
 // skill's spec where the shop chess expects it: a non-default id under `skills[id]`, the shop-default skill on `.skill`,

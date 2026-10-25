@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-fmout.js — 远山 (char_109_fmout), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-fmout.js — 远山 (char_109_fmout), 第一期 (DESIGN §37.22.9).
 // Splash around the struck target is the splashcaster profile. S2's「同时攻击攻击范围内所有敌人」is allInRange on the
 // skill's own grid. The module's wider range is the module talent rangeGrid (applyModuleRange).
 

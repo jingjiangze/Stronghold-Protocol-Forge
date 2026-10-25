@@ -1,10 +1,10 @@
-// §35.11. [ASSUMED] Local repair policy for this example only. Server validPlan and human validators stay strict.
+// §37.11. [ASSUMED] Local repair policy for this example only. Server validPlan and human validators stay strict.
 import { validPlan } from '../../server/match/aiPlan.js';
 const object = x => !!x && typeof x === 'object' && !Array.isArray(x);
 export const shortText = (s, max = 360) => typeof s === 'string' ? s.replace(/\s+/g, ' ').trim().slice(0, max) : '';
-// §35.62 [ASSUMED]: a level hold is accepted only at or above the slow community curve (3-5-7-9: L3 by R5, L4 by R7,
+// §37.62 [ASSUMED]: a level hold is accepted only at or above the slow community curve (3-5-7-9: L3 by R5, L4 by R7,
 // L5 by R9; handoff/round51 RESEARCH §3.2, BV19UXZBJExQ reply). Below it the price drop of one round (1 fund) never
-// pays for a round of lower-tier rolls. A candidate's own shopHold (二本叙 holds L2) is exempt. §35.63: L2 by R4, not
+// pays for a round of lower-tier rolls. A candidate's own shopHold (二本叙 holds L2) is exempt. §37.63: L2 by R4, not
 // R3 (the model read an R3 floor as an order to level and skipped third copies: board value at R3 10.4 against legacy's
 // 15.1; legacy levels at R4, when the price is 2), and L6 by R11 (R8-R13 one-fund holds; bots with L5 at R9 and L6 at
 // R11 dealt about 40 % more Final Assault damage).

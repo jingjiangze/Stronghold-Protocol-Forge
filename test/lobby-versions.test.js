@@ -1,4 +1,4 @@
-// test/lobby-versions.test.js — rooms of an official version and the host's version switch (DESIGN §35.23, M1;
+// test/lobby-versions.test.js — rooms of an official version and the host's version switch (DESIGN §37.23, M1;
 // server/lobby.js header "Official versions"): room.create { version }, room.proposeVersion / room.versionVote /
 // room.cancelVersionVote (modelled on 重刷: a lone human switches at once, the seated humans vote, a decline cancels, a
 // 60 s expiry, a 5 s guard after a declined or expired vote), what voids a vote, what a switch does to the room, the

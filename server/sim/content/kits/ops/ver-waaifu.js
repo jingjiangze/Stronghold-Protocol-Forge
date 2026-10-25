@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-waaifu.js — 槐琥 (char_243_waaifu), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-waaifu.js — 槐琥 (char_243_waaifu), 第一期 (DESIGN §37.22.9).
 // S1 is PASSIVE in the table but has a duration and no SP: a duration skill that opens on deployment (a passive cannot
 // be activated, and a lasting buff is not a permanent passive). S2's burst is the passive onStart.
 

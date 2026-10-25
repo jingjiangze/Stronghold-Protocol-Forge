@@ -1,4 +1,4 @@
-// Real-server browser E2E — the official versions' vote rules and a version match (DESIGN §35.23, M1), on an in-process
+// Real-server browser E2E — the official versions' vote rules and a version match (DESIGN §37.23, M1), on an in-process
 // server that enables every version with a short vote (versionVoteMs 4 s, versionRetryMs 0.5 s) and fast match hosts
 // (timerScale 0.1, combatSpeed 16 — the version hosts take the same matchHost options):
 //   * the vote: a spectator is no voter (1/2, no 同意 button on its page) → the vote expires (toast) → a human taking a

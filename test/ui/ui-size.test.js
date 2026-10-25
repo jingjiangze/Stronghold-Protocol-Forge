@@ -1,4 +1,4 @@
-// 设置 →「异形屏适配」→「界面大小」 (ui/screenFit.js, DESIGN §35.43; reworked from PR #838 by @zasx77771): one manual
+// 设置 →「异形屏适配」→「界面大小」 (ui/screenFit.js, DESIGN §37.43; reworked from PR #838 by @zasx77771): one manual
 // factor --sp-ui on <html>, default 100 %, no automatic shrink. What this file guards: the stored percentage (75–100 in
 // 5 % steps, 100 when missing or invalid) next to the edge offsets; --sp-ui only while it is not 100 % (at 100 % the
 // page is exactly the design); the layout root and the 异形屏适配 root multiplied by it; the 文字大小 floors of 中 / 大 /

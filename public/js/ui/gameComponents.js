@@ -78,7 +78,7 @@ export function Img({ src, class: cls, alt = '', fallback = null, style }) {
 
 /** Owner-aware operator pictures, with live selection / settings updates even on an already open card.
  * `ownerId` omitted = local picker; null = unowned catalogue art. Callers resolve stand-ins / DIY first.
- * B6, maintainer option A (2026-10-18); docs/SKINS.md and §35.4. Model outfits retain their models.
+ * B6, maintainer option A (2026-10-18); docs/SKINS.md and §37.4. Model outfits retain their models.
  */
 export function OperatorImage({ m, chess, ownerId, skin = null, portrait = false, avatarFallback = false,
   portraitClass, avatarClass, ...props }) {

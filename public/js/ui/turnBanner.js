@@ -21,7 +21,7 @@ export const TURN_BANNER_MS = 1700;
 
 /**
  * The latest the band still starts after the turn began, when its sprites were still loading (ms): it waits for them
- * (§35.18's leftover: a cold cache skipped the solo band at 1 s), but not without end — later, the turn is well under
+ * (§37.18's leftover: a cold cache skipped the solo band at 1 s), but not without end — later, the turn is well under
  * way and the band would only cover it. [ASSUMED] the bound (no official counterpart — the event's client has its art
  * at hand); the band never blocks input meanwhile.
  */

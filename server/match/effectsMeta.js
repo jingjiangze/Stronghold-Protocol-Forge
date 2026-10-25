@@ -16,7 +16,7 @@
 //   onBattleStart onBattleResult onChoicePick onEquip onArt onDestroy onLayers onActiveBonds
 // (onActiveBonds: the set of active bonds changed — PlayerState.recompute, player/round.js _reportActiveBonds.)
 // Garrisons fire only on the hook of their eventType (SERVER_GAIN→onGain of the gained piece, SERVER_PREP_START→
-// onPrepStart — 「进入休整期时」, after a 机变 draft (DESIGN §35.53; the strategies' grants §35.24) —, SERVER_PREP_FIN→onPrepEnd, SERVER_CHESS_SOLD→onSold of the sold piece, SERVER_PRICE→onPrice of the
+// onPrepStart — 「进入休整期时」, after a 机变 draft (DESIGN §37.53; the strategies' grants §37.24) —, SERVER_PREP_FIN→onPrepEnd, SERVER_CHESS_SOLD→onSold of the sold piece, SERVER_PRICE→onPrice of the
 // slot's chess, SERVER_REFRESH_SHOP→onRefresh); the dispatcher calls `handler[hook] ?? handler.run`. A handler may
 // widen that per garrison with `garrisonHooks(garrison) → hook[]` (e.g. "<进入休整期时><休整期结束时>"). Owned-piece
 // garrisons fire for board pieces, and for hand pieces unless bbStr.conditionkey is 'character_target_inboard'. A
@@ -66,7 +66,7 @@ const HANDLER_EXTRAS = new Set(['run', 'garrisonHooks']);
 /** Garrison eventType → dispatcher hook. */
 export const GARRISON_HOOK = Object.freeze({
   SERVER_GAIN: 'onGain',
-  SERVER_PREP_START: 'onPrepStart',   // 「进入休整期时」: PREP opens, after the 机变 draft (DESIGN §35.53; was onRoundStart)
+  SERVER_PREP_START: 'onPrepStart',   // 「进入休整期时」: PREP opens, after the 机变 draft (DESIGN §37.53; was onRoundStart)
   SERVER_PREP_FIN: 'onPrepEnd',
   SERVER_CHESS_SOLD: 'onSold',
   SERVER_PRICE: 'onPrice',

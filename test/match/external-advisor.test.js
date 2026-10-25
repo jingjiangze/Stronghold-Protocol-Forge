@@ -158,7 +158,7 @@ for (const transport of ['http', 'stdio']) test(`advisor ${transport}: one hello
   assert.equal(ai.inflight.size, 0);
 });
 
-test('§35.62 plan mode: a late prep keeps the last accepted direction; only protocol errors count toward the limit', t => {
+test('§37.62 plan mode: a late prep keeps the last accepted direction; only protocol errors count toward the limit', t => {
   const h = fixture(t), { m } = h, ps = m.order[0];
   const id = ps.shop.slots.find(s => s?.kind === 'chess').id;
   const bond = ps.gd.chess(id).bonds.find(b => !m.gd.modeInactiveBonds.has(b));
@@ -167,7 +167,7 @@ test('§35.62 plan mode: a late prep keeps the last accepted direction; only pro
   const state = m.externalAI.states.get(ps.playerId);
   const nextPrep = (round = m.round) => h.run(() => pending(m)?.kind === 'prep' && m.round > round);
   assert.ok(nextPrep());
-  // §35.63: of the economy only the funds direction (saveForInterest, reserve) carries over.
+  // §37.63: of the economy only the funds direction (saveForInterest, reserve) carries over.
   const carried = { buy: [id], bonds: [{ id: bond, priority: 4 }], economy: { reserve: 3 } };
   assert.deepEqual(m.externalAI.planFor(ps), carried, 'no placements, choice or one-prep hold carry over');
   m.externalReply(pending(m).id, null, 'timeout');
@@ -187,7 +187,7 @@ test('§35.62 plan mode: a late prep keeps the last accepted direction; only pro
   checkInvariants(m); assert.deepEqual(h.logs.error, []);
 });
 
-test('§35.62 the plan\'s primary core bond leads legacy\'s focus before a member is owned', t => {
+test('§37.62 the plan\'s primary core bond leads legacy\'s focus before a member is owned', t => {
   const { m } = fixture(t), ps = m.order[0];
   const owned = new Set(ps.allChess().flatMap(p => ps.gd.chess(p.id)?.bonds || []));
   const id = m.gd.bondIds.find(b => m.gd.bond(b)?.isCore && !m.gd.modeInactiveBonds.has(b) && !owned.has(b));

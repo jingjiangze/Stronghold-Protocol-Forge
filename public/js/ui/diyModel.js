@@ -12,7 +12,7 @@
 // (`sp.pref.diy` = { v: 1, picks }) and sent with C2S `room.diy { picks }` (the server keeps the legal picks and drops
 // the rest — shared/protocol.js checkDiyPicks — so a stale pick never gets the roster refused). Out of match: the next
 // match takes it. 导出 / 导入 use a versioned envelope like the 干员持有 list.
-// Per version (DESIGN §35.23, M1): each official version has its own slots and pools, so its picks are kept apart —
+// Per version (DESIGN §37.23, M1): each official version has its own slots and pools, so its picks are kept apart —
 // `sp.pref.diy` for 第二期下半 (unchanged) and `sp.pref.diy.<slug>` for another version (diyPrefKey); the export names its
 // version (`version`, only a non-default one).
 

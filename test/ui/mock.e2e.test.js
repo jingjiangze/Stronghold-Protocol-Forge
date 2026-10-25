@@ -341,7 +341,7 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
     } finally { await page.close(); }
   });
 
-  // Q / X prefer the underframe's selection, otherwise use hover (DESIGN §35.31).
+  // Q / X prefer the underframe's selection, otherwise use hover (DESIGN §37.31).
   test('prep: Q/X use selection before hover', async () => {
     const { page, problems } = await open('phase=PREP', { render: 'fallback' });
     const initial = await mockState(page);
@@ -978,7 +978,7 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
     });
   }
 
-  // §35.51: under the 机变 overlay (.gm.has-sp) every button of the corner (交流, ⚙, 📖 玩法说明, ⛶ 全屏) stays on top — the
+  // §37.51: under the 机变 overlay (.gm.has-sp) every button of the corner (交流, ⚙, 📖 玩法说明, ⛶ 全屏) stays on top — the
   // element at its centre is the button — in wide windows, where the corner's one row reached under the veil, and on a
   // coarse phone, where the overlay starts past the corner's wrapped width
   for (const [w, h, touch] of [[1280, 720, false], [1440, 900, false], [1920, 1080, false], [667, 375, true]]) {
@@ -995,7 +995,7 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
     });
   }
 
-  // §35.51 review: on short phones a strategy's name takes two lines — Japanese never starts one with a small kana, ー or a
+  // §37.51 review: on short phones a strategy's name takes two lines — Japanese never starts one with a small kana, ー or a
   // closing mark (「ワルフ|ァリン」), a Korean name stays whole on one line or ends in an ellipsis (「에르망|가르드」 broke
   // between syllables) — and the header's status no longer runs over 2/2; the team and the solo draft, 中 – 特大
   test('选择策略 on 640×360 / 667×375 phones in Japanese and Korean at 中 – 特大: the names break by the rules, the header\'s status clear of 2/2', { timeout: 300000 }, async () => {
@@ -1022,7 +1022,7 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
     assert.deepEqual(bad, []);
   });
 
-  // §35.56: the pre-game headers at wide windows and on phones, the 机变 overlay's head on phones. One page per case, the
+  // §37.56: the pre-game headers at wide windows and on phones, the 机变 overlay's head on phones. One page per case, the
   // text-fit checker's overlap findings plus the header's own boxes
   async function mockScreen(query, root, lang, textSize, [w, h]) {
     const page = await browser.newPage();
@@ -1040,7 +1040,7 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
     return page;
   }
 
-  test('选择策略 in wide windows: at 大 / 特大 nothing over 2/2 or the step\'s name and 「How to Play」 inside its button; at 中 the name shown (§35.56)', { timeout: 300000 }, async () => {
+  test('选择策略 in wide windows: at 大 / 特大 nothing over 2/2 or the step\'s name and 「How to Play」 inside its button; at 中 the name shown (§37.56)', { timeout: 300000 }, async () => {
     const bad = [];
     for (const variant of ['', '&variant=solo']) for (const textSize of ['lg', 'xl']) for (const win of [[1600, 900], [1920, 1080]]) {
       const page = await mockScreen(`phase=BAND_DRAFT${variant}`, '.screen.draft', 'en', textSize, win);
@@ -1056,7 +1056,7 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
     assert.deepEqual(bad, []);
   });
 
-  test('确认本局信息 and the 机变 overlay on phones: the header\'s name, the reroll note and the timing line clear; Korean card texts by words (§35.56)', { timeout: 300000 }, async () => {
+  test('确认本局信息 and the 机变 overlay on phones: the header\'s name, the reroll note and the timing line clear; Korean card texts by words (§37.56)', { timeout: 300000 }, async () => {
     const bad = [];
     for (const lang of ['en', 'ko']) for (const textSize of ['lg', 'xl']) for (const win of [[640, 360], [667, 375]]) {
       const page = await mockScreen('phase=INFO_CHECK', '.brief', lang, textSize, win);

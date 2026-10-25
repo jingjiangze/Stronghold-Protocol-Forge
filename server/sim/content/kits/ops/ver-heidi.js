@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-heidi.js — 海蒂 (char_4045_heidi), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-heidi.js — 海蒂 (char_4045_heidi), 第一期 (DESIGN §37.22.9).
 // The trait regen is the bard profile. 私人信使 (talent index 1, sp_recovery_per_sec) is 破碎日冕 only and is not applied.
 // The module's +8% while two other operators are in range is 最终加算 (atkFinal): the text says it is not affected by skills.
 

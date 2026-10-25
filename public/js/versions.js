@@ -1,4 +1,4 @@
-// versions.js — which official version this page shows (DESIGN §35.23, M1; the maintainer's decisions of 2026-10-22).
+// versions.js — which official version this page shows (DESIGN §37.23, M1; the maintainer's decisions of 2026-10-22).
 //
 //   * The lobby: each player's own choice (a browser preference, `sp.pref.lobby.version`), among the versions the server
 //     enables (welcome.versions: registry order, the server's default marked) — a preference the server does not list
@@ -79,7 +79,7 @@ export function lobbyVersion(s) {
 /** A room's version (room.state.version; absent = 第二期下半). @param {any} room */
 export const roomVersion = (room) => (typeof room?.version === 'string' && room.version ? room.version : DEFAULT_VERSION);
 
-/** The solo time rule, as the lobby card and the solo briefing say it (DESIGN §35.23.10). N_ so extract sees them. */
+/** The solo time rule, as the lobby card and the solo briefing say it (DESIGN §37.23.10). N_ so extract sees them. */
 export const SOLO_TIME_UNLIMITED = N_('休整期与机变阶段不限时');
 export const SOLO_TIME_TIMED = N_('休整每轮 300 秒，机变 150 秒');
 export const SOLO_TIME_SHORT = N_('每轮 300 秒');

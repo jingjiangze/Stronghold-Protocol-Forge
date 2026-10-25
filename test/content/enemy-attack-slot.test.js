@@ -1,5 +1,5 @@
 // test/content/enemy-attack-slot.test.js — the attack-class skills of the non-leader enemies and bounty leaders take the
-// attack's turn (DESIGN §35.52, after §35.29's boss leaders and parts). Official: each skill's prefab ability is a
+// attack's turn (DESIGN §37.52, after §37.29's boss leaders and parts). Official: each skill's prefab ability is a
 // MeleeAttack / RangedAttack / Multi*Attack (fx/index.json units.<key>.skills, from the client's battle/enm_pfb_*.ab);
 // PRTS's skill rules 「大多数技能自动触发会占用攻击间隔」, 「同一技能的冷却时间于该技能结束时开始计时」. Until 0.3.2 they ran
 // on their own timers on top of the attacks.
@@ -77,7 +77,7 @@ test('the committed class fixture matches the fx index (when extracted; SP_UPDAT
   assert.deepEqual(JSON.parse(fs.readFileSync(CLASSES_FILE, 'utf8')), CLS);
 });
 
-/** The skills whose trigger is the attack's target (no selector of their own): they wait for a swing (DESIGN §35.54). */
+/** The skills whose trigger is the attack's target (no selector of their own): they wait for a swing (DESIGN §37.54). */
 const SWING_ONLY = new Set(['enemy_1513_dekght ChargeAttack', 'enemy_1517_xi ShieldBurst', 'enemy_1517_xi ShieldBurstReborn']);
 
 test('each listed skill is built as an attack-class ability with its clip; 腐败骑士\'s charge and “自在”\'s 破桎而出 wait for a swing', () => {
@@ -165,7 +165,7 @@ test('鼠王: 【唱沙】 / 【沙狱】 with no target in its attack range sti
   assert.ok(Math.abs(e.atkCd - e.s.interval) < 1e-9);
 });
 
-test('a clip longer than the attack interval holds the next attack: no strike inside 自行炮\'s Cannon or W\'s C4 (DESIGN §35.54)', () => {
+test('a clip longer than the attack interval holds the next attack: no strike inside 自行炮\'s Cannon or W\'s C4 (DESIGN §37.54)', () => {
   for (const [key, p, row] of [['enemy_1273_stmgun_2', 'Cannon', 9], ['enemy_1504_cqbw', 'C4', 9]]) {
     const h = field([{ chessId: 't_wall', row, col: 6 }]);
     const e = put(h, key, [9, 7]);
@@ -183,7 +183,7 @@ test('a clip longer than the attack interval holds the next attack: no strike in
   }
 });
 
-test('鼠王\'s own turns keep a normal attack\'s refusals: no 唱沙 / 沙狱 while 缴械 or 恐惧 (DESIGN §35.29)', () => {
+test('鼠王\'s own turns keep a normal attack\'s refusals: no 唱沙 / 沙狱 while 缴械 or 恐惧 (DESIGN §37.29)', () => {
   for (const st of ['disarm', 'fear']) {
     const h = field([{ chessId: 't_wall', row: 9, col: 2 }]);
     const e = put(h, 'enemy_1509_mousek', [12, 9]);

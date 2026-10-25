@@ -601,7 +601,7 @@ function LoadoutScreen({ st, leaving = false }) {
   const m = data.get('assets');
   const getChess = (id) => data.lookup('chess', id);
   const getBond = (id) => data.lookup('bonds', id);
-  const roster = useMemo(() => rosterOf(data.list('chess')), [ready, data.locale(), data.contentId()]); // names follow a language switch; the list follows the room's content and a version switch (§35.36, §35.23)
+  const roster = useMemo(() => rosterOf(data.list('chess')), [ready, data.locale(), data.contentId()]); // names follow a language switch; the list follows the room's content and a version switch (§37.36, §37.23)
   const bonds = useMemo(() => {
     const used = new Set(roster.flatMap((c) => c.bonds || []));
     return (data.list('bonds') || []).filter((b) => b && used.has(b.bondId))
@@ -671,7 +671,7 @@ function LoadoutScreen({ st, leaving = false }) {
   // a row's quick choice (PR #301): the same setChoice / setEntries path; the row becomes the selection, a phone stays on the list
   // (the edit is made on the view this render drew, with this render's records: written back through that view's map —
   // a click that lands while another version's data replaces it is re-based, never filed under another operator,
-  // DESIGN §35.23)
+  // DESIGN §37.23)
   const quickChange = (id, patch) => {
     const recs = recordsOf(id, getChess);
     setEntries(setChoice(st.entries, recs.base, recs.golden, patch), { base: st.entries });
@@ -703,7 +703,7 @@ function LoadoutScreen({ st, leaving = false }) {
   const ioOwn = io?.kind === 'ownership';
   const ioDiy = io?.kind === 'diy';
   const openExport = () => setIo(tab === 'ownership'
-    // (by operator, every version's — DESIGN §35.23; a v1 store still migrating exports what it has)
+    // (by operator, every version's — DESIGN §37.23; a v1 store still migrating exports what it has)
     ? { mode: 'export', kind: 'ownership', text: serializeOwnership(loadoutStore.get().notOwnedChars || []) }
     : tab === 'diy' ? { mode: 'export', kind: 'diy', text: serializeDiy(loadoutStore.get().diy, { version: loadoutStore.get().diyVersion }) }
       : { mode: 'export', kind: 'loadout', text: serializeExport(loadoutStore.get().byChar || {}, { ops: loadoutStore.get().ops }) });
@@ -753,7 +753,7 @@ function LoadoutScreen({ st, leaving = false }) {
     if (opsRefused) { toast(opsRefused.text, opsRefused.tone); return; }
     // 0.2.2: a payload with `ops` replaces the 潜能 / 练度 too (an older export leaves them alone)
     const opIds = res.ops ? cultivationCharIds(data.get('chess'), data.get('backups')) : null;
-    // (v2 by operator, v1 by 第二期下半's chess ids: as entries of the data on screen — DESIGN §35.23)
+    // (v2 by operator, v1 by 第二期下半's chess ids: as entries of the data on screen — DESIGN §37.23)
     const r = applyLoadoutEntries(importedEntries(res), getChess, res.ops ? { ops: res.ops, isOperator: (id) => opIds.has(id) } : {});
     const { applied, dropped } = r;
     const nOps = r.ops ?? 0;
@@ -857,7 +857,7 @@ function LoadoutScreen({ st, leaving = false }) {
   const lockedText = t('本局的调配已锁定（确认本局信息后无法修改），修改将在下一局生效');
   // the card view's top-bar note (cut short on narrow screens: its title holds it whole). A locked loadout is said once
   // in the card view: the bottom bar's chip, which every width and 快速配置 keep on screen — not again in this note, the
-  // sync chip beside it or the drawer's detail (§35.18's leftover: three times on a wide screen)
+  // sync chip beside it or the drawer's detail (§37.18's leftover: three times on a wide screen)
   const deckNote = quick === 'cult' ? t('潜能与练度按干员保存，普通、精锐形态与自选共用')
     : quick ? t('快速编辑：展示干员精锐形态的技能与模组，改动即时保存') : locked ? null : fromText;
   const loadoutDetail = html`<${Detail} m=${m} chess=${base} golden=${golden} entries=${st.entries} ops=${st.ops} onChange=${change} onOps=${setOpsOf} onReset=${resetOne} locked=${locked && !deck}

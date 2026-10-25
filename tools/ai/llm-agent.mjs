@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // [ASSUMED] Example limits: 16000 output tokens by default (SP_LLM_MAX_TOKENS), 256 KiB provider replies, 2 MiB input frames,
-// 16 concurrent requests (§35.62: four seats plus requests the host abandoned that are still finishing).
-// §35.9. Explicit stdio adapter; importing this module never connects. No credentials/remote errors on stdout/stderr.
+// 16 concurrent requests (§37.62: four seats plus requests the host abandoned that are still finishing).
+// §37.9. Explicit stdio adapter; importing this module never connects. No credentials/remote errors on stdout/stderr.
 import { appendFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { httpDecision } from '../../server/ai/transport.js';
@@ -91,7 +91,7 @@ choice:an action ID from this observation for band/card/offer/reward. Prefer omi
 one available choice; preserve the prep direction across drafts. During prep supply the round plan.
 An empty plan delegates to legacy; only plan is applied. why/pivot/pivotReason are private diagnostics.`;
 
-// §35.63 [ASSUMED]: a 机变 / offer / reward call executes only plan.choice (externalAI keeps a plan from prep calls only),
+// §37.63 [ASSUMED]: a 机变 / offer / reward call executes only plan.choice (externalAI keeps a plan from prep calls only),
 // yet the model re-planned the whole prep inside them and ran out of output tokens most often there (20 of 62). These
 // calls get the choice table and this task instead of the strategy candidates and continuity.
 export const CHOICE_TASK = `Choice-only decision: pick exactly one choices[].id. Reply only
@@ -107,7 +107,7 @@ export function advisorSystem(pack) {
   return prefix + JSON.stringify(slimKnowledge(pack, { maxChars: 200000 - prefix.length }));
 }
 
-// §35.62: the model sees at most two prep candidates (latency grows with the reply, and the third and fourth were
+// §37.62: the model sees at most two prep candidates (latency grows with the reply, and the third and fourth were
 // rarely chosen) and one copy of the level-curve basis sentence instead of one per checkpoint.
 export function modelStrategy(strategy, kind) {
   const candidates = strategy.candidates || [];
@@ -119,7 +119,7 @@ export function modelStrategy(strategy, kind) {
 
 const CHOICE_KINDS = new Set(['card', 'offer', 'reward']);
 
-// §35.63 [ASSUMED]: the model echoes the chosen card's name. When it names exactly one other card of this observation,
+// §37.63 [ASSUMED]: the model echoes the chosen card's name. When it names exactly one other card of this observation,
 // the choice follows the name (cycle 2, co-op seed 3 R9: the why named 萨卡兹百夫长, the ID picked a slime bounty).
 export function checkChoiceName(plan, name, choices, repairs) {
   if (!plan.choice || typeof name !== 'string' || !name.trim()) return;
@@ -150,7 +150,7 @@ export function createLLMAgent(env = process.env, request = httpDecision) {
   const timeoutMs = Number(env.SP_LLM_TIMEOUT_MS || 20000);
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 300000) throw new Error('LLM configuration');
   // Reasoning models spend completion tokens before they write the plan: 1200 left most replies empty
-  // (finish_reason 'length'). [ASSUMED] default 16000 (§35.63: 6000 cut off 126 of 365 cycle-2 replies; accepted
+  // (finish_reason 'length'). [ASSUMED] default 16000 (§37.63: 6000 cut off 126 of 365 cycle-2 replies; accepted
   // replies reached a median 4.8k output tokens by R9-R14), bounded; an optional OpenAI-style reasoning_effort.
   const maxTokens = Number(env.SP_LLM_MAX_TOKENS || 16000);
   if (!Number.isInteger(maxTokens) || maxTokens < 256 || maxTokens > 32000) throw new Error('LLM configuration');
@@ -215,7 +215,7 @@ export function createLLMAgent(env = process.env, request = httpDecision) {
     count(response);
     let content = String(response.choices?.[0]?.message?.content ?? '');
     let finish = response.choices?.[0]?.finish_reason;
-    // §35.63 [ASSUMED]: one retry when the reasoning budget ran out before the JSON (cycle 2: 126 of 365 requests, 54 of
+    // §37.63 [ASSUMED]: one retry when the reasoning budget ran out before the JSON (cycle 2: 126 of 365 requests, 54 of
     // the 58 solo ones with no text at all), while at least half the HTTP limit remains. SP_LLM_RETRY_EFFORT optionally
     // asks for less reasoning on that retry (only for providers that honour reasoning_effort).
     if (finish === 'length' && Date.now() - started < timeoutMs / 2) {
@@ -232,7 +232,7 @@ export function createLLMAgent(env = process.env, request = httpDecision) {
     try { parsed = parseReply(content); } catch { note({ ...info, stage: 'json', chars: content.length, head: content.slice(0, 300), tail: content.slice(-300), usage, ms: Date.now() - started }); throw new Error('JSON'); }
     let plan, repairs, why, pivot;
     try {
-      // Bare plans remain compatible with §35.9. Metadata never enters validPlan or the game's reply/journal.
+      // Bare plans remain compatible with §37.9. Metadata never enters validPlan or the game's reply/journal.
       const wrapped = parsed && Object.hasOwn(parsed, 'plan');
       if (wrapped && typeof parsed.why !== 'string') throw new Error('plan');
       why = shortText(wrapped ? parsed.why : '').match(/[^.!?。！？]+[.!?。！？]*/gu)?.slice(0, 3).join('').trim() || '';

@@ -105,7 +105,7 @@ export const initialState = Object.freeze({
     // 工坊 mod set (W-A, DESIGN §28.9): `available` = the packs `welcome.mods` declared（干净安装为空 ⇒ picker 不出现），
     // `selected` = the host's picks for the next room it creates. 值本身住在 public/js/roomMods.js，这一格只是 UI 读的那份。
     roomMods: { available: [], selected: [] },
-    // official versions (DESIGN §35.23, versions.js): welcome.versions（null = 开关关着）、本浏览器的选择、以及回放所属版本
+    // official versions (DESIGN §37.23, versions.js): welcome.versions（null = 开关关着）、本浏览器的选择、以及回放所属版本
     versions: null,
     lobbyVersion: (() => { const v = loadPref('lobby.version', null); return typeof v === 'string' && v.length <= 40 ? v : null; })(),
     replayVersion: null,

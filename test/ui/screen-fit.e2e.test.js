@@ -139,7 +139,7 @@ describe('异形屏适配 (headless Chrome)', { skip: !ENABLED && 'set SP_E2E=1 
     await phone.page.close();
   });
 
-  // DESIGN §35.47: on a short phone 选择同盟方式's and 选择模拟协议's right column and the protocol brief keep their unscaled
+  // DESIGN §37.47: on a short phone 选择同盟方式's and 选择模拟协议's right column and the protocol brief keep their unscaled
   // widths (÷ --sp-ui) — the names' 16 px and the brief's 11 px floors and the px paddings do not shrink, and at 75 % a
   // 222 px column cut the English difficulty names ('Perilous Simulation…') and the brief broke a Korean word
   for (const lang of ['en', 'ko']) {

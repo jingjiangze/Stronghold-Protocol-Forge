@@ -70,7 +70,7 @@ The existing portrait → illustration preference is retained; an illustration n
 「显示其他玩家的皮肤」 switch. A local picker reads the browser's choice; an explicit owner reads that seat's public
 map, or its unit's skin when the seat is unavailable, never the viewer's map. Unowned catalogue/statistics art stays
 unowned. `OperatorImage` subscribes to choices, visibility and the composed manifest, so open cards refresh on changes.
-Effective stand-in / DIY bodies are resolved before that lookup, preserving §34.23 and #686.
+Effective stand-in / DIY bodies are resolved before that lookup, preserving §36.23 and #686.
 The strategy draft's name cards (`screens/bandDraft.js` artOf: each doctor's 名片干员 art, as on the room's seat cards)
 follow the seat cards' rule below (`seatCardSkin`), reading the match's `m.public.players[].skins` for the others.
 
@@ -88,7 +88,7 @@ draft's name cards (`public/js/screens/bandDraft.js`) wears the player's outfit 
 - with **「显示其他玩家的皮肤」 off** the others' cards draw the default and one's own keeps its outfit;
 - an outfit **this page does not have** (a teammate's appearance plugin this browser lacks, or switched off) draws the
   operator's own art — `chessPortraitUrl(m, chess, { skin })` falls back — never a placeholder; an outfit picture that
-  **fails to load** falls back to the operator's default one on both (`seatArtSrc`; the draft's name cards since §35.51).
+  **fails to load** falls back to the operator's default one on both (`seatArtSrc`; the draft's name cards since §37.51).
 
 `ui/seatArt.js seatCardSkin` is that rule, on top of `ownerSkin`. The 名片干员 picker is one's own picker: its tiles wear
 this browser's outfits, as 干员调配's roster does. [ASSUMED] The whole map rides in `room.state`, not one skinId per card:

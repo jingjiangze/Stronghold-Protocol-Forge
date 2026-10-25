@@ -1,4 +1,4 @@
-// The page's simulation of another official version's set (versions M1, DESIGN §35.23): loadBrowserSim hands the
+// The page's simulation of another official version's set (versions M1, DESIGN §37.23): loadBrowserSim hands the
 // content modules the version marker (config.version), so a 第一期 battle simulated on the page finds kits by charId and
 // item behaviour by effectId exactly like the version host — before, the browser data had no `config` and every
 // version branch took the default path (another operator's kit, another item's effect). The browser reads the content

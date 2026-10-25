@@ -1,4 +1,4 @@
-// server/sim/content/kits/ops/ver-halo.js — 星源 (char_135_halo), 第一期 (DESIGN §35.22.9).
+// server/sim/content/kits/ops/ver-halo.js — 星源 (char_135_halo), 第一期 (DESIGN §37.22.9).
 // The resting chain (4 jumps, falloff from the trait, sluggish) is the chain profile. S1's charged shot carries its own.
 // She is already on 缪尔赛思's version 莱茵 list; this file does not edit that list.
 

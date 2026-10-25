@@ -14,7 +14,7 @@
 .settle__barbg .sprite { position: absolute; left: 0; top: 0; width: 100%; height: 1.8rem; object-fit: fill; }
 .settle__detail { position: absolute; inset: 0; z-index: 5; background: #070909; }
 .settle__btnbg { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
-/* [ASSUMED] Preserve #698's boxes; uniformly shrink long translations and enlarged text within them (§35.1). */
+/* [ASSUMED] Preserve #698's boxes; uniformly shrink long translations and enlarged text within them (§37.1). */
 .settle__title { position: relative; overflow: hidden; }
 .settle__title > span { position: absolute; left: 0; top: 50%; display: block; width: max-content; white-space: nowrap;
   transform-origin: left center; transform: translateY(-50%) scale(var(--title-scale, 1)); }

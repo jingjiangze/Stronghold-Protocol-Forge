@@ -1,4 +1,4 @@
-// test/ui/version-content.test.js — the browser side of the official versions' data (DESIGN §35.23, M1; protocol §3):
+// test/ui/version-content.test.js — the browser side of the official versions' data (DESIGN §37.23, M1; protocol §3):
 //   * content.js loadVersionSet: a version's /cs/<cs16>/index.json (vanilla, its `version` the id expected, no plugins or
 //     settings, its composition hashing to the cs), every data file under /data/versions/<slug>/ checked by its bytes, the
 //     official-bounds snapshot under /cs/<cs16>/; refused: a changed byte, a file outside the version's folder, another

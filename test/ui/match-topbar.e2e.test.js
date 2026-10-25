@@ -90,7 +90,7 @@ describe('match top bar (headless Chrome)', { skip: !ENABLED && 'set SP_E2E=1 (a
       { hidden: 'true', text: 'RHODES ISLAND TERMINAL SERVICE', img: false },
     ]);
     // a narrow screen (phone landscape): the text stand-in, wider than its sprites, gives way rather than run into itself
-    // over the narrowed band (§35.18); back at full width it is there again
+    // over the narrowed band (§37.18); back at full width it is there again
     await page.setViewport({ width: 667, height: 375, deviceScaleFactor: 1 });
     await sleep(300);
     assert.deepEqual(await decoLayout(page), { shown: [], overlaps: [] }, '667 px: no deco text, nothing overlapping');
@@ -175,7 +175,7 @@ describe('match top bar (headless Chrome)', { skip: !ENABLED && 'set SP_E2E=1 (a
   });
 
   test('real phase spacing: 协议启动！ inside the 3 s BATTLE_CHECK, so the round-1 kettles play over the bar and the entry ends before 准备', async () => {
-    // the server's own spacing (data/config.json timers.battleCheck 3, 回合开始 2 s; DESIGN §35.18): 协议启动！ comes
+    // the server's own spacing (data/config.json timers.battleCheck 3, 回合开始 2 s; DESIGN §37.18): 协议启动！ comes
     // DRAFT_HOLD_MS 0.7 s into BATTLE_CHECK, so 回合开始 follows it 2.3 s later, and 准备 2 s after that (the l2 review's
     // integration gate for decisions 5 and 6 — the frozen 回合开始 of the test above cannot show a scene cut short)
     const { page, problems, context } = await open();

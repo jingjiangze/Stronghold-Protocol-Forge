@@ -1,13 +1,13 @@
 // tools/versions/act2autochess-v2_1.mjs — build profile of 第二期上半: 盟约·下半 (act2autochess) in its first sub-version
 // V2_1 (2026-03-14 16:00 → 2026-03-27 16:00, the 更新#2 that made V2_2, today's data; docs/DATA.md "Official versions
-// (M0)", the maintainer's decisions of 2026-10-22, DESIGN §35.22). Every table is pinned to the launch commit 1457587e
+// (M0)", the maintainer's decisions of 2026-10-22, DESIGN §37.22). Every table is pinned to the launch commit 1457587e
 // (Kengxxiao/ArknightsGameData, data version 26-03-13-06-11-47): activity_table (36 strategies, 120 chess), the
 // character / skill / module / range tables, enemy_handbook_table and enemy_database, and the level files of both
 // seasons with level_autochess_enemy_data (levels changed next at a24a8ad1, 2026-04-08). No file the build reads
 // changed between 1457587e and 86b6e749 (V2_2): the GitHub history of each path, checked 2026-10-22; range, uniequip,
 // battle_equip and enemy_database last changed at 12e0a020 (2026-03-10), so their 1457587e copy is also V2_1's.
 // 987b4cd5 (03-17) changed only battle/buff_template_data.json (精准's ATK and five flags), not a build input: 第二期上半
-// stands for V2_1 with that fix [ASSUMED]; 03-17 vs 03-27 is open for the maintainer (DESIGN §35.22).
+// stands for V2_1 with that fix [ASSUMED]; 03-17 vs 03-27 is open for the maintainer (DESIGN §37.22).
 //
 // What carries over from the default build (same season, measured on V2_2) and what does not:
 //   adapters  launchModes: the 1457587e table already lists the 终极 modes (startTime 2026-03-27 16:00); they open with

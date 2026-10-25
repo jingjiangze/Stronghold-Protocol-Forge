@@ -233,7 +233,7 @@ import { DIFFICULTIES, ERR, MAX_SEATS, MIN_SEATS, MAX_SPECTATORS, ROOM_CODE_LEN,
 import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, checkDiyPicks, charPotentialChanges, checkSkinSelection, operatorCharIds, PACK_MSG_LIMITS, CHAT_LIMITS } from '../shared/protocol.js';
 import { modSetOf, isModId, modSetDrift } from '../shared/modIdentity.js';
 import { normalizeSupportConfig, checkSupport, supportPicker, supportCapacity, supportTiers } from '../shared/support.js';
-import { holdDecision } from './roomPack.js';
+import { createRoomHooks, holdDecision } from './roomPack.js';
 import { encode, isErrCode, sendRaw, sendSession } from './net.js';
 import { getData as defaultGetData, lookup } from './data.js';
 import { Match as DefaultMatch } from './match/Match.js';
@@ -567,6 +567,33 @@ export class Room {
    */
   get needsContent() { return this.modded || this.version !== DEFAULT_VERSION; }
 
+  /**
+   * 一个玩家/观战者座位的**钩子侧快照**（`join` / `leave` / `spectate` 的 `by`）—— 与 `room.players` 里的条目同形，
+   * 所以包读 `by.playerId` 与读 `room.players` 一样，不需要记住两套形状。
+   * @param {string} playerId
+   */
+  hookPlayer(playerId) {
+    for (const p of this.hookSnapshot().seats) if (p && p.playerId === playerId) return p;
+    for (const s of this.hookSnapshot().spectators) if (s && s.playerId === playerId) return { ...s, seat: null, isBot: false, ready: false, left: false };
+    return null;
+  }
+
+  /**
+   * 包里**房间钩子**在事件那一刻看到的房间快照（DESIGN §28.20）：`toState()` 去掉 `t` 与 `support`（一个是
+   * 线格式的帧类型，一个是服务端按需查的助战目录 —— 钩子不需要它，而信封里少一个键就少一份要维护的形状），
+   * 并且**不带 `mods`**：房间自己的集合是**安装那一刻**就定死的（钩子的 `room.modIds` 就是它），事件里再带这一大坨
+   * 只是把不变的静态数据复制 N 遍。
+   *
+   * 这份快照是给**钩子**的，不是给玩家的：它不经过 `encode`，所以它照 `room.state` 的字段形状走、不带 `t`。
+   */
+  hookSnapshot() {
+    const state = this.toState();
+    delete state.t;
+    delete state.support;
+    delete state.mods;
+    return state;
+  }
+
   /** @param {string} playerId @returns {Seat | null} */
   seatOf(playerId) {
     for (const s of this.seats) if (s && s.playerId === playerId) return s;
@@ -750,6 +777,18 @@ export class Lobby {
      * 工坊行为层 (docs/WORKSHOP.md §4)：`{ kits, modules, panels, mods, roomAssets, ... }`。null = 干净安装。
      */
     this.workshop = workshop && typeof workshop === 'object' ? workshop : null;
+    /**
+     * 包声明的**房间级钩子**总线（`pack.json.server.room`, DESIGN §28.20）：`workshop.roomHooks` 是启动时
+     * `server/roomPack.js loadRoomInstallers` 交出来的真函数（每个包一个 `install(room)`），这里包成一张
+     * **按房间**留表的 bus（W-B：声明了集合的房间只装它点名的包）。一个包都没声明时是空数组 ⇒ `install` /
+     * `fire` 都早退，房间的每一步与从前逐字节相同。
+     */
+    this.roomHooks = createRoomHooks({
+      installers: this.workshop && Array.isArray(this.workshop.roomHooks) ? this.workshop.roomHooks : [],
+      log: this.log,
+      now: this.now,
+    });
+
     /**
      * 包通道白名单（docs/WORKSHOP.md §1.9.6）：`<包id>` → 这个包声明过的通道名集合，由**面板清单**推出来。
      * @type {Map<string, Set<string>>}
@@ -1250,6 +1289,10 @@ export class Lobby {
     session.roomCode = code;
     session.notice = null;
     session.pendingResult = null;
+    // 房间级钩子（§28.20）：房间**已经完全建好**（在 rooms 里、房主就位、集合已物化）之后才触发 —— 包看到的
+    // 就是这个房间真正的样子。装不上的包在 `install` 里已经点名并退场，房间照旧。
+    this.roomHooks.install(room);
+    this.hookFire(room, 'create', { room: room.hookSnapshot(), by: room.hookPlayer(session.playerId) });
     this.log.info(`[lobby] ${code} created (${mode}/${difficulty}${version !== DEFAULT_VERSION ? `, ${version}` : ''}${room.test ? ', test' : ''}) by ${session.name}`);
     this.broadcastState(room);
     return OK;
@@ -1480,32 +1523,6 @@ export class Lobby {
     this.roomHooks.fire(room, event, payload);
   }
 
-  /**
-   * 一个玩家/观战者座位的**钩子侧快照**（`join` / `leave` / `spectate` 的 `by`）—— 与 `room.players` 里的条目同形，
-   * 所以包读 `by.playerId` 与读 `room.players` 一样，不需要记住两套形状。
-   * @param {string} playerId
-   */
-  hookPlayer(playerId) {
-    for (const p of this.hookSnapshot().seats) if (p && p.playerId === playerId) return p;
-    for (const s of this.hookSnapshot().spectators) if (s && s.playerId === playerId) return { ...s, seat: null, isBot: false, ready: false, left: false };
-    return null;
-  }
-
-  /**
-   * 包里**房间钩子**在事件那一刻看到的房间快照（DESIGN §28.20）：`toState()` 去掉 `t` 与 `support`（一个是
-   * 线格式的帧类型，一个是服务端按需查的助战目录 —— 钩子不需要它，而信封里少一个键就少一份要维护的形状），
-   * 并且**不带 `mods`**：房间自己的集合是**安装那一刻**就定死的（钩子的 `room.modIds` 就是它），事件里再带这一大坨
-   * 只是把不变的静态数据复制 N 遍。
-   *
-   * 这份快照是给**钩子**的，不是给玩家的：它不经过 `encode`，所以它照 `room.state` 的字段形状走、不带 `t`。
-   */
-  hookSnapshot() {
-    const state = this.toState();
-    delete state.t;
-    delete state.support;
-    delete state.mods;
-    return state;
-  }
 
   /**
    * **每名真人须同意**的判据（W7, DESIGN §28.53）。返回 `null` = 通过，否则是要回给客户端的 `fail(...)`。
@@ -1854,6 +1871,8 @@ export class Lobby {
     session.pendingResult = null;
     if (!room.hostId) room.hostId = session.playerId;
     this.broadcastState(room);
+    // 房间级钩子（§28.20）：**新成员**加入（幂等的重复 join 在上面就返回了，走不到这里）。
+    this.hookFire(room, 'join', { room: room.hookSnapshot(), by: room.hookPlayer(session.playerId) });
     return OK;
   }
 
@@ -1889,6 +1908,8 @@ export class Lobby {
     session.pendingResult = null;
     this.broadcastState(room);
     if (room.match) this.callMatch(room, 'addSpectator', session.playerId);
+    // 房间级钩子（§28.20）：**新观战者**加入。观战者不是玩家、不占座位、不算开局门槛，但「谁在看」包也该知道。
+    this.hookFire(room, 'spectate', { room: room.hookSnapshot(), by: room.hookPlayer(session.playerId) });
     return OK;
   }
 
@@ -2912,6 +2933,12 @@ export class Lobby {
       this.log.info(`[lobby] ${room.code} match #${room.matchCount} starting (${room.mode}/${room.difficulty}, ${seats.length} seats, seed ${seed}${room.test ? ', test' : ''}${modded ? `, content ${room.content.cs.slice(0, 8)}${match.hosted ? ' in its match host' : ''}` : ''}${versioned ? `, version ${room.version}${match.hosted ? ' in its match host' : ''}` : ''})`);
       this.broadcastState(room);
       match.start();
+      // 房间级钩子（§28.20）：**一局真的起来了**（`match.start()` 已经跑完、没有抛）。
+      this.hookFire(room, 'matchStart', {
+        matchNo: room.matchCount, mode: room.mode, difficulty: room.difficulty, seed,
+        players: room.seats.filter(Boolean).map((s) => s.playerId),
+        spectators: room.spectators.map((s) => s.playerId),
+      });
     } catch (e) {
       this.log.error(`[lobby] ${room.code} match failed to start`, e);
       if (room.matchCtx === ctx) {
@@ -2920,6 +2947,9 @@ export class Lobby {
       }
       this.disposeMatchCtx(ctx);
       this.broadcastState(room);
+      // 房间级钩子（§28.20）：这一局**没起来**。包在 `matchStart` 里挂过的一次性东西有这一条可以收回；
+      // 它不是 `matchEnd` —— 那个事件说的是「打过的一局结束了」，与一个从没开始的对局是两件事。
+      this.hookFire(room, 'matchFailed', { matchNo: room.matchCount + 1, error: e && e.message ? e.message : String(e) });
       // the match hosts refuse one content set more than they run (PLUGIN_BUSY: server/match/host/index.js)
       return fail(e && isErrCode(e.code) ? e.code : ERR.INTERNAL, 'match failed to start');
     }
@@ -2937,6 +2967,15 @@ export class Lobby {
     room.matchKey = null;
     room.replay = this.buildReplay(room, ctx);
     setImmediate(() => this.disposeMatchCtx(ctx));
+    // 房间级钩子（§28.20）：**这一局结束了**。位置在两处清理之前 —— 座位还没被腾空、断线的人还没进宽限，
+    // 所以包拿到的还是「刚打完」的那张座位表；`disposed` 若跟着来（房间空了），包看到的是 matchEnd → dispose。
+    this.hookFire(room, 'matchEnd', {
+      matchNo: room.matchCount,
+      summary: room.lastSummary,
+      victory: !!(room.lastSummary && room.lastSummary.victory),
+      players: room.seats.filter(Boolean).map((s) => s.playerId),
+      spectators: room.spectators.map((s) => s.playerId),
+    });
     // a match of gameplay plugins, or of an official version, whose match host stopped (header "Gameplay plugins",
     // "Official versions"; its members were told: proxy.js)
     const why = summary && typeof summary.reason === 'string' && /^(?:plugin|version)-/.test(summary.reason) ? ` (${summary.reason}${summary.detail ? `: ${summary.detail}` : ''})` : '';
@@ -3223,6 +3262,10 @@ export class Lobby {
    * @param {Room} room @param {string} playerId
    */
   removeMember(room, playerId) {
+    // 房间级钩子（§28.20）：**离开**在座位真的被释放**之前**触发 —— 此刻 `by` 还是这个人的那个座位，
+    // 所以包看到的是「谁走了」而不是「少了一个人」。离开、踢人、观战者被移除、大厅宽限超时都走这里。
+    const leaving = room.hookPlayer(playerId);
+    if (leaving) this.hookFire(room, 'leave', { by: leaving });
     const session = this.registry.byId(playerId);
     if (session && session.roomCode === room.code) session.roomCode = null;
     this.clearGrace(playerId);
@@ -3338,6 +3381,13 @@ export class Lobby {
     // the room's visual set and content set are no longer held by it (server/plugins/visualSet.js, contentSets.js)
     this.releaseContent(room.content);
     this.log.info(`[lobby] ${room.code} disposed (${reason})`);
+    // 房间级钩子（§28.20）：**最后一个事件**，放在这里而不是函数开头 —— `room.closed` 已经发给还连着的成员，
+    // 而这时包仍然读得到那张座位表（座位还在数组里、只是会话已经脱离了房间）。这是唯一在
+    // `room.disposed === true` 之后触发的事件：它的意思正是「这个房间没了」。
+    this.hookFire(room, 'dispose', { reason, room: room.hookSnapshot() });
+    // 这个房间的钩子表随房间一起消失：一张按房间码索引的表不能留住已经没了的房间（码会被 genCode 用掉，
+    // 留下旧条目就是让下一个同码的房间继承上一个的钩子）。
+    this.roomHooks.forget(room);
   }
 
   genCode(yieldingRoom = null) {

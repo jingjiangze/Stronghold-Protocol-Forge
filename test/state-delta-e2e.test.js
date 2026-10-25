@@ -10,6 +10,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { startServer } from '../server/index.js';
+// 本仓库的线格式号是 2（上游是 1：聊天 / 座位上限 / 模组集 / 助战这些消息是我们加的），
+// 所以 hello 要发这个号 —— 服务端对不上的号一律 BAD_MSG。
+import { PROTOCOL_VERSION } from '../shared/constants.js';
 import { STATE_DELTA_VERSION, StateReceiver } from '../shared/stateDelta.js';
 import { TestClient } from './helpers/wsClient.js';
 
@@ -109,7 +112,7 @@ test('a repeated hello keeps the baseline, and a reconnecting socket starts a ne
 
   const before = await first.waitFor('m.state', () => true, 5000).catch(() => null);
   // A second hello on the same live socket (a rename) must not drop the baseline: the next frame stays a delta.
-  const w2 = await first.request({ t: 'hello', name: 'Repeat2', version: 1, delta: STATE_DELTA_VERSION });
+  const w2 = await first.request({ t: 'hello', name: 'Repeat2', version: PROTOCOL_VERSION, delta: STATE_DELTA_VERSION });
   assert.equal(w2.t, 'welcome', JSON.stringify(w2));
 
   // A brand-new connection has no baseline at all, so its first frame must be a full one.

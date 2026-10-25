@@ -63,6 +63,7 @@ import { NoticesButton } from '../ui/notices.js';
 import { VersionSwitch } from '../ui/versionPicker.js';
 import { contentSet, retryContentSet } from '../content.js';
 import { DEFAULT_VERSION, lobbyVersion, offeredDifficulties, fallbackDifficulty, seasonOf, soloTimedOf, soloTimeMsgid, versionLabel } from '../versions.js';
+export { DEFAULT_DIFFICULTY, parsePlaytestParam } from './lobbyLinks.js';
 
 /** Official mode texts (activity_table act2autochess.modeDataDict), fallback when config.json is absent. */
 export const MODE_TEXT = {
@@ -522,8 +523,55 @@ function BackPlate({ onClick, class: cls = '' }) {
  * replacing the button's label and the hint (the host's 确认), or `readOnly` — the cards shown, not chosen, and no
  * button (the other doctors: the host chooses).
  */
+/**
+ * 本房间使用 mod (W-A, DESIGN §28.9): the host ticks the packs THIS server declared, and the pick travels as
+ * `room.create.modIds`. The list comes from `welcome.mods.packs` (main.js writes it into store.roomMods), so it can only
+ * ever offer content the server has — the server refuses an unknown id with MOD_UNKNOWN rather than guessing.
+ *
+ * Rendered only when the server declared at least one pack; on a plain install this component returns nothing and the
+ * create button sends exactly what it always did.
+ */
+function ModPicker({ selected, onToggle }) {
+  const { available } = useStore((s) => s.roomMods, shallowEqual);
+  if (!available.length) return null;
+  return html`<div class="mod-picker">
+    <div class="mod-picker__head">
+      <${MicroLabel} tone="mint">ROOM MODS<//>
+      <span>${t('本房间使用的模组')}</span>
+    </div>
+    <ul class="mod-picker__list">
+      ${available.map((p) => html`<li key=${p.id}>
+        <button type="button" class=${`mod-chip${selected.includes(p.id) ? ' is-on' : ''}`}
+          aria-pressed=${selected.includes(p.id) ? 'true' : 'false'} onClick=${() => onToggle(p.id)}>
+          <span class="mod-chip__id">${p.id}</span>
+          <span class="mod-chip__meta">${t(LAYER_TEXT[p.layer] || p.layer)}${p.combat ? ` · ${t('会改动战斗结果')}` : ''}</span>
+        </button>
+      </li>`)}
+    </ul>
+    <div class="mod-picker__note">${t('不勾选 = 本房间不声明模组（模拟仍按服务器加载的全部模组运行）')}</div>
+  </div>`;
+}
+
+/**
+ * 「本房间使用的模组」选择器要不要出现（G3）。**一格判据、两个建房屏共用**
+ * （`ProtocolScreen` 与 `AllianceSelect`）—— 两份判据就是两个会漂的真相。
+ *
+ * 判据**不是房间模式，而是「这台服务器声明过包吗」**：那件事由 `ModPicker` 自己收尾
+ * （`available.length === 0` 就返回 null），所以干净安装逐字节不变；这里只列**真的会建房间**的两个模式。
+ *
+ * **为什么 solo 也要有**：服务端从不按 mode 分支 —— `server/lobby.js` 的 `resolveRoomModSet` 在 `create` 里
+ * 无条件跑，结果写进 `room.modIds` / `room.modSet`；而 W-B 让声明的集合**真的决定这一局跑什么**
+ * （`startMatch` 里 `roomAssets.forRoom(room.modSet)` 供出这一局的数据 / kit 清单，`mods` 又进 BattleSpec）。
+ * 单人房声明集合因此不是装饰 —— 从前只是**客户端没给入口**，服务端一直收得下。
+ * @param {string} roomMode 'solo' | 'coop'
+ * @returns {boolean}
+ */
+export const ROOM_MOD_PICKER_MODES = Object.freeze(['solo', 'coop']);
+export function hasRoomModPicker(roomMode) { return ROOM_MOD_PICKER_MODES.includes(roomMode); }
+
 export function ProtocolSelect({ roomMode, difficulty, onDifficulty, onClose, onCreate, busy, online, testMode, asTest, onTest, action = null, hint = null, readOnly = false,
-  difficulties = DIFFICULTIES, loading = false, failed = false, soloTime = null }) {
+  difficulties = DIFFICULTIES, loading = false, failed = false, soloTime = null,
+  selectedMods = [], onToggleMod = () => {} }) {
   const card = MODE_CARDS.find((c) => c.id === roomMode) || MODE_CARDS[0];
   const info = difficultyInfo(roomMode, difficulty);
   const label = action || (roomMode === 'solo' ? t('开始独立模拟') : t('创建同盟'));
@@ -552,6 +600,7 @@ export function ProtocolSelect({ roomMode, difficulty, onDifficulty, onClose, on
           </div>
         </section>
         <section class="proto-side">
+          ${hasRoomModPicker(roomMode) ? html`<${ModPicker} selected=${selectedMods} onToggle=${onToggleMod} />` : null}
           <div class="proto-list" role="group" aria-label=${t('模拟难度')} aria-busy=${loading ? 'true' : 'false'}>
             ${failed ? html`<p class="proto-list__wait is-failed" data-testid="proto-failed"><${Icon} name="warn" />${t('版本数据校验失败')}
                 <${Button} size="sm" variant="secondary" data-testid="proto-retry" onClick=${retryContentSet}>${t('重试')}<//></p>`
@@ -602,7 +651,8 @@ export function ProtocolSelect({ roomMode, difficulty, onDifficulty, onClose, on
  * in a 1024 px window — it ended in an ellipsis there).
  */
 export function AllianceSelect({ onClose, onCreate, difficulty = 'FUNNY', code, onCode, codeOk, online, busy, onJoin, onSpectate, recent, marks, focusKey,
-  testMode = false, asTest = false, onTest = () => {}, short = false, roomMode = 'coop', seatValue = null, seatMax = MAX_SEATS, onSeat = () => {} }) {
+  testMode = false, asTest = false, onTest = () => {}, short = false, roomMode = 'coop', seatValue = null, seatMax = MAX_SEATS, onSeat = () => {},
+  selectedMods = [], onToggleMod = () => {} }) {
   const diffName = DIFFICULTY_NAMES[difficulty] ? t(DIFFICULTY_NAMES[difficulty]) : '';
   return html`<${Modal} open=${true} onClose=${onClose} class="ally" veilClass="proto-veil">
     <div class="ally__body">
@@ -626,6 +676,7 @@ export function AllianceSelect({ onClose, onCreate, difficulty = 'FUNNY', code, 
             <span class="ally-card__bar"><span class="ally-card__icon">${busy === 'create' ? html`<${Spinner} size="sm" />` : html`<${Icon} name="plus" />`}</span><span class="ally-card__name">${t('创建同盟')}</span>
               <small>${online ? t('难度：{name}（可在同盟内更改）', { name: diffName }) : t('正在连接服务器…')}</small></span>
           </button>
+          ${hasRoomModPicker(roomMode) ? html`<${ModPicker} selected=${selectedMods} onToggle=${onToggleMod} />` : null}
           ${roomMode === 'coop' ? html`<${SeatCapPicker} value=${seatValue ?? seatCapRange(seatMax).max} min=${seatCapRange(seatMax).min} max=${seatCapRange(seatMax).max} onChange=${onSeat} />` : null}
           ${testMode ? html`<label class="create-box__test ally-test" data-testid="create-test">
             <input type="checkbox" checked=${asTest} onChange=${(e) => onTest(e.target.checked)} />
@@ -753,6 +804,9 @@ export function LobbyScreen() {
   // `null` = 没动过 ⇒ 建房时按上限（此时不发这个字段，帧与 B5 之前逐字节相同）。
   const [seatMax, setSeatMax] = useState(() => serverSeatMaxOf());
   const [seatValue, setSeatValue] = useState(null);
+  // 本房间声明的模组集合 (W-A, DESIGN §28.9)：只列这台服务器声明过的包（welcome.mods.packs）
+  const [selectedMods, setSelectedMods] = useState([]);
+  const toggleMod = (id) => setSelectedMods((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
   useEffect(() => {
     const sync = () => setSeatMax(serverSeatMaxOf());
     sync();
@@ -804,6 +858,7 @@ export function LobbyScreen() {
   // (`version`: the lobby's, only when welcome.versions is present — protocol §4; omitted when the server offers 第二期下半 alone)
   const create = (roomMode) => run('create', () => net.request('room.create', {
     ...seatCapPayload(roomMode, seatValue, seatMax),
+    ...(selectedMods.length ? { modIds: selectedMods } : {}),
     mode: roomMode, difficulty: roomMode === 'solo' ? shownSolo : shownCoop, ...(testMode && asTest ? { test: true } : {}), ...(versions ? { version } : {}),
     ...(roomMode === 'solo' && soloFree && soloTimed === true ? { soloUnlimited: true } : {}),
   }));
@@ -887,11 +942,11 @@ export function LobbyScreen() {
     ${allyOpen ? html`<${AllianceSelect} onClose=${() => setAllyOpen(false)} onCreate=${() => create('coop')} difficulty=${shownCoop} seatValue=${seatValue} seatMax=${seatMax} onSeat=${setSeatValue}
       code=${code} onCode=${(v) => setCode(normalizeCode(v))} codeOk=${codeOk} online=${online} busy=${busy}
       onJoin=${join} onSpectate=${spectate} recent=${recent} marks=${marks} focusKey=${!coarse}
-      testMode=${testMode} asTest=${asTest} onTest=${setAsTest} short=${shortScreen} />` : null}
+      testMode=${testMode} asTest=${asTest} onTest=${setAsTest} short=${shortScreen} selectedMods=${selectedMods} onToggleMod=${toggleMod} />` : null}
     ${soloOpen ? html`<${ProtocolSelect} roomMode="solo" difficulty=${shownSolo} onDifficulty=${pickDifficulty}
       onClose=${() => setSoloOpen(false)} onCreate=${() => create('solo')} busy=${busy} online=${online}
       testMode=${testMode} asTest=${asTest} onTest=${setAsTest} difficulties=${solo} loading=${versionLoading} failed=${versionFailed}
-      soloTime=${soloTimed === true ? { on: soloFree, onToggle: setSoloFreePref } : null} />` : null}
+      soloTime=${soloTimed === true ? { on: soloFree, onToggle: setSoloFreePref } : null} selectedMods=${selectedMods} onToggleMod=${toggleMod} />` : null}
     ${sweepOpen ? html`<${SweepReport} onClose=${() => setSweepOpen(false)} />` : null}
     ${achOpen ? html`<${AchievementDialog} onClose=${() => setAchOpen(false)} />` : null}
   </div>`;

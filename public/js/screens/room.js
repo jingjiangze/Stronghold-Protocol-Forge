@@ -822,6 +822,10 @@ export function RoomScreen() {
   const online = conn.status === 'online';
   const coop = room.mode !== 'solo';
   const facts = roomFacts(room, me.playerId);
+  // 对齐状态（W-D, DESIGN §28.16）：房间声明了集合而本机还没拿到那几个包时，solo 房主的「开始模拟」
+  // 也要挡住 —— 服务端会在开局那一刻拒绝（CONTENT_NOT_READY / 缺件），别让玩家点一个注定失败的按钮。
+  // `align` 由 RoomModsPanel 算完回填（它才是问 planAlignment 的那一处）。
+  const [align, setAlign] = useState(null);
   const myReady = !!facts.mine?.ready;
   const info = difficultyInfo(room.mode, room.difficulty);
 
@@ -838,6 +842,8 @@ export function RoomScreen() {
   };
 
   const toggleReady = () => run('ready', () => net.request('room.ready', { ready: !myReady }));
+  const alignBlocked = isAlignBlocked(align);
+  const soloAlignBlocked = hostStartAlignBlocked({ solo: !coop, align });
   const start = () => run('start', () => net.request('room.start', {}));
   const addBot = () => run('add', () => net.request('room.addBot', {}));
   const removeBot = (seat) => run(`rm${seat}`, () => net.request('room.removeBot', { seat }));
@@ -1030,7 +1036,7 @@ export function RoomScreen() {
     ${/* 房间屏的**旁栏**宿主（`screen.room.aside`，docs/WORKSHOP.md §1.9.3 的第 10 槽）：容器由**组件自己**渲染
          （`[data-mod-slot]`），**不在** `extensions.js MOD_PANEL_CREATED` 的四个浮层里 —— 它不是浮层，是这一屏的地方。 */ null}
     <div class="mod-host" data-mod-slot="screen.room.aside"></div>
-    <${RoomModsPanel} room=${room} myId=${me.playerId} />
+    <${RoomModsPanel} room=${room} myId=${me.playerId} onAlignment=${setAlign} />
     <${ChatPanel} />
     <div class="mod-host" data-mod-slot="screen.room.chat"></div>
     <footer class="room-bar rs-foot">
@@ -1052,7 +1058,7 @@ export function RoomScreen() {
       <${SupportButton} from="room" size="md" class="room-support" />
         ${facts.isHost
           ? html`<${Tooltip} text=${facts.canStart ? null : vote ? t('切换版本投票进行中，请等投票结束') : !facts.contentReady ? (facts.versionRoom ? t('仍有博士未载入「{version}」的数据', { version: versionLabel(curVersion) }) : t('仍有博士未载入房间的插件内容')) : t('仍有博士未准备就绪')}>
-              <${GoButton} label=${t('开始模拟')} loading=${busy === 'start'} disabled=${!facts.canStart || !online || busy === 'start' || !!vote} onClick=${start} />
+              <${GoButton} label=${t('开始模拟')} loading=${busy === 'start'} disabled=${!facts.canStart || !online || busy === 'start' || !!vote || soloAlignBlocked} title=${soloAlignBlocked ? t('本机缺少本房间声明的模组，补齐后才能开始') : null} onClick=${start} />
             <//>`
           : facts.spectating
             ? html`<${GoButton} label=${t('观战中')} icon="eye" disabled=${true} />`

@@ -35,6 +35,8 @@ export async function mountLobbyPlugins(lobby, registry, { log = null } = {}) {
   const matchOptions = [];
   const events = new Map(ROOM_EVENTS.map((e) => [e, []]));
   const disposers = [];
+  let mounted = 0;   // 真正挂上的插件数（过滤后仍可能因路径逃逸/缺文件/setup 抛错而挂不上——
+                     //  ext 只按这个数决定挂不挂，否则空 ext 会让宿主误以为有插件）
 
   for (const p of plugins) {
     const rel = p.manifest.code.lobby;
@@ -67,6 +69,7 @@ export async function mountLobbyPlugins(lobby, registry, { log = null } = {}) {
       };
       const d = await mod.setup(api);
       if (typeof d === 'function') disposers.push(d);
+      mounted++;
       log?.info?.(`[lobby] plugin ${p.id}: lobby hooks mounted`);
     } catch (e) {
       log?.error?.(`[lobby] plugin ${p.id}: code.lobby failed`, e);
@@ -103,7 +106,7 @@ export async function mountLobbyPlugins(lobby, registry, { log = null } = {}) {
     },
   };
 
-  lobby.setExtensions?.(plugins.length ? ext : null);
+  lobby.setExtensions?.(mounted ? ext : null);
   return () => {
     for (const d of disposers) { try { d(); } catch { /* ignore */ } }
     lobby.setExtensions?.(null);

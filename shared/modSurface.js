@@ -45,6 +45,7 @@ const isPlain = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
  * @returns {{ ok: true, decl: ReadonlyArray<object> } | { ok: false, code: string, reason: string }}
  */
 export function parseMatchKinds(raw) {
+  /** @type {(code: string, reason: string) => { ok: false, code: string, reason: string }} */
   const bad = (code, reason) => ({ ok: false, code, reason });
   if (!Array.isArray(raw)) return bad('MATCHKINDS_BAD_SHAPE', 'matchKinds must be an array of { id, seats?, label? }');
   if (!raw.length) return bad('MATCHKINDS_EMPTY', 'matchKinds must declare at least one kind (drop the key instead of sending [])');

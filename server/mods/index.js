@@ -20,6 +20,7 @@ import { fetchHttps, readDownloadAllow } from '../plugins/install.js';
 import { importArchive } from './import.js';
 import { startInbox } from './inbox.js';
 import { modPage } from './page.js';
+import { MOD_PAGE_SCRIPT } from './pageScript.js';
 
 const MAX_JSON_BYTES = 64 * 1024;
 
@@ -131,6 +132,16 @@ export function createMods({ root, pluginsDir, dataDir, registry = null, vanilla
         if (method !== 'GET') { sendError(req, res, 405, '不支持的请求方法 · Method not allowed'); return; }
         const body = Buffer.from(modPage({ inbox: inboxPath, keyHint: path.join(pluginsDir, '.studio-key') }), 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Length': body.length });
+        res.end(req.method === 'HEAD' ? undefined : body);
+        return;
+      }
+
+      // The page's script, served as a file: the site CSP hashes only import maps, so an inline
+      // <script> on /mod is blocked and the table would stay empty. `script-src 'self'` covers this.
+      if (rawPath === '/mod/page.js') {
+        if (method !== 'GET') { sendError(req, res, 405, '不支持的请求方法 · Method not allowed'); return; }
+        const body = Buffer.from(MOD_PAGE_SCRIPT, 'utf8');
+        res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Length': body.length });
         res.end(req.method === 'HEAD' ? undefined : body);
         return;
       }

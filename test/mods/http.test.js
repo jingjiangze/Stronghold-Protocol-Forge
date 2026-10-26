@@ -83,7 +83,7 @@ test('/mod: the page and the status read are open; a write method is 405', async
     let r = await call(mods, { method: 'GET', url: '/mod' });
     assert.equal(r.status, 200);
     assert.match(String(r.headers['content-type']), /text\/html/);
-    assert.match(r.body, /\/mod\/upload/, 'the page still names the upload path');
+    assert.match(r.body, /<script src="\/mod\/page\.js"><\/script>/, 'the page loads its script as a file');
 
     r = await call(mods, { method: 'POST', url: '/mod' });
     assert.equal(r.status, 405);
@@ -278,5 +278,26 @@ test('/mod: a peer that is not on this machine or the local network gets 404 for
     }
     const r = await call(mods, { method: 'GET', url: '/mod', headers: { host: 'evil.example' } });
     assert.equal(r.status, 404, 'a foreign Host is refused');
+  } finally { mods.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('/mod: the page loads its script as a file, because the site CSP hashes only import maps', async () => {
+  const { mods, dir } = makeMods();
+  try {
+    let r = await call(mods, { method: 'GET', url: '/mod' });
+    assert.equal(r.status, 200);
+    assert.match(r.body, /<script src="\/mod\/page\.js"><\/script>/,
+      'the page names the external script');
+    assert.doesNotMatch(r.body, /<script>\s*\(\(\)/,
+      'no inline script: siteCsp() would block it and the table would stay empty');
+
+    r = await call(mods, { method: 'GET', url: '/mod/page.js' });
+    assert.equal(r.status, 200);
+    assert.match(String(r.headers['content-type']), /javascript/);
+    assert.match(r.body, /\/mod\/status\.json/, 'the script is the one that fills the table');
+    assert.doesNotMatch(r.body, /<\/script>/, 'a served .js does not close a tag it never opened');
+
+    r = await call(mods, { method: 'POST', url: '/mod/page.js' });
+    assert.equal(r.status, 405);
   } finally { mods.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });

@@ -306,6 +306,21 @@ function composeContentSet({ registry, ids = [], checkDataOnly = false }) {
   if (tr.problems.length) return { problems: tr.problems };
   // Checking declarative references must never execute a dependency's script setup/preflight.
   if (checkDataOnly) return { data, problems: [] };
+  // 代码根（DESIGN §32.6 的对局入口）：`code.match` 指向插件目录里的一个模块，worker/子进程 import 它代替
+  // 上游 Match.js —— 这是「插件自带对局逻辑」唯一的合法落点（matchClass 包装器只作用于主进程的 vanilla 对局）。
+  // 后加载者胜（与 code.client 的覆盖语义一致）：取列表里最后一个声明了 match 的根。
+  // Only a relative module path inside the plugin directory: an absolute path or a `..` segment would let a manifest make
+  // the match host import code from anywhere on the server. Only a trusted plugin may supply one — a script plugin is
+  // meant to run in the SES sandbox, and the match host runs outside it.
+  const codePath = (v) => typeof v === 'string' && v.length <= 200 && v.endsWith('.js')
+    && !v.startsWith('/') && !/^[A-Za-z]:/.test(v) && !v.split('/').includes('..');
+  const codeRoots = plugins
+    .filter((p) => p && typeof p.dir === 'string' && p.dir && p.manifest && p.manifest.class === 'trusted'
+      && p.manifest.code && codePath(p.manifest.code.match))
+    .map((p) => ({ id: p.id, root: p.dir, match: p.manifest.code.match }));
+  const code = codeRoots.length
+    ? { roots: codeRoots, match: [...codeRoots].reverse()[0].match }
+    : null;
   const bodies = new Map(base.files), files = {}, hashes = {};
   for (const [name, rec] of Object.entries(data)) {
     const rel = `data/${name}.json`;
@@ -367,7 +382,7 @@ function composeContentSet({ registry, ids = [], checkDataOnly = false }) {
     const [section, name] = rel.split('/');
     index[section][name.slice(0, -5)] = { url, ...f };
   }
-  const set = deepFreeze({ cs, vanilla, plugins: plugins.map(p => ({ id: p.id, version: p.manifest.version, hash: p.content.hash })),
+  const set = deepFreeze({ cs, vanilla, ...(code ? { code } : {}), plugins: plugins.map(p => ({ id: p.id, version: p.manifest.version, hash: p.content.hash })),
     data, files, ...(scripts.length ? {scripts, execution} : {}), ...(rules ? { rules } : {}), modes: Object.values(data.config.modes), problems: [], warnings, index, settings, bounds: boundsSnap,
     kitted: [...KITTED_CHARS, ...Object.keys(data.backups.units).filter(id => !own(base.data.backups.units, id))],
     // PLUGIN API v2 (docs/PLUGINS.md §10b): the interaction windows the set declares, tagged with their plugin. Data

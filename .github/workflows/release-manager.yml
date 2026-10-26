@@ -9,8 +9,9 @@ name: release-manager
 #   · 这一版走**上游自己的** `tools/package.mjs --lite`：白名单（RUNTIME_DIRS = server/ shared/ data/ public/
 #     packs/ schemas/ + 玩家工具）就是上游的判据，`server/` 整目录进包，所以 `server/mods/`（管理器本体 4 个
 #     文件）自动带上 —— 一条链，没有第二套打包口径。
-#   · tag 只用 `APP_VERSION`（0.3.1 树没有 UPSTREAM_VERSION，旧版那个 `modmgr-v<app>-<game>` 会退化成
-#     `modmgr-v0.3.1-`）。
+#   · tag = `modmgr-v<APP_VERSION>-<提交短SHA>`（0.3.1 树没有 UPSTREAM_VERSION，旧版那个
+#     `modmgr-v<app>-<game>` 会退化成 `modmgr-v0.3.1-`）。带短 SHA 是因为同一个 APP_VERSION 会发多次：
+#     引擎面继续前进而版本号跟随上游不动，只用 APP_VERSION 的话第二笔起永远命中「已存在 → 跳过」。
 #
 # 触发：`workflow_run` 接在 `mirror-upstream` **成功且发生在默认分支**之后（「每次上游同步成功后自动发」），
 #       外加人工 `workflow_dispatch`（可 dry-run 只构建不发）。
@@ -58,8 +59,15 @@ jobs:
           set -uo pipefail
           APP=$(grep -oE "APP_VERSION = '[^']+'" shared/constants.js | head -1 | cut -d"'" -f2)
           PKG=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")
-          TAG="modmgr-v${APP}"
+          # 同一个 APP_VERSION 会发布多次（引擎面继续前进、版本号跟随上游不动）。tag 必须能区分**这一次构建**，
+          # 否则第二笔起全部命中「已存在 → 跳过」，等于这条线再也不能发版。加 12 位提交短 SHA：
+          #   · 仍然幂等（同一提交重复 dispatch → 同 tag → 跳过，不覆盖、不重传）；
+          #   · 不引入会漂移的计数（构建序号 / 时间戳会让「同输入不同输出」失去可比性）；
+          #   · 版本号本身仍由 APP_VERSION 决定，`modmgr-v<APP>-<sha>` 一眼能看出发布对象。
+          SHA_SHORT="$(git rev-parse HEAD | cut -c1-12)"
+          TAG="modmgr-v${APP}-${SHA_SHORT}"
           echo "app=$APP" >> "$GITHUB_OUTPUT"; echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA_SHORT" >> "$GITHUB_OUTPUT"
           echo "package.json=$PKG · 发行标识 $TAG"
           if [ "$PKG" != "$APP" ]; then
             echo "::error::package.json ($PKG) 与 shared/constants.js APP_VERSION ($APP) 不一致 —— 别发，先查哪边漂移"
@@ -139,7 +147,7 @@ jobs:
           {
             echo "## 这是什么"
             echo
-            echo "**纯 mod 管理器发行物** —— 卫戍协议 0.3.1（\`APP_VERSION ${{ steps.v.outputs.app }}\`）的"
+            echo "**纯 mod 管理器发行物** —— 卫戍协议 \`${{ steps.v.outputs.app }}\`（= \`shared/constants.js\` 的 \`APP_VERSION\`）的"
             echo "**服务端运行时 + 模组管理器**。走的是上游自己的 \`tools/package.mjs --lite\`："
             echo "\`server/\`（含 \`server/mods/\` 管理器本体）、\`shared/\`、\`data/\`、\`public/\`、\`packs/\`、\`schemas/\`。"
             echo "**不含**游戏素材（\`npm run setup\` 首启自取）、\`public/dev/\`、\`test/\`、\`.github/\`。"
@@ -165,15 +173,17 @@ jobs:
             echo "## 这条线与上游的关系"
             echo
             echo "- 上游是 \`sganggs/Stronghold-Protocol\`（游戏本体）。这条线是它的直接后代："
-            echo "  在 0.3.2 之上只多出 10 个文件（管理器本体 4 个 + \`tools/mod.mjs\` + 文档 + 测试，"
-            echo "  以及对 \`server/index.js\` / \`server/http/routes.js\` / \`server/plugins/forgeImport.js\` 三个挂点）。"
+            echo "  在 \`${{ steps.v.outputs.app }}\` 之上另加**管理器本体 4 个文件**（\`server/mods/\`）、\`tools/mod.mjs\`、"
+            echo "  文档与测试，以及三个挂点（\`server/index.js\` / \`server/http/routes.js\` / \`server/plugins/forgeImport.js\`）；"
+            echo "  引擎面（对局 / 客户端 / 数据）也随本线前进，逐条见 \`CHANGELOG.md\` 与各次 PR。"
+            echo "  改了哪些上游也存在同路径的文件，登记在 \`.github/sync-allow.txt\`（\`mirror-upstream\` 的门控读它）。"
             echo "- 上游同步由 \`mirror-upstream.yml\` 自动做（merge，不 reset），四道门全过才推。"
             echo "- Forge 0.18.8 那条旧世系已归档：tag \`archive/forge-0.18.8-lineage\` + bundle。"
           } > "$NOTES"
           gh release create "${{ steps.v.outputs.tag }}" \
             --repo "$GITHUB_REPOSITORY" \
             --target "${{ github.ref_name }}" \
-            --title "mod 管理器 v${{ steps.v.outputs.app }}（纯服务端发行，不含素材）" \
+            --title "mod 管理器 v${{ steps.v.outputs.app }} · ${{ steps.v.outputs.sha }}（纯服务端发行，不含素材）" \
             --notes-file "$NOTES" \
             '${{ steps.out.outputs.zip }}' '${{ steps.out.outputs.zip }}.sha256'
           echo "### 已发布 ${{ steps.v.outputs.tag }}" >> "$GITHUB_STEP_SUMMARY"

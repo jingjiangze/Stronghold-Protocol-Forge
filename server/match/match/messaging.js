@@ -101,6 +101,20 @@ export class MatchMessaging {
       return;
     }
     this._pubDirty = false;
+    // 2V2: until the reveal round each team gets its own m.public (the opponent's rows are a stub); spectators and the
+    // reveal round get the single full view below.
+    if (this.isVersus && !this.opponentRevealed) {
+      this._lastPubAt = this.sched.now();
+      for (const ps of this.order) {
+        if (ps.isBot) continue;
+        try { this.sendTo(ps.playerId, this.publicView(this.teamIdOf(ps))); } catch (e) { this.reportError('publicView', e); }
+      }
+      const full = this.publicView(null);
+      for (const sp of this.spectators ? this.spectators.values() : []) {
+        try { this.sendTo(sp.playerId, full); } catch (e) { this.reportError('public', e); }
+      }
+      return;
+    }
     let view;
     try { view = this.publicView(); } catch (e) { this.reportError('publicView', e); return; }
     const { serverNow, ...rest } = view;

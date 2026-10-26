@@ -31,6 +31,7 @@
 
 import { parentPort, workerData } from 'node:worker_threads';
 import { createHash } from 'node:crypto';
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { getData, setData } from '../../data.js';
 import { installOfficialBounds } from '../../../shared/plugins/officialBounds.js';
@@ -50,7 +51,9 @@ let sandbox = false;
 /** PLUGIN API v2: the content set's interaction windows (docs/PLUGINS.md §10b) — data, injected into every match. */
 let offers = [];
 let options = {};
-const adopt = (init) => { ({ cs, hashInput, files, bounds = null, scripts = [], sandbox = false, offers = [] } = init || {}); options = (init && init.options) || {}; };
+/** code.match：插件自带的 Match 入口（{ roots: [{ id, root, match }], match }；没有插件时 null）。 */
+let code = null;
+const adopt = (init) => { ({ cs, hashInput, files, bounds = null, scripts = [], sandbox = false, offers = [], code = null } = init || {}); options = (init && init.options) || {}; };
 if (viaWorker) adopt(workerData);
 // a child process whose parent is gone has nothing left to do
 if (!viaWorker) process.on('disconnect', () => process.exit(0));
@@ -166,7 +169,19 @@ async function boot() {
   }
   // After setData, before Match: Match reads opts.registry || getDefaultRegistry(), the same singleton.
   dslGrants = await installPrepDsl(data);
-  const mod = await import(typeof options.matchModule === 'string' && options.matchModule ? pathToFileURL(options.matchModule).href : '../Match.js');
+  // 插件自带的对局入口优先（code.match，绝对目录 + 插件内相对路径）；没有才用上游 Match.js。
+  // options.matchModule 是测试专用（比插件更靠前，e2e 靠它注入假 Match）。
+  // A root whose match is absolute or steps out with `..` never runs (the builder refuses those; a set built before that
+  // check falls back to the engine Match rather than importing code from anywhere on the server).
+  const inside = (v) => typeof v === 'string' && v.endsWith('.js') && !v.startsWith('/') && !/^[A-Za-z]:/.test(v) && !v.split('/').includes('..');
+  const codeMatch = code && Array.isArray(code.roots)
+    ? [...code.roots].reverse().find((r) => r && typeof r.root === 'string' && inside(r.match))
+    : null;
+  const matchUrl = typeof options.matchModule === 'string' && options.matchModule
+    ? pathToFileURL(options.matchModule).href
+    : (codeMatch ? pathToFileURL(path.join(codeMatch.root, ...codeMatch.match.split('/'))).href : '../Match.js');
+  log.info(`[host] match module: ${codeMatch ? 'plugin ' + codeMatch.id + ' (' + codeMatch.match + ')' : 'engine'}`);
+  const mod = await import(matchUrl);
   const Inner = mod.Match || mod.default;
   if (typeof Inner !== 'function') throw new Error('the match module exports no Match');
   // [ASSUMED] Grant the prep EffectRefs after super(), once players exist (DESIGN §32.7).
@@ -268,6 +283,17 @@ function handle(m) {
     let result;
     if (!match) result = { error: 'WRONG_PHASE', detail: 'no running match' };
     else if (m.method === 'diag') result = diag(match);
+    // pack.msg：包装器用布尔回答「对局是否接管」。ipc 的 reply 必须是 object，所以在这里包一层
+    // （与 diag 同款的按名特判），否则 plain(true) 过不了 validHostMessage 的 reply 校验。
+    else if (m.method === 'handlePackMsg') {
+      try {
+        const fn = match[m.method];
+        result = { ok: true, consumed: typeof fn === 'function' ? fn.apply(match, Array.isArray(m.args) ? m.args : []) === true : false };
+      } catch (e) {
+        log.error(`[host] match ${m.matchId} ${m.method} threw`, e);
+        result = { error: ERR_INTERNAL };
+      }
+    }
     else {
       try {
         const fn = match[m.method];

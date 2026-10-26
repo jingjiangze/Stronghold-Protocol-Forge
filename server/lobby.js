@@ -162,7 +162,7 @@
 //     a player seat (the seat is kept and given back on resume).
 
 import { randomBytes, randomInt } from 'node:crypto';
-import { DIFFICULTIES, ERR, MAX_SEATS, MAX_SPECTATORS, ROOM_CODE_LEN, modeIdFor } from '../shared/constants.js';
+import { DIFFICULTIES, ERR, MAX_SEATS, MAX_SPECTATORS, ROOM_CODE_LEN, modeIdFor, teamOfSeat, TEAMS, TEAM_SIZE, TEAM_SIZES } from '../shared/constants.js';
 import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, checkDiyPicks, charPotentialChanges, checkSkinSelection, operatorCharIds } from '../shared/protocol.js';
 import { encode, isDroppable, isErrCode, sendRaw, sendSession } from './net.js';
 import { getData as defaultGetData, lookup } from './data.js';
@@ -264,11 +264,20 @@ function freezeSkins(skins, hasOperator) {
 
 /** One room: 4 seat slots, host, difficulty, optional running match. */
 export class Room {
-  /** @param {string} code @param {'solo'|'coop'} mode @param {string} difficulty @param {number} now */
-  constructor(code, mode, difficulty, now) {
+  /**
+   * @param {string} code @param {'solo'|'coop'|'versus'} mode @param {string} difficulty @param {number} now
+   * @param {number} [teamSize] versus only: players per team (2 = 2V2, 4 = 4V4); ignored in solo / co-op
+   */
+  constructor(code, mode, difficulty, now, teamSize = TEAM_SIZE) {
     this.code = code;
     this.mode = mode;
     this.difficulty = difficulty;
+    /**
+     * Players per team of a 'versus' room (2 = 2V2, 4 = 4V4). The room's seat capacity is `teamSize × TEAMS`, so the
+     * two formats share one binary: lobby, protocol bounds and Match all read this number instead of a constant.
+     * Solo / co-op keep 1 here and MAX_SEATS seats.
+     */
+    this.teamSize = mode === 'versus' && TEAM_SIZES.includes(teamSize) ? teamSize : (mode === 'versus' ? TEAM_SIZE : 1);
     /**
      * 「AI 队友最后选择」 (room.setAiPicksLast, GitHub #338; co-op only, off by default): the match's strategy and 机变 drafts
      * put every human seat before every AI seat (Match opts.aiPicksLast). Kept across the room's matches.
@@ -278,8 +287,11 @@ export class Room {
     this.private = false;
     /** @type {string | null} */
     this.hostId = null;
+    /** code.lobby 的扩展对象（server/plugins/lobbyModules.js；没有插件时为 null）。 */
+    this.ext = null;
     /** @type {(Seat | null)[]} */
-    this.seats = new Array(MAX_SEATS).fill(null);
+    // versus: teamSize × TEAMS seats (4 for 2V2, 8 for 4V4); solo / co-op: the official 1–4
+    this.seats = new Array(mode === 'versus' ? this.teamSize * TEAMS : MAX_SEATS).fill(null);
     /** @type {{ playerId: string, name: string, connected: boolean }[]} spectator seats, ≤ MAX_SPECTATORS (header) */
     this.spectators = [];
     /** @type {any} running Match instance */
@@ -344,12 +356,16 @@ export class Room {
       // 私密房：只在 true 时出现，普通 room.state 逐字节不变（mota 客户端的「私密房间」勾选框读这一格）。
       ...(this.private ? { private: true } : {}),
       hostId: this.hostId,
+      // code.lobby 的 roomState()：只在插件返回非空时多出字段（普通 room.state 逐字节不变）
+      ...(this.ext?.state?.(this) || {}),
       mode: this.mode,
       difficulty: this.difficulty,
       aiPicksLast: this.aiPicksLast,
       inMatch: !!this.match,
       seats: this.seats.map((s) => (s
         ? { seat: s.seat, playerId: s.playerId, name: s.name, isBot: s.isBot, ready: s.ready, connected: s.connected && !s.left,
+          // 2V2: the team this seat fights for — present only in a versus room (solo / coop keep their shape)
+          ...(this.mode === 'versus' ? { team: teamOfSeat(s.seat, { teamSize: this.teamSize }) } : {}),
           // a room with gameplay plugins (header "Gameplay plugins"): has this player's page loaded and checked its content?
           ...(this.modded && !s.isBot ? { content: s.content || 'loading' } : {}) }
         : null)),
@@ -357,6 +373,8 @@ export class Room {
       ...(this.content ? { content: this.content.trusted ? {...this.content, trusted:{...this.content.trusted, consent:Object.fromEntries(this.seats.filter(x => x && !x.isBot).map(x => [x.seat,x.consentCs === this.content.cs]))}} : this.content } : {}),
       // omitted when false so a normal room.state stays identical
       ...(this.test ? { test: true } : {}),
+      // versus: how many teams the room splits its seats into, and how many players each holds (2 = 2V2, 4 = 4V4)
+      ...(this.mode === 'versus' ? { teams: TEAMS, teamSize: this.teamSize } : {}),
     };
   }
 }
@@ -564,6 +582,7 @@ export class Lobby {
     if (changed) this.broadcastState(room);
     else this.sendState(room, session);
     this.resync(session, !resumed);
+    this.ext?.emit?.('resync', room, session);
   }
 
   /**
@@ -649,6 +668,8 @@ export class Lobby {
       case 'room.addBot': return this.addBot(session);
       case 'room.removeBot': return this.removeBot(session, msg);
       case 'room.kick': return this.kick(session, msg);
+      // 2V2: the host drags a seat between the two teams (server/lobby.js swapSeats)
+      case 'room.swapSeats': return this.swapSeats(session, msg);
       case 'room.start': return this.start(session);
       case 'room.rerollSetup': return this.rerollSetup(session, msg);
       case 'room.cancelReroll': return this.rerollSetup(session, msg, true);
@@ -663,9 +684,16 @@ export class Lobby {
       case 'room.contentReady': return this.contentReady(session, msg, ctx);
       case 'room.consent': return this.consent(session,msg);
       case 'pack.msg': return this.packMsg(session, msg);
-      default:
+      default: {
         if (typeof msg.t === 'string' && msg.t.startsWith('g.')) return this.routeGameNow(session, msg);
+        // lobby 级插件（code.lobby 的 on(type, fn)）：只处理它注册过的类型；异常按 INTERNAL 回，不拖垮连接。
+        const h = this.ext?.handlers?.get(msg.t);
+        if (h) {
+          try { return h(session, msg, ctx, this); }
+          catch (e) { this.log.error(`[lobby] plugin handler ${String(msg.t).slice(0, 40)} failed`, e); return fail(ERR.INTERNAL); }
+        }
         return fail(ERR.BAD_MSG, `unhandled type ${String(msg.t).slice(0, 32)}`);
+      }
     }
   }
 
@@ -731,7 +759,7 @@ export class Lobby {
   // room.* handlers
   // ---------------------------------------------------------------------------------------------------
 
-  create(session, { mode, difficulty, private: isPrivate, test } = {}) {
+  create(session, { mode, difficulty, private: isPrivate, test, teamSize } = {}) {
     // A test room exists only when the process switch allowed it. The check runs before the room is built.
     if (test === true && this.testEnabled !== true) return fail(ERR.TEST_DISABLED);
     const cur = this.roomOf(session);
@@ -749,7 +777,8 @@ export class Lobby {
     const code = this.genCode();
     if (!code) return fail(ERR.INTERNAL, 'no room code available');
     if (cur) this.removeMember(cur, session.playerId);
-    const room = new Room(code, mode, difficulty, this.now());
+    // 4V4: a versus room may be created with 4 players per team; any other mode ignores it (teamSize 1)
+    const room = new Room(code, mode, difficulty, this.now(), teamSize);
     room.test = test === true;
     room.private = mode !== 'solo' && isPrivate === true;
     room.content = this.vanilla;
@@ -761,6 +790,8 @@ export class Lobby {
       else { room.content = r.content; this.holdContent(r.content); }
     }
     room.ownerKey = key;
+    room.ext = this.ext;
+    this.ext?.init?.(room);   // 插件默认字段（chat 缓冲、房间级开关…）在广播之前就位
     room.seats[0] = this.humanSeat(0, session);
     room.hostId = session.playerId;
     this.rooms.set(code, room);
@@ -769,6 +800,7 @@ export class Lobby {
     session.pendingResult = null;
     this.log.info(`[lobby] ${code} created (${mode}/${difficulty}${room.test ? ', test' : ''}) by ${session.name}`);
     this.broadcastState(room);
+    this.ext?.emit?.('created', room);
     return OK;
   }
 
@@ -792,6 +824,7 @@ export class Lobby {
     session.pendingResult = null;
     if (!room.hostId) room.hostId = session.playerId;
     this.broadcastState(room);
+    this.ext?.emit?.('joined', room, session);
     return OK;
   }
 
@@ -1135,6 +1168,31 @@ export class Lobby {
     return OK;
   }
 
+  /**
+   * 2V2 (`room.swapSeats { a, b }`): swap the occupants of two seats — a player dragged between the two teams changes
+   * team (the team follows the seat index, `teamOfSeat`). Either seat may be empty (that is a move).
+   * Host-only, before the match, and only in a versus room. Both seats' `ready` clears: a swap may change the teams.
+   */
+  swapSeats(session, { a, b }) {
+    const room = this.roomOf(session);
+    if (!room) return fail(ERR.NOT_IN_ROOM);
+    if (room.mode !== 'versus') return fail(ERR.BAD_TARGET, 'not a 2V2 room');
+    if (room.hostId !== session.playerId) return fail(ERR.NOT_HOST);
+    if (room.match) return fail(ERR.ROOM_STARTED);
+    if (!Number.isInteger(a) || !Number.isInteger(b) || a === b) return fail(ERR.BAD_TARGET, 'two different seats');
+    if (a < 0 || a >= room.seats.length || b < 0 || b >= room.seats.length) return fail(ERR.BAD_TARGET, 'no such seat');
+
+    const [sa, sb] = [room.seats[a], room.seats[b]];
+    room.seats[a] = sb;
+    room.seats[b] = sa;
+    if (room.seats[a]) room.seats[a].seat = a;
+    if (room.seats[b]) room.seats[b].seat = b;
+    // a swap can move a human to the other team: nobody stands ready after it
+    for (const s of [room.seats[a], room.seats[b]]) if (s && !s.isBot) s.ready = false;
+    this.broadcastRoom(room, room.toState());
+    return OK;
+  }
+
   start(session) {
     const room = this.roomOf(session);
     if (!room) return fail(ERR.NOT_IN_ROOM);
@@ -1410,6 +1468,10 @@ export class Lobby {
         modeId: room.content?.modeId || modeIdFor(room.mode, room.difficulty),
         // 「AI 队友最后选择」 (GitHub #338): fixed for the match
         aiPicksLast: room.mode !== 'solo' && room.aiPicksLast === true,
+        // lobby 级插件给的 match opts（code.lobby 的 matchOptions）
+        ...(this.ext?.options?.(room) || {}),
+        // versus: players per team (2 = 2V2, 4 = 4V4) — PlayerState.team and the views derive from it
+        ...(room.mode === 'versus' ? { teamSize: room.teamSize } : {}),
         seats,
         // the spectator seats (header): watched like eliminated players, never players
         spectators: room.spectators.map((s) => s.playerId),
@@ -1429,6 +1491,9 @@ export class Lobby {
         // The list the lobby just checked the picks with (kittedFor). Vanilla rooms omit it: setDiy stays on
         // KITTED_CHARS, and the worker payload / test journal of a normal match do not grow a key.
         ...(modded ? { kitted: this.kittedFor(room) } : {}),
+        // 本房装上的插件 id（matchClass 包装器在 worker 里的房间门控信号；vanilla 房不出现这个键）
+        ...(modded && Array.isArray(room.content?.plugins) && room.content.plugins.length
+          ? { plugins: room.content.plugins.map((p) => p && p.id).filter((x) => typeof x === 'string' && x) } : {}),
         ...(room.content?.rules ? { rules: room.content.rules } : {}),
         data,
         log: this.log,
@@ -1448,6 +1513,7 @@ export class Lobby {
       this.log.info(`[lobby] ${room.code} match #${room.matchCount} starting (${room.mode}/${room.difficulty}, ${seats.length} seats, seed ${seed}${room.test ? ', test' : ''}${modded ? `, content ${room.content.cs.slice(0, 8)}${match.hosted ? ' in its match host' : ''}` : ''})`);
       this.broadcastState(room);
       match.start();
+      this.ext?.emit?.('started', room);
     } catch (e) {
       this.log.error(`[lobby] ${room.code} match failed to start`, e);
       if (room.matchCtx === ctx) { room.match = null; room.matchCtx = null; room.matchKey = null; }
@@ -1623,18 +1689,24 @@ export class Lobby {
    * 先问对局（`Match.handlePackMsg`，由包的 matchClass 包装器提供）：返回 true = 对局接管，不再广播；
    * 否则（undefined / 没有该方法 / 抛错）照旧转发。`from`/`seat` 由服务端从会话与座位解析。
    */
-  packMsg(session, msg) {
+  async packMsg(session, msg) {
     const room = this.roomOf(session);
     if (!room) return fail(ERR.NOT_IN_ROOM);
     const declared = this.packChannels instanceof Map ? this.packChannels.get(msg.pack) : null;
     if (!declared || !declared.has(msg.channel)) return fail(ERR.BAD_MSG, `undeclared pack channel ${String(msg.pack)}/${String(msg.channel)}`);
+    // 房间-包绑定：通道表是进程级的，A 房的玩家不该能把帧送进 B 房（装的包不同）。
+    // room.content.plugins 是本房真正装上的插件；vanilla 房没有这个列表，任何包通道都对它无意义。
+    const roomPacks = room.content && Array.isArray(room.content.plugins) ? room.content.plugins.map((p) => p && p.id) : [];
+    // 只对本房确实装了插件集的情况生效：vanilla 房没有插件，保持旧的同房广播语义（不改既有行为）。
+    if (roomPacks.length && !roomPacks.includes(msg.pack)) return fail(ERR.BAD_MSG, `pack ${String(msg.pack)} is not a plugin of this room`);
     const seat = room.seatOf(session.playerId);
     const base = { pack: msg.pack, channel: msg.channel, from: session.playerId, seat: seat && Number.isInteger(seat.seat) ? seat.seat : null };
     const frame = { ...base, ...(msg.data === undefined ? {} : { data: msg.data }) };
     const match = room.match;
     if (match && typeof match.handlePackMsg === 'function') {
       let consumed = false;
-      try { consumed = match.handlePackMsg(session.playerId, frame) === true; } catch (e) { this.log.warn?.(`[lobby] pack.msg ${msg.pack}/${msg.channel} handler threw: ${e && e.message ? e.message : e}`); }
+      // 进程内的 Match 同步返回布尔；hosted 的 MatchProxy 返回 Promise<boolean> —— 同一个判据。
+      try { consumed = (await match.handlePackMsg(session.playerId, frame)) === true; } catch (e) { this.log.warn?.(`[lobby] pack.msg ${msg.pack}/${msg.channel} handler threw: ${e && e.message ? e.message : e}`); }
       if (consumed) return OK;
     }
     const out = { t: 'pack.msg', ...frame };
@@ -1869,10 +1941,22 @@ export class Lobby {
       if (session.connected) sendSession(session, { t: 'room.closed', reason });
       else session.notice = reason;
     }
+    this.ext?.emit?.('disposed', room);
     if (ctx) this.disposeMatchCtx(ctx);
     // the room's visual set and content set are no longer held by it (server/plugins/visualSet.js, contentSets.js)
     this.releaseContent(room.content);
     this.log.info(`[lobby] ${room.code} disposed (${reason})`);
+  }
+
+  /**
+   * code.lobby 的扩展对象（server/plugins/lobbyModules.js）：插件钩子的唯一入口。
+   * 传 null 撤掉；换新对象时对已有房间补跑 init（房间级默认字段不能在切插件后丢）。
+   * @param {*} ext
+   */
+  setExtensions(ext) {
+    this.ext = ext || null;
+    for (const room of this.rooms.values()) room.ext = this.ext;
+    if (this.ext) for (const room of this.rooms.values()) { try { this.ext.init(room); } catch { /* logged upstream */ } }
   }
 
   genCode() {

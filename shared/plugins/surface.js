@@ -48,7 +48,8 @@ export const SURFACE_MARKERS = Object.freeze({
 const EXPERIMENTAL_PERMISSIONS = new Set(['sim.code', 'meta.code', 'mode.code', 'trusted.page', 'trusted.server']);
 /** Code plugins (P3a trusted, P3b sandbox) are new in 0.3.0: their classes and their manifest field stay experimental. */
 const EXPERIMENTAL_CLASSES = new Set(['script', 'trusted']);
-const EXPERIMENTAL_FIELDS = new Set(['overrides']);
+/** The manifest fields new enough to stay experimental: the stable snapshot only freezes the rest. */
+const EXPERIMENTAL_FIELDS = new Set(['overrides', 'code', 'capabilities', 'server', 'csp']);
 
 const DSL_GROUPS = Object.freeze([
   ['trigger', 'TRIGGERS'],

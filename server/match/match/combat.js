@@ -50,7 +50,23 @@ export class MatchCombat {
     if (preview) ps = previewPlayer(ps, board);
     const input = ps.battleInput({ side: 'L', colOffset: 0 });
     // the client's list: bounty units inserted among their host action's own units, which are re-timed around them
-    const spawns = withBounties(this.gd, this.round, wave, ps.bounties, ps.playerId).map((s) => ({ ...s, ownerPlayerId: ps.playerId }));
+    let spawns = withBounties(this.gd, this.round, wave, ps.bounties, ps.playerId).map((s) => ({ ...s, ownerPlayerId: ps.playerId }));
+    // 2V2 事件期: the monster card + the 强力属性 subset apply to the round's NORMAL wave only (not the 狩猎期
+    // placements, whose bounty stays untouched). Applied after withBounties so the host-action re-timing is untouched.
+    spawns = this.foeWaveSpawns(spawns);
+    // 2V2 对抗期: every intervention aimed at this player replaces a share of this wave (confront.js; one per attacker).
+    // A preview (the bot rehearsal) must not move the match's rngConfront — applyConfront shuffles with it, and the real
+    // battle draws it after the rehearsal — so the preview draws from a clone.
+    const savedConfront = preview ? this.rngConfront : null;
+    if (preview && savedConfront && typeof savedConfront.clone === 'function') this.rngConfront = savedConfront.clone();
+    try {
+      const subs = typeof this.confrontFor === 'function' ? this.confrontFor(ps) : [];
+      for (const sub of subs || []) spawns = this.applyConfront(spawns, sub, ps);
+    } finally {
+      if (savedConfront) this.rngConfront = savedConfront;
+    }
+    // 同盟狩猎: the system's prey is INSERTED after the event card / 强力属性, so its bounty stays the plan's own value
+    if (this.coopHuntActive()) spawns = this.applyCoopHunt(spawns, ps);
     const ev = { input, kind: 'normal', round: this.round, spawns, ...(preview ? { preview: true } : {}) };
     // Preview construction failures go to the rehearsal's discard path, never Match.dispatch's live error sink.
     if (preview) this.dispatcher.dispatch(ps, 'onBattleStart', ev);

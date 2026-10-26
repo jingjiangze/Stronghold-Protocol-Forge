@@ -98,6 +98,10 @@ export function makeMatch(o = {}) {
     // still has no kitted key.
     ...(o.kitted !== undefined ? { kitted: o.kitted } : {}),
     ...(o.rules !== undefined ? { rules: o.rules } : {}),
+    // 同盟狩猎 is off by default in this build (shared/constants.js COOP_HUNT.enabled); a test opts in explicitly
+    ...(o.coopHunt !== undefined ? { coopHunt: o.coopHunt } : {}),
+    // versus: players per team (2 = 2V2 default, 4 = 4V4) — the room passes the same number in production
+    ...(o.teamSize !== undefined ? { teamSize: o.teamSize } : {}),
   });
   const m = h.m;
   if (m.clientCombat && o.clients !== false) {

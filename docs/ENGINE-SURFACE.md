@@ -65,6 +65,11 @@ plugin.json (server.modules)
 * **pack.msg**：C2S 形状在 `shared/protocol.js`（`pack` 插件 id、`channel` 正则、`data` ≤4096 B）；
   `lobby.packMsg` 先投给 `Match.handlePackMsg`（返回 `true` = 消费，不广播），否则转发给同房已连接席位与旁观者
   （`from`/`seat` 由服务端从会话解析，载荷里写的不作数）。
+  **hosted 对局同样生效**：`MatchProxy.handlePackMsg` 走 IPC 把这一问送进 worker，回答折成布尔
+  （`entry.js` 按名特判，把布尔包成 `{ ok, consumed }` —— ipc 的 reply 必须是 object）；调用方读到的
+  与进程内 Match 完全同形。**房间-包绑定**：装了插件集的房间只接受**它自己装的那个包**的通道
+  （进程级的通道表不等于房间级授权）；vanilla 房没有插件集，保持旧的同房广播语义。
+  worker 侧的包装器做门控可读 `opts.plugins`（本房插件 id 列表，`wireOptions` 透传，vanilla 房不出现这个键）。
 * **干净安装零负担**：没有任何包声明时，`modMount` 的 healthz 返回 `{}`、routes 返回空 Map、包装器列表为空，
   `/healthz` 与请求路径的行为逐字节不变。
 
@@ -72,6 +77,24 @@ plugin.json (server.modules)
 
 * `code`（无损插件，`contentSet.js` 的多代码根）：`code.match` 是**整包替换对局**；`server.modules.matchClass`
   是**包装对局类**。两者可共存，`code.match` 优先（替换基类后仍可被包装）。
+  **只有 `class: trusted` 的插件能提供 `code.match`**——对局宿主进程在 SES 沙箱之外，`script` 插件若也能提供就等于绕过沙箱；
+  `match` 必须是插件目录内的相对 `.js` 路径（绝对路径、盘符、`..` 一律不成为代码根）。多个插件都声明时**最后加载者胜**
+  （与 `code.client` 的覆盖语义一致）；代码根**不进 `cs`**（路径不是内容、浏览器也看不到），所以同一 `cs` 的旧集合在
+  `code.match` 变了时会被重新 adopt（`contentSets.js` 的 `codeKey`）。
+* `code.lobby`（**房间级插件面**，`server/plugins/lobbyModules.js`）：`class: trusted` 且 `code.lobby` 指向一个
+  导出 `setup(api)` 的相对路径时，服务端在第一个连接进来之前挂上房间钩子——
+  `api.protocol(spec)` 只能**新增** C2S 键（引擎协议表权威，已存在的键不覆盖）、`api.on(type, fn)` 处理一条 C2S
+  （与 `handleMessage` 同形，走 `default` 分支委托）、`api.roomInit(room)`（建房/补挂时给房间加默认字段）、
+  `api.roomState(room)`（返回对象平铺进 `room.state`；返回空则 `room.state` 逐字节不变）、
+  `api.matchOptions(room)`（合并进 Match opts）、`api.onRoom(event, fn)`（`created` / `joined` / `left` /
+  `disposed` / `resync` / `started`）。任何钩子抛错只记日志。协议键须在 `shared/protocol.js` 的 `C2S`/`S2C`
+  里有定义（服务端与客户端的校验器读同一张表）——`api.protocol()` 是给「表里还没有的键」补登记，不是绕过校验。
+* `code.clientEntry`（**插件自己的浏览器入口**，`server/index.js` 的 `clientEntries` + `/api/client-entries`）：
+  `code.client` 是「顶替宿主的同名文件」，`code.clientEntry` 是「插件新增一个页面模块」。服务端把每个已加载插件声明的
+  入口（相对 `client/` 的路径，拒绝 `..` 与绝对路径）汇总成 `GET /api/client-entries → { entries: [{ id, url }] }`
+  （`Cache-Control: public, max-age=30`，不序列化磁盘路径）；宿主 `public/js/main.js` 在 `boot()` 末尾 fetch 它并
+  **动态 `import()`**，模块导出 `mount()`（或 `default`）时把返回值当卸载函数（`pagehide` 时调用）。导入失败只 `warn`，
+  所以插件没装/没启用时基座照常启动。
 * `script` / `trusted` 插件：那两条是**插件系统**的沙箱/信任面（SES、lock pin、玩家同意），与本面并行；
   本面面向的是**包（mod）**的服务端逻辑，按 `combat: true` 与房间包集合门控。
 * `routes`（顶层静态路由，`pack.json.routes`）尚未在管理器中启用；本面提供的是**动态**端点（`host.route`）。

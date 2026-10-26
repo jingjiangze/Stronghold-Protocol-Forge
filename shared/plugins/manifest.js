@@ -183,7 +183,7 @@ const SETTING_TYPES = ['boolean', 'integer', 'number', 'enum'];
 /** Top-level fields of manifest 2 (anything else is warned about and ignored). */
 const V2_FIELDS = new Set(['$schema', 'manifest', 'id', 'name', 'englishName', 'description', 'version', 'app', 'api', 'class', 'scope',
   'authors', 'credits', 'license', 'homepage', 'sourceLang', 'requires', 'optional', 'conflicts', 'loadAfter', 'loadBefore', 'priority',
-  'settings', 'permissions', 'overrides', 'rules', 'entry', 'slots', 'notices', 'files', 'lang', 'base', 'fallback', 'complete', 'machineTranslated', 'numberUnits', 'csp', ...Object.keys(PARTS)]);
+  'settings', 'permissions', 'capabilities', 'overrides', 'rules', 'entry', 'code', 'server', 'csp', 'slots', 'notices', 'files', 'lang', 'base', 'fallback', 'complete', 'machineTranslated', 'numberUnits', ...Object.keys(PARTS)]);
 /** Those fields, sorted, for the frozen API table (docs/PLUGIN-API.md). */
 export const MANIFEST_FIELDS = Object.freeze([...V2_FIELDS].sort());
 /** Fields only a lang plugin has. */
@@ -293,11 +293,11 @@ export function appVersionMatches(range, version = APP_VERSION) {
  *   compatible: boolean, api: number | null, scope: string[], authors: string[], credits: string, license: string,
  *   homepage: string, sourceLang: string, requires: Record<string, string>, optional: Record<string, string>,
  *   conflicts: Record<string, string>, loadAfter: string[], loadBefore: string[], priority: number,
- *   settings: Record<string, PluginSetting>, permissions: string[], parts: Record<string, PluginPart>,
+ *   settings: Record<string, PluginSetting>, permissions: string[], capabilities?: string[], parts: Record<string, PluginPart>,
  *   entry: Record<string, string>, slots: string[], files: Record<string, string>, overrides?: string[],
  *   themeVars?: Record<string, string>, notices?: PluginNotice[],
  *   lang?: string, base?: string | null, fallback?: string[], complete?: boolean, machineTranslated?: boolean,
- *   numberUnits?: string[] | null, rules?: Record<string, string>,
+ *   numberUnits?: string[] | null, rules?: Record<string, string>, server?: { modules?: object[] },
  *   csp?: { off?: true, directives?: Record<string, string[]> } }} PluginManifest
  *   One shape for both versions. type: the manifest 1 type (lang, assets, data; the class name for the classes that
  *   have none). files: the lang class's role → path. parts / entry: manifest 2 (empty for manifest 1).
@@ -798,12 +798,26 @@ export function readPluginManifest(raw, ctx) {
 
   // 跨域资源放行：插件声明站点 CSP 需要追加的源（只放宽「从哪取」，script-src 不变）。
   const csp = readCsp(m.csp, cls, list);
+  // capabilities：插件自报的「面」，管理面板据此分组（transport 单列一栏，不混进美术/玩法）。只是标签：
+  // 不认识的值原样保留，不写这个字段的插件行为完全不变。
+  let capabilities = [];
+  if (m.capabilities !== undefined) {
+    const declared = Array.isArray(m.capabilities) ? m.capabilities : null;
+    if (!declared || declared.length > 8 || declared.some((x) => typeof x !== 'string' || !/^[a-z][a-z0-9-]{0,23}$/.test(x))) {
+      list.problem('PLUGIN_FIELD_UNKNOWN', 'capabilities must be up to 8 lowercase tags', { at: ['capabilities'] });
+    } else capabilities = [...new Set(declared)];
+  }
 
   /** @type {PluginManifest} */
   const out = {
     manifest: 2, id, class: cls, type: kind.packType, name, englishName, names, description, version, app: range, compatible, api, scope,
     authors: authorsOf(m.authors), credits: str(m.credits, 500), license: str(m.license, 100), homepage, sourceLang: sourceLang || SOURCE_LANG,
-    requires, optional, conflicts, loadAfter, loadBefore, priority, settings, permissions, parts, entry, slots, files: {},
+    requires, optional, conflicts, loadAfter, loadBefore, priority, settings, permissions, capabilities, parts, entry, slots, files: {},
+    // 无损插件：服务端代码根 / 客户端覆盖表 / 整份数据（只对 trusted 有意义）。
+    ...(m.code && typeof m.code === 'object' && !Array.isArray(m.code) ? { code: m.code } : {}),
+    // 服务端模块（server.modules）：装载器读原始清单（server/modHostAdapter.js），这里只让它成为一个「已知字段」，
+    // 免得清单校验说它「不是 manifest 2 的字段，被忽略」——那句话与事实相反。
+    ...(m.server && typeof m.server === 'object' && !Array.isArray(m.server) ? { server: m.server } : {}),
     ...(m.overrides !== undefined ? { overrides } : {}),
     ...(parts.theme?.themeVars ? { themeVars: parts.theme.themeVars } : {}),
     ...(notices ? { notices } : {}),
@@ -962,6 +976,8 @@ export function pluginIndexEntry(p) {
   if (m.priority) e.priority = m.priority;
   if (Object.keys(m.settings).length) e.settings = JSON.parse(JSON.stringify(m.settings));
   if (m.permissions.length) e.permissions = [...m.permissions];
+  // the plugin's self-declared 面 (manifest 2 `capabilities`): the panel groups by it; absent means "no label"
+  if (m.capabilities && m.capabilities.length) e.capabilities = [...m.capabilities];
   if (Number.isFinite(p.bytes)) e.bytes = p.bytes;
   if (Number.isFinite(p.count)) e.files = p.count;
   // [ASSUMED] A cosmetic whose overlay writes nothing does not publish `vs` or `artBytes`. The page would

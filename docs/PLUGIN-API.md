@@ -70,10 +70,13 @@ replacement. No route or frozen plugin grammar member is added; the stable surfa
 | `manifest.field.assets` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
 | `manifest.field.authors` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
 | `manifest.field.base` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
+| `manifest.field.capabilities` | experimental | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
 | `manifest.field.class` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
+| `manifest.field.code` | experimental | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
 | `manifest.field.complete` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
 | `manifest.field.conflicts` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
 | `manifest.field.credits` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
+| `manifest.field.csp` | experimental | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
 | `manifest.field.data` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
 | `manifest.field.description` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
 | `manifest.field.dsl` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
@@ -104,6 +107,7 @@ replacement. No route or frozen plugin grammar member is added; the stable surfa
 | `manifest.field.requires` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
 | `manifest.field.rules` | stable | 0.3.1 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
 | `manifest.field.scope` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
+| `manifest.field.server` | experimental | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
 | `manifest.field.settings` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
 | `manifest.field.slots` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |
 | `manifest.field.sourceLang` | stable | 0.3.0 | `shared/plugins/manifest.js#MANIFEST_FIELDS` |

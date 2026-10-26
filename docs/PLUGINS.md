@@ -148,6 +148,9 @@ classes and the content sets running at once — §11 and `docs/DEPLOY.md`.
 | `permissions` | what the plugin does (§4); every part needs one, every permission must fit the class |
 | parts | `assets`, `theme` (cosmetic+) · `data`, `operators`, `enemies`, `modes`, `stages`, `dsl`, `offers` (content+) — a path, a list of paths or (`assets`, `theme`) the object inline · `i18n` `{ "<lang>": path }` (content+) |
 | `entry` | `{ "sim", "meta" }` (script, `.js`) · `{ "client" }` (ui, `.html`) · `{ "server" }` (trusted, `.js`) |
+| `capabilities` | up to 8 tags (`^[a-z][a-z0-9-]{0,23}$`, duplicates dropped) the panel groups by — e.g. `["transport"]` keeps a networking plugin out of the art/gameplay shelves. A label only: an unknown tag is kept as written, and a plugin without the field behaves exactly as before |
+| `server` | `{ "modules": [{ "id", "entry", "uses", "channels", "lane" }] }` — the server modules the loader runs in the host process (`server/modHostAdapter.js`), and where a `pack.msg` channel is declared when a **plugin** (not a pack) owns one |
+| `csp` | `"off"` (trusted only: the server drops its CSP header for the process and logs which plugin did it — a host-wide switch, not a per-room one) or `{ "<img\|media\|connect\|style\|font\|frame\|worker>": ["https://…"] }`, up to 16 explicit origins each (https, `*.` subdomain wildcards and ports allowed; `http://localhost` also). It only widens **where the page fetches from**: `script-src`, `object-src` and `base-uri` stay the engine's, and the default header is byte-identical when no plugin declares the field |
 | `lang`, `files` … | the `lang` class only: manifest 1's language fields and `files: { ui, data }` (§7) |
 
 A **problem** keeps a plugin out (unlisted; the start log and `tools/plugin.mjs` say why); a **warning** does not.

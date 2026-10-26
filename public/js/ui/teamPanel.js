@@ -30,6 +30,7 @@ import { STATUS_META, sortedPlayers, teamFrameIds } from './gameLogic.js';
 import { MissTag, uniteRemaining } from './hud.js';
 import { localAsset } from '../data.js';
 import { t } from '../../../shared/i18n.js';
+import { RoundBuffs } from './roundBuffs.js';
 
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
 
@@ -210,5 +211,6 @@ export function TeamPanel({ pub, myId, watching, bubbles, onWatch, compact = fal
         ${bubble ? html`<${EmoteBubble} key=${bubble.seq} id=${bubble.id} class="team__bubble" />` : null}
       </div>`;
     })}
+    <${RoundBuffs} pub=${pub} myId=${myId} />
   </aside>`;
 }

@@ -110,3 +110,28 @@ test('site CSP never changes the UI frame policy (200/206/304)', async t => {
     }
   }
 });
+
+test('a plugin widens only where the page fetches from; "csp": "off" drops the header and names the plugin', () => {
+  const base = siteCsp(publicDir);
+  const plugin = { id: 'cdn', manifest: { csp: { directives: {
+    img: ['https://cdn.example.com'], connect: ['https://api.example.com:8443'], media: ['https://media.example.com'],
+  } } } };
+  const csp = siteCsp(publicDir, { plugins: [plugin] });
+  assert.match(csp, /img-src 'self' data: blob: https:\/\/cdn\.example\.com;/);
+  assert.match(csp, /connect-src 'self' https:\/\/api\.example\.com:8443;/);
+  assert.match(csp, /media-src 'self' blob: https:\/\/media\.example\.com;/);
+  // what may run is the engine's alone: identical to the policy without any plugin
+  const directive = (text, name) => new RegExp(`${name}[^;]*`).exec(text)[0];
+  for (const name of ['script-src', 'object-src', 'base-uri', 'worker-src', 'frame-src', 'default-src']) {
+    assert.equal(directive(csp, name), directive(base, name), name);
+  }
+  // the base policy has no media-src: it appears only because a plugin widened it
+  assert.doesNotMatch(base, /media-src/);
+  // a plugin that declares nothing changes nothing, byte for byte
+  assert.equal(siteCsp(publicDir, { plugins: [{ id: 'x', manifest: {} }, { id: 'y', manifest: { csp: { directives: {} } } }] }), base);
+  // one plugin switching the policy off is enough: no header at all, and the log says which one
+  const lines = [];
+  assert.equal(siteCsp(publicDir, { plugins: [{ id: 'vpn', manifest: { csp: { off: true } } }, plugin], log: { warn: (t) => lines.push(t) } }), null);
+  assert.equal(lines.length, 1);
+  assert.match(lines[0], /"vpn"/);
+});

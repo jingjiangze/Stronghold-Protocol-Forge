@@ -36,6 +36,10 @@
 | `route` | `host.route(path, fn, {cache})` | 只读动态端点，路径强制 `/mod/<包id>/…`，GET/HEAD，返回 JSON，≤64 KiB |
 | `lane` | `host.lane(onUpgrade)` | 包自己的 WebSocket 通道：声明 `lane.path`（精确匹配、不得是 `/ws`），宿主替它升级；处理器未挂上时 503 |
 
+`plugin.json.matchKinds`（或 `engine.matchKinds`）不是挂载点，而是**数据面**：`[{ id, seats?: {min,max}, label? }]`，
+最多 4 种、按 id 排序；必须有一个 `uses:["matchClass"]` 的模块执行它（`host.matchKinds()` 只读返回冻结清单）。
+判据与 Forge §28.54 一致；`callBudget` **未实现**（本树没有 kits 的逐单位计费点，不登记）。
+
 `write: true` 才拿到 `host.io`：被限定在 `<SP_STATE_DIR|repo/var>/mod/<包id>/` 里（`write/append/read/exists/remove/list`）。
 `channels` 声明本模块**收得到**的包通道（`pack.msg`），与客户端面板的 `messages` 同名。
 
@@ -104,7 +108,8 @@ plugin.json (server.modules)
 | 面 | 状态 | 落点 |
 |---|---|---|
 | `client.screens` / `screen.room.aside` / `room.mods` | 未做 | `public/js/ui/extensions.js` + 宿主容器 |
-| `callBudget` / `matchKinds` | 未做（`modModules` 已透传 `pack.matchKinds` 数据） | manifest 字段 + 对局分派 |
+| `callBudget` | 不适用（本树无 kits 计费点；不登记为面） | 若引入 kits 运行时再评估 |
+| `matchKinds` | **已做**（声明/校验/`host.matchKinds()`；分派仍由包自己的 matchClass 判定） | `shared/modSurface.js` + `modHostAdapter.js` |
 | `docs/MOD-SURFACE.md` 守卫表 | 未做 | 新增文档 + `test/modSurface.test.js` |
 
 ## 5. 相关文件

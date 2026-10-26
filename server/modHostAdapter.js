@@ -18,7 +18,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { SERVER_MODULE_USES, PACK_CHANNEL_RE } from '../shared/modSurface.js';
+import { SERVER_MODULE_USES, PACK_CHANNEL_RE, parseMatchKinds } from '../shared/modSurface.js';
 
 const noopLog = { info() {}, warn() {}, error() {}, debug() {} };
 
@@ -80,7 +80,19 @@ export function pluginModulePacks({ registry = null, pluginsDir = '', log = noop
     }
     if (!modules.length) continue;
     const hash = String(p.lockHash || (p.script && p.script.lockHash) || p.hash || '');
-    const matchKinds = Array.isArray(raw.matchKinds) ? raw.matchKinds : null;
+    // 对局种类声明（`matchKinds`，DESIGN §28.54）：声明与协商面，不是分派表。
+    // 两条判据与 Forge 一致：① 形状合法（parseMatchKinds）；② 必须有一个 uses 含 matchClass 的模块执行它
+    // ——「一个没人读的种类」是静默失败，宁可整条声明拒掉并点名。
+    let matchKinds = null;
+    if (raw.matchKinds !== undefined) {
+      const parsed = parseMatchKinds(raw.matchKinds);
+      if (!parsed.ok) { log.warn?.(`[mods] ${p.id}: ${parsed.code}: ${parsed.reason}`); continue; }
+      if (!modules.some((m) => m.uses.includes('matchClass'))) {
+        log.warn?.(`[mods] ${p.id}: MATCHKINDS_NEED_MATCH_CLASS: matchKinds has no executor (server.modules has no uses:["matchClass"] module) — kind declarations refused`);
+        continue;
+      }
+      matchKinds = parsed.decl;
+    }
     out.push({ id: p.id, dir, hash, server: { modules }, matchKinds });
   }
   return out;

@@ -37,6 +37,37 @@ const marathon = () => ({
 const problemsOf = (raw, id = 'marathon', extra) => readPluginManifest(raw, ctx(id, extra)).problems.join(' | ');
 const warningsOf = (raw, id = 'marathon') => readPluginManifest(raw, ctx(id)).warnings.join(' | ');
 
+test('the panel surfaces: capabilities, the server block, and the CSP sources a plugin may widen', () => {
+  // capabilities: labels the panel groups by — deduped, and only lowercase tags (a bad list is a warning, not a refusal)
+  const caps = readPluginManifest({ ...marathon(), capabilities: ['transport', 'ui', 'transport'] }, ctx('marathon'));
+  assert.deepEqual(caps.problems, []);
+  assert.deepEqual(caps.manifest.capabilities, ['transport', 'ui']);
+  for (const bad of [['Transport!'], Array.from({ length: 9 }, (_, i) => `t${i}`), 'transport']) {
+    const r = readPluginManifest({ ...marathon(), capabilities: bad }, ctx('marathon'));
+    assert.deepEqual(r.problems, [], JSON.stringify(bad));
+    assert.match(r.warnings.join(' | '), /capabilities must be up to 8 lowercase tags/, JSON.stringify(bad));
+    assert.deepEqual(r.manifest.capabilities, [], 'dropped, the plugin still loads');
+  }
+  assert.deepEqual(readPluginManifest(marathon(), ctx('marathon')).manifest.capabilities, [], 'absent: an empty list, not a key');
+  // server.modules is read by server/modHostAdapter.js from the raw file — the manifest must not call it unknown
+  const srv = readPluginManifest({ ...marathon(), server: { modules: [{ id: 'a', entry: 'server/a.js' }] } }, ctx('marathon'));
+  assert.deepEqual(srv.warnings, []);
+  assert.deepEqual(srv.manifest.server, { modules: [{ id: 'a', entry: 'server/a.js' }] });
+  // csp: only "where the page fetches from", explicit https origins (or http on localhost), 16 per directive
+  const own = readPluginManifest({ ...marathon(), csp: { img: ['https://cdn.example.com', 'https://cdn.example.com'], connect: ['https://api.example.com:8443', 'http://localhost:8080'] } }, ctx('marathon'));
+  assert.deepEqual(own.problems, []);
+  assert.deepEqual(own.manifest.csp, { directives: { img: ['https://cdn.example.com'], connect: ['https://api.example.com:8443', 'http://localhost:8080'] } });
+  assert.match(problemsOf({ ...marathon(), csp: { script: ['https://evil.example.com'] } }), /a directive is "img", "media", "connect"/);
+  for (const bad of ['*', 'https://*.example.com/', "'unsafe-inline'", 'data:', 'http://example.com']) {
+    assert.match(problemsOf({ ...marathon(), csp: { img: [bad] } }), /is not an explicit https origin/, bad);
+  }
+  assert.match(problemsOf({ ...marathon(), csp: { img: Array.from({ length: 17 }, (_, i) => `https://h${i}.example.com`) } }), /a list of up to 16 origins/);
+  assert.match(problemsOf({ ...marathon(), csp: 'off' }), /"csp": "off" is only for a trusted plugin/);
+  const trustedRaw = { ...marathon(), class: 'trusted', scope: ['server'], permissions: [...(marathon().permissions || []), 'trusted.server'], entry: { server: 'server/index.js' }, csp: 'off' };
+  const trusted = readPluginManifest(trustedRaw, ctx('marathon'));
+  assert.deepEqual(trusted.problems, []);
+  assert.deepEqual(trusted.manifest.csp, { off: true });
+});
 test('manifest 2: a content plugin, normalised', () => {
   const { manifest: m, problems, warnings } = readPluginManifest(marathon(), ctx('marathon'));
   assert.deepEqual(problems, []);

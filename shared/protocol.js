@@ -580,6 +580,11 @@ export const C2S = {
   // every data file's bytes against /cs/<cs16>/index.json, that manifest's composition against `cs`; `ok: false` = it
   // could not (the seat shows it). A room with gameplay plugins starts only once every player's page sent it for its cs
   'room.consent': { cs: isContentHash, accept: isBool },
+  // WebRTC 信令（transport 插件）：服务端只做**同房间**点对点转发，SDP/ICE 不解析、不落库。
+  'p2p.offer': { to: isId, sdp: (v) => typeof v === 'string' && v.length > 0 && v.length <= 20000 },
+  'p2p.answer': { to: isId, sdp: (v) => typeof v === 'string' && v.length > 0 && v.length <= 20000 },
+  'p2p.ice': { to: isId, candidate: (v) => v === null || (typeof v === 'object' && !Array.isArray(v)) },
+  'p2p.bye': { to: isId },
   'room.contentReady': { cs: isContentHash, ok: isBool, $optional: ['ok'] },
 
   // match

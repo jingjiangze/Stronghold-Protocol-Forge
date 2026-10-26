@@ -101,7 +101,11 @@ export const actions = {
   // 商人「坎诺特」: withdraw `gold` 金币 against the banked 赏金 (server-authoritative rate / cost / cap)
   merchantWithdraw: (gold) => act('g.confront.withdraw', { gold }, { sfx: 'buy' }),
   ready: (ready) => act('g.ready', { ready }, { sfx: ready ? 'ready' : 'back' }),
-  emote: (id) => act('g.emote', { id }, { quiet: true }),
+  emote: (id) => {
+    // 先给 peers 一份（浏览器旁路，即时显示）；下面这条服务端帧仍是权威来源。
+    try { globalThis.__spP2P?.broadcast?.({ kind: 'emote', id }); } catch { /* no peer channel */ }
+    return act('g.emote', { id }, { quiet: true });
+  },
   // `playerId`: the player tapped in the team panel (a shared field shows two) — what an eliminated viewer follows
   watch: (fieldId, playerId = null) => act('g.watch', typeof playerId === 'string' && playerId ? { fieldId, playerId } : { fieldId }, { sfx: 'tab' }),
   autoplay: (on) => act('g.autoplay', { on }),

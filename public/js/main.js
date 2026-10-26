@@ -279,8 +279,21 @@ function wireNet() {
     const priority = Number.isFinite(msg.priority) ? msg.priority : 0;
     store.set((s) => ({ ticker: [...s.ticker.slice(-(TICKER_KEEP - 1)), { id: ++seq, text, at: Date.now(), type, playerId, round: s.match?.public?.round ?? null, priority }] }));
   });
-  net.on('m.emote', (msg) => {
-    store.set((s) => ({ emotes: [...s.emotes.slice(-(EMOTE_KEEP - 1)), { seq: ++seq, playerId: msg.playerId, id: msg.id, at: Date.now() }] }));
+  // 同一条表情可能走两条路到达：服务端广播（m.emote）与点对点旁路（p2p.data）。
+  // 按 (player, id) 在 900 ms 内去重——低于服务端 1 s 冷却，不会吞掉合法的第二次发送。
+  const pushEmote = (playerId, id) => {
+    if (typeof playerId !== 'string' || typeof id !== 'string') return;
+    store.set((s) => {
+      const now = Date.now();
+      const last = s.emotes[s.emotes.length - 1];
+      if (last && last.playerId === playerId && last.id === id && now - last.at < 900) return {};
+      return { emotes: [...s.emotes.slice(-(EMOTE_KEEP - 1)), { seq: ++seq, playerId, id, at: now }] };
+    });
+  };
+  net.on('m.emote', (msg) => pushEmote(msg.playerId, msg.id));
+  net.on('p2p.data', (msg) => {
+    const d = msg && msg.data;
+    if (d && d.kind === 'emote') pushEmote(msg.from, d.id);
   });
 
   // Entering (title → lobby) while already online also needs the deep-link join.

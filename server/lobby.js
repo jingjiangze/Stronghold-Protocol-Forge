@@ -682,6 +682,7 @@ export class Lobby {
       case 'room.setPlugins': return this.setPlugins(session, msg);
       case 'room.setMode': return this.setMode(session, msg);
       case 'room.contentReady': return this.contentReady(session, msg, ctx);
+      case 'p2p.offer': case 'p2p.answer': case 'p2p.ice': case 'p2p.bye': return this.relayP2P(session, msg);
       case 'room.consent': return this.consent(session,msg);
       case 'pack.msg': return this.packMsg(session, msg);
       default: {
@@ -695,6 +696,24 @@ export class Lobby {
         return fail(ERR.BAD_MSG, `unhandled type ${String(msg.t).slice(0, 32)}`);
       }
     }
+  }
+
+  /**
+   * WebRTC 信令中继（transport 插件）：把一帧原样转给**同一房间**里的某个会话。
+   * 服务端不解析 SDP/ICE，也不保存；目标不在本房间一律拒绝，避免跨房打扰。
+   */
+  relayP2P(session, msg) {
+    const room = this.roomOf(session);
+    if (!room) return fail(ERR.NOT_IN_ROOM);
+    const to = String(msg.to || '');
+    if (!to || to === session.playerId) return fail(ERR.BAD_MSG, 'bad peer');
+    const target = this.registry.byId(to);
+    if (!target || target.roomCode !== room.code) return fail(ERR.NOT_IN_ROOM, 'peer not in this room');
+    const out = { t: msg.t, from: session.playerId, to };
+    if (msg.t === 'p2p.ice') out.candidate = msg.candidate ?? null;
+    else if (msg.t !== 'p2p.bye') out.sdp = String(msg.sdp || '').slice(0, 20000);
+    sendSession(target, out);
+    return OK;
   }
 
   /** The session's socket closed. @param {import('./net.js').Session} session */

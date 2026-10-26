@@ -723,6 +723,18 @@ export const PLUGIN_ERRORS = Object.freeze({
     fix: { zh: '每条消息都是 { "v": 1, "t": 类型, … }，类型只能是 ready、slot、resize、storage、notice、stats，一条不超过 8 KB；格式见 schemas/ui.schema.json。', en: 'Every message is { "v": 1, "t": <type>, … } with a type of ready, slot, resize, storage, notice or stats, at most 8 KB; schemas/ui.schema.json has the shapes.' },
   },
 
+  // ---- the panel labels a plugin declares (manifest 2 `capabilities`) -----------------------------------------------
+  PLUGIN_CAPABILITIES: {
+    level: 'warning', doc: D.manifest,
+    zh: 'capabilities 写得不对，这组标签被忽略了', en: 'The capabilities labels are not written the right way and were ignored',
+    fix: { zh: '最多 8 个标签，每个是 1–24 个小写字母/数字/连字符且以小写字母开头（例如 "transport"、"ui"）；重复的会合并。', en: 'Up to 8 tags, each 1–24 lowercase letters, digits or hyphens starting with a letter (e.g. "transport", "ui"); duplicates are merged.' },
+  },
+  // ---- the site CSP sources a plugin may widen (manifest 2 `csp`, server/http/csp.js) -------------------------------
+  PLUGIN_CSP: {
+    level: 'problem', doc: D.manifest,
+    zh: '这个插件的站点 CSP 声明不合法：{detail}', en: 'This plugin’s site-CSP declaration is not valid: {detail}',
+    fix: { zh: 'csp 只能是 "off"（仅 trusted）或 { "img"/"media"/"connect"/"style"/"font"/"frame"/"worker": ["https://…"] }，每项最多 16 个显式源（https，可带 *. 子域与端口；也接受 http://localhost）。它只放宽「页面从哪取」，script-src / object-src / base-uri 永不受插件影响。', en: 'csp is "off" (trusted only) or { "<img|media|connect|style|font|frame|worker>": ["https://…"] }, up to 16 explicit origins each (https, optionally a *. subdomain and a port; http://localhost is accepted too). It only widens where the page fetches from: script-src, object-src and base-uri never change.' },
+  },
   // ---- the declarative interaction windows of PLUGIN API v2 (shared/plugins/offers.js) ------------------------------
   PLUGIN_OFFER_REFERENCE: {
     level: 'problem', doc: D.offers,

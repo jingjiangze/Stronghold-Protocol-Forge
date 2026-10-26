@@ -50,6 +50,8 @@ const EXPERIMENTAL_PERMISSIONS = new Set(['sim.code', 'meta.code', 'mode.code', 
 const EXPERIMENTAL_CLASSES = new Set(['script', 'trusted']);
 /** The manifest fields new enough to stay experimental: the stable snapshot only freezes the rest. */
 const EXPERIMENTAL_FIELDS = new Set(['overrides', 'code', 'capabilities', 'server', 'csp']);
+/** The error codes that belong to an experimental field (manifest 2 `csp` / `capabilities`): frozen with it, not before it. */
+const EXPERIMENTAL_ERRORS = new Set(['PLUGIN_CSP', 'PLUGIN_CAPABILITIES']);
 
 const DSL_GROUPS = Object.freeze([
   ['trigger', 'TRIGGERS'],
@@ -136,7 +138,8 @@ export function buildSurface(extra = {}) {
   for (const name of UI_HOST_MESSAGES) add(`ui.message.host.${name}`, 'ui', 'stable', 'shared/plugins/ui.js#UI_HOST_MESSAGES');
   for (const name of UI_SLOT_IDS) add(`ui.slot.${name}`, 'ui', 'stable', 'shared/plugins/manifest.js#UI_SLOT_IDS');
   for (const route of extra.studioRoutes || []) add(`studio.route.${route}`, 'studio', 'stable', 'server/studio/index.js#STUDIO_ROUTES');
-  for (const code of Object.keys(PLUGIN_ERRORS)) add(`error.${code}`, 'error', 'stable', 'shared/plugins/errors.js#PLUGIN_ERRORS');
+  // an error code of a field that is itself experimental stays experimental too: the stable snapshot freezes neither
+  for (const code of Object.keys(PLUGIN_ERRORS)) add(`error.${code}`, 'error', EXPERIMENTAL_ERRORS.has(code) ? 'experimental' : 'stable', 'shared/plugins/errors.js#PLUGIN_ERRORS');
   for (const name of CATALOG_FIELDS) add(`catalog.field.${name}`, 'catalog', 'stable', 'shared/plugins/catalog.js#CATALOG_FIELDS');
   for (const name of CATALOG_ENTRY_FIELDS) add(`catalog.entry.${name}`, 'catalog', 'stable', 'shared/plugins/catalog.js#CATALOG_ENTRY_FIELDS');
   add(`sdk.${SDK_ID}`, 'sdk', 'experimental', 'shared/plugins/sdk.js#SDK_ID');

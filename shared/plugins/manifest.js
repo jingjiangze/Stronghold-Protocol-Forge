@@ -433,24 +433,25 @@ const CSP_ORIGIN = /^(?:https:\/\/(?:\*\.)?[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?(?::\
  * @returns {{ off: true } | { directives: Record<string, string[]> } | null}
  */
 function readCsp(raw, cls, list) {
+  const bad = (text, at) => list.problem('PLUGIN_CSP', text, { at, detail: text });
   if (raw === undefined) return null;
   if (raw === 'off') {
-    if (cls !== 'trusted') { list.problem('PLUGIN_CSP', '"csp": "off" is only for a trusted plugin', { at: ['csp'] }); return null; }
+    if (cls !== 'trusted') { bad('"csp": "off" is only for a trusted plugin', ['csp']); return null; }
     return { off: true };
   }
-  if (!isObj(raw)) { list.problem('PLUGIN_CSP', '"csp" is "off" or { "<directive>": ["https://…"] }', { at: ['csp'] }); return null; }
+  if (!isObj(raw)) { bad('"csp" is "off" or { "<directive>": ["https://…"] }', ['csp']); return null; }
   /** @type {Record<string, string[]>} */
   const directives = {};
   for (const [key, value] of Object.entries(raw)) {
     if (!PLUGIN_CSP_DIRECTIVES.includes(key)) {
-      list.problem('PLUGIN_CSP', `"csp.${key}": a directive is ${PLUGIN_CSP_DIRECTIVES.map((d) => `"${d}"`).join(', ')}`, { at: ['csp', key] });
+      bad(`"csp.${key}": a directive is ${PLUGIN_CSP_DIRECTIVES.map((d) => `"${d}"`).join(', ')}`, ['csp', key]);
       continue;
     }
-    if (!Array.isArray(value) || value.length > 16) { list.problem('PLUGIN_CSP', `"csp.${key}" is a list of up to 16 origins`, { at: ['csp', key] }); continue; }
+    if (!Array.isArray(value) || value.length > 16) { bad(`"csp.${key}" is a list of up to 16 origins`, ['csp', key]); continue; }
     const ok = [];
     for (const origin of value) {
       const s = typeof origin === 'string' ? origin.trim() : '';
-      if (!CSP_ORIGIN.test(s)) { list.problem('PLUGIN_CSP', `"csp.${key}": ${short(origin)} is not an explicit https origin (or http://localhost)`, { at: ['csp', key] }); continue; }
+      if (!CSP_ORIGIN.test(s)) { bad(`"csp.${key}": ${short(origin)} is not an explicit https origin (or http://localhost)`, ['csp', key]); continue; }
       ok.push(s);
     }
     if (ok.length) directives[key] = [...new Set(ok)];
@@ -804,7 +805,8 @@ export function readPluginManifest(raw, ctx) {
   if (m.capabilities !== undefined) {
     const declared = Array.isArray(m.capabilities) ? m.capabilities : null;
     if (!declared || declared.length > 8 || declared.some((x) => typeof x !== 'string' || !/^[a-z][a-z0-9-]{0,23}$/.test(x))) {
-      list.problem('PLUGIN_FIELD_UNKNOWN', 'capabilities must be up to 8 lowercase tags', { at: ['capabilities'] });
+      // a label a panel groups by: a bad one is dropped with a warning, never a reason to refuse the plugin
+      list.warning('PLUGIN_CAPABILITIES', 'capabilities must be up to 8 lowercase tags', { at: ['capabilities'] });
     } else capabilities = [...new Set(declared)];
   }
 

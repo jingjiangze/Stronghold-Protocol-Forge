@@ -510,6 +510,8 @@ unequip（official／allow）；每项下面显示作用说明。选「继承」
 | 界面插件的页面收到拒绝（ok: false、rejected 或 limit 消息） | `PLUGIN_STORAGE` | 界面插件的存储请求被拒绝：键名不合规，或者超出了容量 | 键名 1–64 个字符，只用字母、数字和 . _ -；一个值的 JSON 不超过 4096 字节；每个插件最多 32 个键、一共 32 KB。 |
 | 界面插件的页面收到拒绝（ok: false、rejected 或 limit 消息） | `PLUGIN_INTENT` | 界面插件想发对局操作，被拒绝了 | 界面插件只能看，不能操作对局（它不能成为自动操作或作弊工具）：不要发 hello、ping、room.*、g.*、b.* 这类消息，也不要把它们夹在别的消息里。 |
 | 界面插件的页面收到拒绝（ok: false、rejected 或 limit 消息） | `PLUGIN_SHAPE` | 界面插件发来的消息格式不对，被丢弃了 | 每条消息都是 { "v": 1, "t": 类型, … }，类型只能是 ready、slot、resize、storage、notice、stats，一条不超过 8 KB；格式见 schemas/ui.schema.json。 |
+| 插件能用，但检查时有提示 | `PLUGIN_CAPABILITIES` | capabilities 写得不对，这组标签被忽略了 | 最多 8 个标签，每个是 1–24 个小写字母/数字/连字符且以小写字母开头（例如 "transport"、"ui"）；重复的会合并。 |
+| 插件没出现在列表里（被跳过）；启动日志和 check 写着原因 | `PLUGIN_CSP` | 这个插件的站点 CSP 声明不合法：{detail} | csp 只能是 "off"（仅 trusted）或 { "img"/"media"/"connect"/"style"/"font"/"frame"/"worker": ["https://…"] }，每项最多 16 个显式源（https，可带 *. 子域与端口；也接受 http://localhost）。它只放宽「页面从哪取」，script-src / object-src / base-uri 永不受插件影响。 |
 | 插件没出现在列表里（被跳过）；启动日志和 check 写着原因 | `PLUGIN_OFFER_REFERENCE` | 交互窗口引用了不可用的记录：{detail} | 只使用官方数据或本插件在房间内容集内声明的物品、棋子和羁绊。 |
 | 插件没出现在列表里（被跳过）；启动日志和 check 写着原因 | `PLUGIN_OFFER_SHAPE` | 这个交互窗口的写法不对：{detail} | 一份 offers/*.json 是 { "offer": 1, "id": "窗口名", "when": { "at": ["battleCheck" 或 "prep"], "rounds": 轮次 }, "windowSec": 秒数, "slots": 1–6, "options": { "source": "插件里的 .json" } }；windowSec 缺省 0（不开窗、不阻塞）。 |
 | 插件没出现在列表里（被跳过）；启动日志和 check 写着原因 | `PLUGIN_OFFER_ROUNDS` | 这个交互窗口的轮次表达式看不懂：{detail} | 轮次写成 1–99 的列表（如 [1, 3, 6, 11]）、"any"（每一轮）、{ "every": N }（每 N 轮）或 { "from": R, "to": R }；窗口在该轮开始之前打开，任何一轮都可以，不必是官方固定节奏里的轮次。 |

@@ -492,6 +492,8 @@ replacement. No route or frozen plugin grammar member is added; the stable surfa
 | `error.PLUGIN_STORAGE` | stable | 0.3.0 | `shared/plugins/errors.js#PLUGIN_ERRORS` |
 | `error.PLUGIN_INTENT` | stable | 0.3.0 | `shared/plugins/errors.js#PLUGIN_ERRORS` |
 | `error.PLUGIN_SHAPE` | stable | 0.3.0 | `shared/plugins/errors.js#PLUGIN_ERRORS` |
+| `error.PLUGIN_CAPABILITIES` | experimental | 0.3.0 | `shared/plugins/errors.js#PLUGIN_ERRORS` |
+| `error.PLUGIN_CSP` | experimental | 0.3.0 | `shared/plugins/errors.js#PLUGIN_ERRORS` |
 | `error.PLUGIN_OFFER_REFERENCE` | stable | 0.3.1 | `shared/plugins/errors.js#PLUGIN_ERRORS` |
 | `error.PLUGIN_OFFER_SHAPE` | stable | 0.3.1 | `shared/plugins/errors.js#PLUGIN_ERRORS` |
 | `error.PLUGIN_OFFER_ROUNDS` | stable | 0.3.1 | `shared/plugins/errors.js#PLUGIN_ERRORS` |

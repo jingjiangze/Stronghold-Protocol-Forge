@@ -38,13 +38,16 @@ const problemsOf = (raw, id = 'marathon', extra) => readPluginManifest(raw, ctx(
 const warningsOf = (raw, id = 'marathon') => readPluginManifest(raw, ctx(id)).warnings.join(' | ');
 
 test('the panel surfaces: capabilities, the server block, and the CSP sources a plugin may widen', () => {
-  // capabilities: labels the panel groups by — deduped, and only lowercase tags
+  // capabilities: labels the panel groups by — deduped, and only lowercase tags (a bad list is a warning, not a refusal)
   const caps = readPluginManifest({ ...marathon(), capabilities: ['transport', 'ui', 'transport'] }, ctx('marathon'));
   assert.deepEqual(caps.problems, []);
   assert.deepEqual(caps.manifest.capabilities, ['transport', 'ui']);
-  assert.match(problemsOf({ ...marathon(), capabilities: ['Transport!'] }), /capabilities must be up to 8 lowercase tags/);
-  assert.match(problemsOf({ ...marathon(), capabilities: Array.from({ length: 9 }, (_, i) => `t${i}`) }), /capabilities must be up to 8/);
-  assert.match(problemsOf({ ...marathon(), capabilities: 'transport' }), /capabilities must be up to 8/);
+  for (const bad of [['Transport!'], Array.from({ length: 9 }, (_, i) => `t${i}`), 'transport']) {
+    const r = readPluginManifest({ ...marathon(), capabilities: bad }, ctx('marathon'));
+    assert.deepEqual(r.problems, [], JSON.stringify(bad));
+    assert.match(r.warnings.join(' | '), /capabilities must be up to 8 lowercase tags/, JSON.stringify(bad));
+    assert.deepEqual(r.manifest.capabilities, [], 'dropped, the plugin still loads');
+  }
   assert.deepEqual(readPluginManifest(marathon(), ctx('marathon')).manifest.capabilities, [], 'absent: an empty list, not a key');
   // server.modules is read by server/modHostAdapter.js from the raw file — the manifest must not call it unknown
   const srv = readPluginManifest({ ...marathon(), server: { modules: [{ id: 'a', entry: 'server/a.js' }] } }, ctx('marathon'));

@@ -94,6 +94,24 @@ const SIM_PRIVATE = new Set(['nodedata.js']); // lower-case (compared case-insen
 /** Optional per-machine art manifests (tools/local-extract: the local art, the official effects' files — DESIGN §33)
  * and the empty stand-in served when one is absent. */
 const LOCAL_ART_MANIFESTS = new Set(['local-assets.json', 'local-fx.json']);
+
+/**
+ * Where a missing art file may come from instead: the mirror named by `SP_ASSET_FALLBACK`, or null.
+ * Only `/assets/…` and `/fonts/…` are mirrored — a missing page stays a 404, and an install with no mirror set
+ * behaves exactly as before. The `~<hash>` segment is already stripped by the caller (it is this server's cache
+ * key, not a path the mirror knows).
+ * @param {string} decoded the request path, normalized
+ * @param {{ base?: string }} [opts]
+ * @returns {string | null}
+ */
+export function assetFallback(decoded, { base = process.env.SP_ASSET_FALLBACK } = {}) {
+  const mirror = String(base || '').trim().replace(/\/+$/, '');
+  if (!/^https?:\/\//i.test(mirror)) return null;
+  const first = decoded.split('/')[1] || '';
+  if (first !== 'assets' && first !== 'fonts') return null;
+  return `${mirror}${decoded}`;
+}
+
 const EMPTY_LOCAL_ART = Buffer.from(JSON.stringify({ version: 1, source: 'none', count: 0, groups: {} }));
 
 /** The content-set manifest's cache policy: its URL names its content (the `cs`), so it never changes. */
@@ -124,7 +142,7 @@ const CS_FILE = /^\/cs\/([0-9a-f]{16})\/([A-Za-z0-9._\/-]{1,200})$/;
  */
 export function createStaticHandler({ publicDir, dataDir, sharedDir, simDir = path.join(ROOT, 'server', 'sim'), packsDir = path.join(ROOT, 'packs'),
   pluginsDir = path.join(path.dirname(path.resolve(packsDir)), 'plugins'), packs = null, content = null, log = noopLog,
-  assetIndex = null, views = null, visual = null, contents = null }) {
+  assetIndex = null, views = null, visual = null, contents = null, clientOverlay = null }) {
   const registry = packs || createPluginRegistry({ publicDir, dataDir, packsDir, pluginsDir }, { log: /** @type {any} */ (log) });
   const sets = visual || (typeof registry.pluginFile === 'function' ? createVisualSets({ registry, log }) : null);
   let vanilla = content;
@@ -258,6 +276,16 @@ export function createStaticHandler({ publicDir, dataDir, sharedDir, simDir = pa
         return;
       }
     }
+    // 客户端覆盖（server/index.js 建表）：code.client 插件的 client/** 与 shared/**，
+    // 以及 engine overlay 影子根里的实体文件 —— 同路径后者优先。
+    if (clientOverlay) {
+      const hit = clientOverlay.get(decoded.slice(1));
+      if (hit) {
+        res.writeHead(200, { 'Content-Type': hit.type, 'Cache-Control': 'no-cache', 'Content-Length': hit.body.length });
+        res.end(req.method === 'HEAD' ? undefined : hit.body);
+        return;
+      }
+    }
     // Bare mount paths (e.g. "/data") → treat as the mount directory.
     const mount = mounts.find((m) => decoded.startsWith(m.prefix) || decoded === m.prefix.slice(0, -1)) || mounts[mounts.length - 1];
     const rest = decoded.length > mount.prefix.length ? decoded.slice(mount.prefix.length) : '';
@@ -306,6 +334,13 @@ export function createStaticHandler({ publicDir, dataDir, sharedDir, simDir = pa
         res.writeHead(200, { 'Content-Type': MIME['.json'], 'Cache-Control': 'no-cache', 'Content-Length': EMPTY_LOCAL_ART.length });
         res.end(req.method === 'HEAD' ? undefined : EMPTY_LOCAL_ART);
       } else if (e && (e.code === 'ENOENT' || e.code === 'ENOTDIR' || e.code === 'EISDIR' || e.code === 'ENAMETOOLONG')) {
+        // an art file this install does not carry: let the configured mirror answer, if there is one
+        const mirror = mount.name === 'public' ? assetFallback(decoded) : null;
+        if (mirror) {
+          res.writeHead(302, { Location: mirror, 'Cache-Control': 'no-cache', 'Content-Length': 0 });
+          res.end();
+          return;
+        }
         sendError(req, res, 404, '页面不存在 · Not found', decoded.length <= 200 ? decoded : '');
       } else if (e && (e.code === 'EACCES' || e.code === 'EPERM')) {
         sendError(req, res, 403, '禁止访问 · Forbidden');

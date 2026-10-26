@@ -62,6 +62,8 @@ export class PlayerViews {
     for (const { r, c, piece } of boardOrder(this.board)) board.push(this.pieceView(piece, [r, c]));
     // a boss round's prep: the partner's board on its half of the boss field (Match.bossMateView, item 51)
     const bossMate = typeof this.m.bossMateView === 'function' ? this.m.bossMateView(this) : null;
+    // 商人「坎诺特」: null outside a hunt mode (merchantView checks huntMode itself)
+    const merchant = typeof this.m.merchantView === 'function' ? this.m.merchantView(this) : null;
     return {
       t: 'm.private',
       playerId: this.playerId,
@@ -101,6 +103,9 @@ export class PlayerViews {
       bonds: bondList(this.gd, this.bondsView(), { full: true, off: offBondCounts(this.gd, this) }),
       effects: this.effectsView(),
       nextEnemies: this.m.nextEnemiesFor(this),
+      // 商人「坎诺特」/ 赏金: the player's own bank, this round's rate / cap and the withdrawal options (2V2 / 同盟狩猎
+      // only; omitted otherwise, so solo/coop-without-hunt stay byte-identical)
+      ...(merchant ? { merchant } : {}),
       // DESIGN §16: the effective operator loadout ({ [baseChessId]: { skill, module } }; chess not listed use defaults)
       loadout: this.loadout,
       // 0.2.2: the effective per-operator 潜能 / 练度 ({ [charId]: { potential, cultivate } }; operators not listed: 潜能 6,

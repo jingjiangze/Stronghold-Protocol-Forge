@@ -35,6 +35,7 @@
 // Programmatic use (tests): `const srv = await startServer({ port: 0, quiet: true }); … await srv.close();`
 // The server only auto-listens when this file is the process entry point.
 
+import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { getData, loadData } from './data.js';
@@ -65,6 +66,8 @@ import { createAssetIndex } from './http/assetIndex.js';
 import { createManifestViews } from './http/assetViews.js';
 import { answerClientError } from './http/common.js';
 import { lanUrls, displayHost, isProcessEntry, runMain } from './http/boot.js';
+import { shadowEntry, spawnShadow, OVERLAY_DIR } from './plugins/engineOverlay.js';
+import { mountLobbyPlugins } from './plugins/lobbyModules.js';
 
 // The public API of this module (tests and tools import it from here); the code lives in ./http/.
 export {
@@ -157,7 +160,91 @@ export async function startServer(opts = {}) {
   const hosts = createMatchHosts({ contents, log, options: { transport, maxWorkers: Math.max(1, policy.get().maxSets), ...(opts.matchHost || {}) } });
   const { registry, lobby, network } = createSessionStack(matchWrappers.length ? { ...opts, MatchClass: MatchClassForLobby } : opts, { data, log, content, plugins: roomSets, hosts });
   lobby.packChannels = packChannels;
-  const serveStatic = createStaticHandler({ publicDir, dataDir, sharedDir, simDir, packsDir, pluginsDir, packs, content, log, assetIndex, views, visual, contents });
+  // lobby 级插件面（2026-10-23）：loaded + trusted + 声明 code.lobby 的插件在这里挂上房间级钩子。
+  const disposeLobbyPlugins = await mountLobbyPlugins(lobby, packs, { log });
+  // 无损插件的客户端覆盖：声明了 code.client 的已加载插件，其 client/** 顶替同路径页面资源。
+  // 只允许 **loaded** 的插件覆盖：被 owner gate 拒掉的 trusted/script 插件也不能改页面（与 server 侧装载一致）。
+  const clientOverlay = new Map();
+  /** code.clientEntry 汇总（插件自己的浏览器入口模块；按插件 id 排序，见 /api/client-entries）。 */
+  const clientEntries = [];
+  try {
+    const loadedPlugins = new Set((typeof packs.plugins === 'function' ? packs.plugins() : [])
+      .filter((p) => p && p.status === 'loaded')
+      .map((p) => p.id));
+    const order = [];
+    for (const id of (fs.existsSync(pluginsDir) ? fs.readdirSync(pluginsDir) : [])) {
+      if (!loadedPlugins.has(id)) continue;
+      const man = path.join(pluginsDir, id, 'plugin.json');
+      if (!fs.existsSync(man)) continue;
+      let m; try { m = JSON.parse(fs.readFileSync(man, 'utf8')); } catch { continue; }
+      if (m && m.code) order.push({ id, m });
+    }
+    order.sort((x, y) => (Number(x.m.loadOrder) || 0) - (Number(y.m.loadOrder) || 0) || x.id.localeCompare(y.id));
+    for (const { id, m } of order) {
+      const c = m.code;
+      // code.clientEntry：插件自己的浏览器入口模块（与 code.client 的「顶替宿主文件」不同，这些是插件新增的
+      // 页面脚本，宿主 main.js 从 /api/client-entries 读到后动态 import）。路径必须落在 client/ 内、且文件存在。
+      if (c && Array.isArray(c.clientEntry)) {
+        for (const rel of c.clientEntry) {
+          if (typeof rel !== 'string' || !rel || rel.includes('..') || rel.startsWith('/')) continue;
+          const abs = path.join(pluginsDir, id, 'client', ...rel.split('/'));
+          if (!fs.existsSync(abs)) continue;
+          clientEntries.push({ id, rel, url: '/' + rel, mtimeMs: fs.statSync(abs).mtimeMs });
+          // 入口文件本身也要能取到（它不在 code.client 里，宿主不顶替任何文件，只是新增一个 URL）。
+          if (!clientOverlay.has(rel)) clientOverlay.set(rel, { body: fs.readFileSync(abs), type: MIME[path.extname(rel)] || 'application/octet-stream' });
+        }
+      }
+      if (!c || !Array.isArray(c.client)) continue;
+      for (const rel of c.client) {
+        const abs = path.join(pluginsDir, id, 'client', ...rel.split('/'));
+        if (!fs.existsSync(abs)) continue;
+        clientOverlay.set(rel, { body: fs.readFileSync(abs), type: MIME[path.extname(rel)] || 'application/octet-stream' });
+      }
+      // 插件自带的 shared/**（如评分策略模块）也按同路径顶替。
+      const sharedDirP = path.join(pluginsDir, id, 'shared');
+      if (fs.existsSync(sharedDirP)) {
+        const walkShared = (d, rel) => {
+          for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+            const child = rel ? rel + '/' + e.name : e.name;
+            if (e.isDirectory()) walkShared(path.join(d, e.name), child);
+            else clientOverlay.set('shared/' + child, { body: fs.readFileSync(path.join(d, e.name)), type: MIME[path.extname(child)] || 'application/octet-stream' });
+          }
+        };
+        walkShared(sharedDirP, '');
+      }
+    }
+  } catch (e) { log.warn?.(`[plugins] client overlay: ${e.message}`); }
+  if (clientOverlay.size) log.info?.(`[plugins] client overlay: ${clientOverlay.size} files (code.client + engine overlay)`);
+
+  // 影子根（engine overlay）叠在同一张表上：后写覆盖同路径 —— 它是「改了引擎」的那一层，
+  // 优先于普通 code.client 插件。只认 plugins/config.json 的 overlay，与 registry 加载状态无关。
+  // 影子根的客户端覆盖：`.shadow/` 里被插件顶替的文件，按原路径服务。
+  // 只认 plugins/config.json 的 `overlay` 指定的那一个（server/plugins/engineOverlay.js），
+  // 与 registry 的加载状态无关 —— 影子根本身就是「改了引擎」的那一层。
+  try {
+    const shadowDir = path.join(ROOT, OVERLAY_DIR);
+    for (const top of ['public', 'shared']) {
+      const dir = path.join(shadowDir, top);
+      if (!fs.existsSync(dir)) continue;
+      const walk = (d, rel) => {
+        for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+          const child = rel ? `${rel}/${e.name}` : e.name;
+          const abs = path.join(d, e.name);
+          if (e.isDirectory()) { walk(abs, child); continue; }
+          // 只收**实体文件**：目录级符号链接是引擎原文件，插件覆盖的那一个在链接被「降级」时
+          // 已经换成实体（engineOverlay.ensureDir）。所以这里不用 isSymbolicLink 判，用 lstat 的形态判。
+          const st = fs.lstatSync(abs);
+          if (!st.isFile()) continue;
+          const body = fs.readFileSync(abs);
+          // 键用请求路径（/js/…、/css/…）：static.js 命中时拿到的是 decoded.slice(1)，不带 public/ 前缀。
+          const key = top === 'public' ? child : `${top}/${child}`;
+          clientOverlay.set(key, { body, type: MIME[path.extname(child)] || 'application/octet-stream' });
+        }
+      };
+      walk(dir, '');
+    }
+  } catch (e) { log.warn?.(`[plugins] client overlay: ${e.message}`); }
+  const serveStatic = createStaticHandler({ publicDir, dataDir, sharedDir, simDir, packsDir, pluginsDir, packs, content, log, assetIndex, views, visual, contents, clientOverlay });
   const studio = opts.studio === false ? null : createStudio({ publicDir, pluginsDir, dataDir, registry: packs, lobby, sessions: registry, log, fetch: opts.fetch });
   // the mod manager (server/mods/): the /mod page and the drop-in inbox. Imports go through the plugin system's own
   // forgeImport / installPluginBytes — one loading chain, no second one. Off with opts.mods === false or SP_MODS=off.
@@ -173,7 +260,7 @@ export async function startServer(opts = {}) {
   buildTag();
 
   const traffic = createTrafficCounter();
-  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health, modHealth: () => modMount.healthz() }, log, trustProxy: network.opts.trustProxy, studio, mods, dynamicRoutes: modMount.routes(), trustedRuntime }));
+  const server = http.createServer(createRequestHandler({ serveStatic, csp: process.env.SP_CSP === 'off' ? null : siteCsp(publicDir), health: { startedAt, network, registry, lobby, content, traffic, assetIndex, views, trusted:trustedRuntime?.health, modHealth: () => modMount.healthz() }, log, trustProxy: network.opts.trustProxy, studio, mods, dynamicRoutes: modMount.routes(), clientEntries, trustedRuntime }));
   server.on('clientError', answerClientError);
   const wss = attachWebSocket(server, { network, log, traffic, lanes: packLaneTable() });
 
@@ -241,6 +328,7 @@ export async function startServer(opts = {}) {
       try { lobby.shutdown('shutdown'); } catch (e) { log.error('[shutdown] lobby', e); }
       try { modMount.shutdown(); } catch (e) { log.error('[shutdown] pack modules', e); }
       try { hosts.close(); } catch (e) { log.error('[shutdown] match hosts', e); }
+      try { await disposeLobbyPlugins?.(); } catch (e) { log.error('[shutdown] lobby plugins', e); }
       network.close();
       assetIndex?.close();
       studio?.close();
@@ -260,4 +348,8 @@ export async function startServer(opts = {}) {
 }
 
 // `node server/index.js` / npm start: listen, print the banner, stop on SIGINT / SIGTERM (http/boot.js).
-if (isProcessEntry(import.meta.url)) runMain(startServer);
+if (isProcessEntry(import.meta.url)) {
+  const shadow = shadowEntry({ root: ROOT, pluginsDir: path.join(ROOT, 'plugins') });
+  if (shadow) spawnShadow({ entry: shadow.entry });
+  else runMain(startServer);
+}

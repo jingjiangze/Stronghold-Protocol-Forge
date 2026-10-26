@@ -92,6 +92,14 @@ export const actions = {
   reward: (idx) => act('g.reward', { idx }),
   offer: (offer, idx, refresh = false, cardId) => act(refresh ? 'g.offerRefresh' : 'g.offer', { offerId: offer.id, pluginId: offer.pluginId, seq: offer.seq, idx, cardId }),
   choice: (idx, choiceId) => act('g.choice', choiceId === undefined ? { idx } : { idx, choiceId }),
+  // 2V2 事件期: give one entry to one target (self / mate / oppA / oppB); the server owns the draw and the odds
+  eventPick: (target) => act('g.event.pick', { target }, { sfx: 'confirm' }),
+  // 2V2 对抗期 (confront.js): step 1 the opponent this seat attacks; step 2 its monsters — one group, one insertion
+  // position (front / mid / back) and the placed monsters, each on a gate ('upper' 上路 / 'lower' 下路).
+  confrontTarget: (targetPlayerId) => act('g.confrontTarget', { targetPlayerId }, { sfx: 'confirm' }),
+  confront: (group, position, picks) => act('g.confront', { group, position, picks: (picks || []).map((p) => ({ enemyKey: p.enemyKey, gate: p.gate === 'upper' ? 'upper' : 'lower' })) }, { sfx: 'confirm' }),
+  // 商人「坎诺特」: withdraw `gold` 金币 against the banked 赏金 (server-authoritative rate / cost / cap)
+  merchantWithdraw: (gold) => act('g.confront.withdraw', { gold }, { sfx: 'buy' }),
   ready: (ready) => act('g.ready', { ready }, { sfx: ready ? 'ready' : 'back' }),
   emote: (id) => act('g.emote', { id }, { quiet: true }),
   // `playerId`: the player tapped in the team panel (a shared field shows two) — what an eliminated viewer follows

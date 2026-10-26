@@ -1,10 +1,13 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {validHostMessage,HOST_IPC_LIMITS,boundedJson} from '../../server/match/host/ipc.js';
 import {MatchProxy} from '../../server/match/host/proxy.js';
 import {createMatchHosts} from '../../server/match/host/index.js';
 import {scriptSet} from '../helpers/simHostFixture.js';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 
 test('IPC limits and shape: logs, errors, match-only frames, replies and non-JSON payloads',()=>{
   const id='TEST-0-1',base={matchId:id};
@@ -52,4 +55,21 @@ test('parent receiver rejects forged log/boot-error/send/reply IPC before logger
   assert.equal(lines.length,before);assert.equal(host.dead,null);assert.equal(frames.length,0);assert.equal(p.pending.size,1);
   host.onMessage({type:'reply',matchId:p.matchId,id:1,result:{ok:true}});assert.deepEqual(await answer,{ok:true});
   host.onMessage({type:'log',level:'info',text:'accepted'});assert.match(lines.at(-1),/accepted$/);
+});
+
+test("a set's code.match is the Match its host runs, not ../Match.js",async t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'sp-code-match-'));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const stub=pathToFileURL(fileURLToPath(new URL('../../server/match/StubMatch.js',import.meta.url))).href;
+  fs.writeFileSync(path.join(dir,'m.js'),`export { Match } from ${JSON.stringify(stub)};\n`);
+  const base=scriptSet('export default () => {};','trusted',{bonds:{}});
+  const set={...base,code:{roots:[{id:'shop',root:dir,match:'m.js'}],match:'m.js'}};
+  const files={bonds:Buffer.from(JSON.stringify(set.data.bonds))},lines=[];
+  const hosts=createMatchHosts({contents:{get:()=>set,dataBytes:()=>files},log:{info:x=>lines.push(x),warn:x=>lines.push(x),error:x=>lines.push(x)}});
+  t.after(()=>hosts.close());
+  hosts.create(set.cs,{roomCode:'TEST',seats:[],send(){},broadcast(){},onEnd(){}});
+  const booted=()=>lines.some(x=>/ready$/.test(x)),broken=()=>lines.some(x=>/did not boot|failed|cannot/.test(x));
+  for(let i=0;i<300&&!booted()&&!broken();i++)await new Promise(r=>setTimeout(r,50));
+  assert.ok(lines.some(x=>/match module: plugin shop \(m\.js\)/.test(x)),lines.join('\n'));
+  assert.ok(booted(),lines.join('\n'));
 });

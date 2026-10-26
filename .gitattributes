@@ -25,3 +25,5 @@
 *.ttf binary
 *.mp3 binary
 *.ogg binary
+# the sync gate parses this list byte-wise (one path per line); keep it LF everywhere
+.github/sync-allow.txt text eol=lf

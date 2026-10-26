@@ -19,6 +19,10 @@
 //   dataBytes(cs)                          the served bytes of every data file of the set — exactly the bytes the
 //                                          builder hashed — which a match host checks against the set's hash
 //                                          input and parses (server/match/host/entry.js)
+//   get(cs).code                           a plugin's own Match module (manifest `code.match`): `{ roots: [{ id, root,
+//                                          match }], match }` — the set's match host imports it instead of ../Match.js.
+//                                          Paths, not content: not part of cs, so a kept set of the same cs is adopted
+//                                          again when they change.
 // The builder is C1 (server/plugins/contentSet.js buildContentSet / contentSetFiles, DESIGN §32.5); this file
 // adapts its set to what P1c reads: `hashInput` (the contentHashOf input a browser and a worker recompute `cs` from — out
 // of the set's index: its data files', and its translation files', hashes; checked to be the builder's cs), `modes` (only the config.modes entries the vanilla data lacks, as { id, name, roomMode,
@@ -65,6 +69,13 @@ export function pluginModes(modes, vanillaData) {
       difficulty: DIFFICULTIES.includes(m.difficulty) ? m.difficulty : null,
     }));
 }
+
+/**
+ * A set's code.match roots as one comparable string ('' for a set whose plugins ship no Match module) — what tells two
+ * sets of the same cs apart when a plugin's match entry moved (`resolve`).
+ * @param {{ roots?: { id: string, root: string, match: string }[] } | null | undefined} code
+ */
+const codeKey = (code) => (code && Array.isArray(code.roots) ? code.roots.map((r) => `${r?.id}:${r?.root}:${r?.match}`).join('|') : '');
 
 /**
  * The content sets of one server.
@@ -189,6 +200,9 @@ export function createContentSets({ registry, vanillaData, log = noopLog, maxSet
       // PLUGIN API v2: the set's interaction windows (docs/PLUGINS.md §10b), handed to its match host and to the
       // rooms' views; [] when the set declares none
       offers: Array.isArray(built.offers) ? built.offers : [],
+      // code.match: the plugin's own Match module, which the set's match host imports instead of ../Match.js. Paths into
+      // the plugin directory are not part of cs (a browser never sees them), so `resolve` re-adopts when they change.
+      ...(built.code && Array.isArray(built.code.roots) && built.code.roots.length ? { code: built.code } : {}),
     };
   }
 
@@ -235,7 +249,9 @@ export function createContentSets({ registry, vanillaData, log = noopLog, maxSet
       }
       const k = csUrlPart(built.cs);
       set = sets.get(k) || null;
-      if (!set || set.cs !== built.cs) set = adopt(built);
+      // code roots are file paths, not content (see adopt), so a kept set of the same cs may still be running another
+      // plugin's Match: a changed code.match is a new set even when cs is the same.
+      if (!set || set.cs !== built.cs || codeKey(set.code) !== codeKey(built.code)) set = adopt(built);
       if (!set) {
         log.error?.(`[plugins] content set ${built.cs.slice(0, 8)}: its manifest does not hash to its cs`);
         return { error: ERR.INTERNAL, detail: 'the content set\'s manifest does not hash to its cs' };

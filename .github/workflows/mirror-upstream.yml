@@ -97,29 +97,52 @@ jobs:
           fi
 
       # GATE 1 —— 增量面：合并后相对上游**只多出**允许的东西（mod 管理器这一层 + 控制面）。
-      #   这条令是「纯 mod 管理器」的机器判据：出现白名单外的文件就红，分支不许悄悄长成别的产品线。
+      #   这条令是「纯 mod 管理器」的机器判据：出现白名单外的**同路径**文件就红，分支不许悄悄长成别的产品线。
+      #
+      #   判据（三条）：
+      #     ① 我方**新增**的文件（上游没有同路径）一律放行 —— 管理器自己的 4 个文件、工具、文档都是这类；
+      #     ② `.github/**` 是控制面（本仓自己的 CI / 工作流），整前缀放行；
+      #     ③ **上游也有同路径**的文件必须在 `.github/sync-allow.txt` 登记，否则红 —— 这是「将来上游再改会撞上」
+      #        的那一面，必须逐个在册，新长出来一个没登记的就把分支拦下。
+      #
+      #   为什么是文件而不是写死的字符串：这份名单随我们自己的提交增长（引擎面一改就多一条），写死在 shell 里
+      #   必然会漂（2026-10-23 就是这样：名单停在 3 条，而实际同路径文件已到 57 条，gate 连续 9 次红）。
+      #   名单放 `.github/sync-allow.txt`，改动它本身走 code review，判据不变。
       - name: GATE — 增量面（还是不是纯 mod 管理器）
         if: steps.merge.outputs.merged == 'true'
         run: |
           set -uo pipefail
+          UP="${{ steps.up.outputs.sha }}"
+          ALLOW_FILE=.github/sync-allow.txt
+          if [ ! -f "$ALLOW_FILE" ]; then
+            echo "::error::缺少 $ALLOW_FILE —— 没有登记表就没有判据，不算通过"
+            exit 1
+          fi
+          # 去注释 / 去空白 / 去空行；名单里的路径必须逐字匹配（-Fx）
+          ALLOW=$(sed 's/#.*//' "$ALLOW_FILE" | tr -d ' \t\r' | grep -v '^$' || true)
           echo "--- 我方相对上游的增量文件 ---"
-          git diff --name-only "${{ steps.up.outputs.sha }}" HEAD | sort
+          git diff --name-only "$UP" HEAD | sort
           echo "--- 其中上游也有的（将来上游再改会撞上的面）---"
-          for f in $(git diff --name-only "${{ steps.up.outputs.sha }}" HEAD); do
-            if git cat-file -e "${{ steps.up.outputs.sha }}:$f" 2>/dev/null; then echo "  上游也有  $f"; else echo "  我方新增  $f"; fi
-          done
-          # 受控例外：与上游同路径的三个文件。它们是管理器接进本体的挂点，必须在册；
-          # 册外再出现同路径文件 = 越界，红。
-          BODY_PATCHES="server/http/routes.js server/index.js server/plugins/forgeImport.js"
           STRAY=0
-          for f in $(git diff --name-only "${{ steps.up.outputs.sha }}" HEAD); do
-            if git cat-file -e "${{ steps.up.outputs.sha }}:$f" 2>/dev/null; then
-              case " $BODY_PATCHES " in
-                *" $f "*) ;;
-                *) echo "::error::越界：$f 上游也有，但没登记为受控挂点"; STRAY=1 ;;
-              esac
+          REG=0
+          for f in $(git diff --name-only "$UP" HEAD); do
+            git cat-file -e "$UP:$f" 2>/dev/null || { echo "  我方新增  $f"; continue; }
+            case "$f" in
+              .github/*) echo "  控制面    $f"; continue ;;
+            esac
+            if echo "$ALLOW" | grep -Fxq "$f"; then
+              echo "  已登记    $f"; REG=$((REG + 1))
+            else
+              echo "::error::越界：$f 上游也有，但没登记在 $ALLOW_FILE"
+              STRAY=1
             fi
           done
+          echo "登记在册的同路径文件：$REG 个"
+          # 「一条都没比到」不算通过：增量为空或名单失效时不能静默变绿
+          if [ "$REG" = 0 ]; then
+            echo "::error::一个同路径文件都没比到 —— 判据失效，不算通过"
+            exit 1
+          fi
           [ "$STRAY" = 0 ] || exit 1
           echo "✓ 增量面全部在允许范围内"
 
@@ -223,12 +246,26 @@ jobs:
             echo "演练模式：不推送、不开 issue（分支与清单只在 runner 里）"
           else
             git push -f origin "HEAD:refs/heads/$BR"
-            # GITHUB_TOKEN 开同仓 PR 会被拒（实测 GraphQL: Resource not accessible by integration），
-            # 所以「响」这条走 issue —— 同一个 sha 只开一条，不刷屏。
+            # 「响」的三条腿，按可用性排序 —— 任何一条成功都算响过：
+            #   ① 步骤摘要（永远可用，job 页面第一屏）；
+            #   ② ::error:: 注解（job 名字旁边标红，日志可搜）；
+            #   ③ issue（本仓**禁用了 Issues**，实测必失败，所以放最后，且不因它失败而中断）。
+            # 历史：2026-10-23 的红跑里 issue 两次报 "repository has disabled issues"，job 仍以 exit 1 结束
+            # —— 结论没错，但「响」其实是假的（没人看得到）。改成前两条兜底。
+            {
+              echo "## 上游同步被拦（$SHORT → $TARGET）"
+              echo
+              echo "$REASON"
+              echo
+              echo "- 分支：\`$BR\`"
+              echo "- 逐条门控结论见本 job 上方各 GATE 步骤"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::上游同步被拦：upstream $SHORT → $TARGET（分支 $BR，详见本 job 摘要）"
             TITLE="上游同步被拦：upstream $SHORT → $TARGET"
-            if ! gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$TITLE" --json number --jq '.[].number' | grep -q .; then
+            if ! gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$TITLE" --json number --jq '.[].number' 2>/dev/null | grep -q .; then
               gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" \
-                --body "$REASON 分支 \`$BR\` 上有清单。"
+                --body "$REASON 分支 \`$BR\` 上有清单。" 2>/dev/null \
+                || echo "（Issues 已禁用或不可用：跳过 issue，摘要与注解已记录）"
             fi
           fi
           exit 1

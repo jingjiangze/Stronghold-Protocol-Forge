@@ -44,6 +44,12 @@ export class MatchIntents {
       case 'g.offer': return this.requestOffer(ps, msg.offerId, msg.idx, msg);
       case 'g.offerRefresh': return this.requestOfferRefresh(ps, msg.offerId, msg.idx, msg);
       case 'g.ready': return ps.setReady(!!msg.ready);
+      // 2V2 对抗期: step 1 the target this seat attacks, step 2 its monsters (confront.js)
+      case 'g.confrontTarget': return this.submitConfrontTarget(ps, msg);
+      case 'g.confront': return this.submitConfront(ps, msg);
+      case 'g.confront.withdraw': return this.withdrawBounty(ps, msg);
+      // 2V2 事件期: give one entry to one target (server/match/match/event.js)
+      case 'g.event.pick': return this.pickEvent(ps, msg.target);
       case 'g.emote': return this.emote(ps, msg.id);
       // playerId: the player tapped (a shared field names two) — the watch preference (item 56)
       case 'g.watch': return this.watch(ps, msg.fieldId, msg.playerId ?? null);

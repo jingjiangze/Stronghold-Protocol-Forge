@@ -15,7 +15,14 @@
 .lobby-left, .lobby-right { display: flex; flex-direction: column; min-width: 0; }
 
 /* ---- mode cards ------------------------------------------------------------------------------------ */
-.mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: .24rem; margin-bottom: .34rem; }
+.mode-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(2.1rem, 1fr)); gap: .24rem; margin-bottom: .34rem; }
+/* versus: the 2V2 / 4V4 switch under the mode cards */
+.team-size { display: flex; gap: .08rem; margin: -.2rem 0 .3rem; }
+.team-size__opt { display: flex; flex-direction: column; align-items: flex-start; gap: .02rem; padding: .05rem .14rem;
+  border: 1px solid var(--line-2); background: rgba(255, 255, 255, .03); color: var(--text-md); cursor: pointer;
+  font-size: calc(.16 * var(--t)); font-weight: 700; letter-spacing: .06em; }
+.team-size__opt.is-on { border-color: var(--mint-400); color: var(--text-hi); background: rgba(23, 249, 183, .08); }
+.team-size__hint { font-size: calc(.11 * var(--t)); font-weight: 400; letter-spacing: 0; color: var(--text-lo); }
 .mode-card {
   --bk-c: transparent;
   --bk-l: .2rem;

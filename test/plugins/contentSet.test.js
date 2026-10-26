@@ -8,6 +8,7 @@ import { DATA_SHIM_JS } from '../../server/http/static.js';
 import { contentHashOf } from '../../shared/plugins/identity.js';
 import { applyFileOverlay } from '../../shared/i18nData.js';
 import { fixture, guard, bondPatch } from '../helpers/contentFixtures.js';
+import { scriptFixture } from '../helpers/scriptFixtures.js';
 import { createPluginRegistry } from '../../server/plugins/registry.js';
 import { ROOT, getData } from '../../server/data.js';
 import { Grid } from '../../server/sim/grid.js';
@@ -40,6 +41,34 @@ test('settings normalize into cs, and dependency order is stable', t => {
   assert.equal(s.data.bonds.deputShip.bb.base_def, 0.5); assert.equal(s.warnings[0].code, 'PLUGIN_PATCH_OVERRIDE');
   const changed = buildContentSet({ registry: f.registry, ids: [{ id: 'data-demo', settings: { def: 0.7 } }] });
   assert.notEqual(changed.cs, s.cs); assert.equal(changed.data.bonds.deputShip.bb.base_def, 0.7);
+});
+test('code.match: a trusted plugin\'s Match module is the set\'s; other classes and escaping paths are refused', t => {
+  // a trusted plugin is the only class whose code runs outside the SES sandbox, so it is the only one that may supply it
+  const g = scriptFixture(t);
+  g.put('shop', 'export function activate() {}', {
+    class: 'trusted', scope: ['room'], permissions: ['data.patch', 'trusted.server'], entry: { server: 'host.js' },
+    data: ['patch.json'], code: { match: 'server/m.js' },
+  }, { 'patch.json': bondPatch(), 'host.js': 'export function activate() {}', 'server/m.js': 'export class Match {}' });
+  const trusted = buildContentSet({ registry: g.registry, ids: ['shop'] });
+  assert.deepEqual(trusted.problems, []);
+  assert.equal(trusted.code.match, 'server/m.js');
+  assert.deepEqual(trusted.code.roots.map((r) => r.id), ['shop']);
+  assert.ok(path.isAbsolute(trusted.code.roots[0].root) && trusted.code.roots[0].root.endsWith('shop'));
+  // a content plugin has no code, and no manifest may point the match host out of its own directory
+  for (const code of [{ match: 'server/shop.js' }, { match: '../../escape.js' }, { match: '/etc/x.js' }, { match: 'C:/x.js' }, { match: 'server/x.txt' }]) {
+    const f = fixture(t);
+    f.put('data-demo', { data: ['patch.json'], code }, { 'patch.json': bondPatch() });
+    const s = build(f);
+    assert.deepEqual(s.problems, [], JSON.stringify(code));
+    assert.equal(s.code, undefined, `${JSON.stringify(code)} is no code root`);
+  }
+  // a script (sandboxed) plugin cannot either
+  const h = scriptFixture(t);
+  h.put('sandboxed', 'export default () => {};', { class: 'script', scope: ['room'], permissions: ['sim.code', 'data.patch'], entry: { sim: 'index.js' }, data: ['patch.json'], code: { match: 'server/m.js' } },
+    { 'patch.json': bondPatch(), 'server/m.js': 'export class Match {}' });
+  const scripted = buildContentSet({ registry: h.registry, ids: ['sandboxed'] });
+  assert.deepEqual(scripted.problems, []);
+  assert.equal(scripted.code, undefined, 'a script plugin runs in SES, never in the match host');
 });
 test('template, mode inheritance and plugin stage ground paths compose together', t => {
   const f = fixture(t);

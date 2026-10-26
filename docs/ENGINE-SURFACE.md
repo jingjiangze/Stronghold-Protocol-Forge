@@ -77,6 +77,10 @@ plugin.json (server.modules)
 
 * `code`（无损插件，`contentSet.js` 的多代码根）：`code.match` 是**整包替换对局**；`server.modules.matchClass`
   是**包装对局类**。两者可共存，`code.match` 优先（替换基类后仍可被包装）。
+  **只有 `class: trusted` 的插件能提供 `code.match`**——对局宿主进程在 SES 沙箱之外，`script` 插件若也能提供就等于绕过沙箱；
+  `match` 必须是插件目录内的相对 `.js` 路径（绝对路径、盘符、`..` 一律不成为代码根）。多个插件都声明时**最后加载者胜**
+  （与 `code.client` 的覆盖语义一致）；代码根**不进 `cs`**（路径不是内容、浏览器也看不到），所以同一 `cs` 的旧集合在
+  `code.match` 变了时会被重新 adopt（`contentSets.js` 的 `codeKey`）。
 * `code.lobby`（**房间级插件面**，`server/plugins/lobbyModules.js`）：`class: trusted` 且 `code.lobby` 指向一个
   导出 `setup(api)` 的相对路径时，服务端在第一个连接进来之前挂上房间钩子——
   `api.protocol(spec)` 只能**新增** C2S 键（引擎协议表权威，已存在的键不覆盖）、`api.on(type, fn)` 处理一条 C2S

@@ -70,6 +70,7 @@ export const STEPS = [
   { id: 'lint', ci: { job: 'tooling', name: 'Lint (warnings allowed)' }, npm: 'lint', describe: 'eslint .' },
   { id: 'imports', ci: { job: 'tooling', name: 'Import boundaries' }, npm: 'check:imports', describe: 'node tools/check-imports.mjs' },
   { id: 'typecheck', ci: { job: 'tooling', name: 'Typecheck' }, npm: 'typecheck', describe: 'tsc --noEmit --checkJs -p jsconfig.json' },
+  { id: 'plugin-load', ci: { job: 'plugin-load', name: 'Plugin load (registry + match host, real boot)' }, describe: 'node tools/plugin-load.mjs' },
 ];
 
 // ---------------------------------------------------------------------------------------------------------------------

@@ -101,3 +101,58 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 真装载门（本仓此前没有显式的一道）
+  # `npm run test` 会顺带跑到这两个文件，但它们红在 4 个矩阵里的某一条时，看上去和
+  # 「某个单测挂了」没区别；而它们回答的是**完全不同**的问题：插件到底装不装得上。
+  # 这里单独成 job：① 文件不在 = 判据失效（不是绿）；② 一条用例都没跑 = 判据失效；
+  # ③ `plugin-host.test.js` 里的 `errorCount === 0` 断言被删掉也算红 —— 那是「装载无错」的判据本身。
+  # ─────────────────────────────────────────────────────────────────────────────
+  plugin-load:
+    name: plugin-load (插件真装载 + 对局宿主无错)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install (npm ci → postinstall copies public/vendor)
+        run: npm ci --no-audit --no-fund
+
+      - name: 判据完整性（文件在、断言在）
+        run: |
+          set -uo pipefail
+          for f in test/plugins/registry.test.js test/match/plugin-host.test.js; do
+            [ -f "$f" ] || { echo "::error::$f 不见了 —— 真装载门失去判据（这不是绿，是判据失效）"; exit 1; }
+          done
+          grep -q 'errorCount' test/match/plugin-host.test.js             || { echo "::error::test/match/plugin-host.test.js 里的 errorCount===0 断言没了 —— 装载无错的判据被删"; exit 1; }
+          grep -q 'pluginsDir' test/plugins/registry.test.js             || { echo "::error::test/plugins/registry.test.js 不再用 pluginsDir 起 server —— 判据被改"; exit 1; }
+
+      - name: 真装载（两个文件各自跑，红的话把完整输出打出来）
+        run: |
+          set -uo pipefail
+          fail=0
+          for f in test/plugins/registry.test.js test/match/plugin-host.test.js; do
+            log="/tmp/$(basename "$f").log"
+            echo "::group::$f"
+            rc=0
+            node --test "$f" > "$log" 2>&1 || rc=$?
+            grep -E '^# (tests|pass|fail)' "$log" || true
+            n=$(grep -E '^# tests ' "$log" | grep -oE '[0-9]+' | head -1 || true)
+            if [ -z "${n:-}" ] || [ "${n:-0}" -lt 1 ]; then
+              echo "::error::$f 一条用例都没跑 —— 判据失效，不报绿"
+              fail=1
+            fi
+            if [ "$rc" != 0 ]; then
+              echo "::error::$f 红（rc=$rc）"
+              cat "$log"
+              fail=1
+            fi
+            echo "::endgroup::"
+          done
+          [ "$fail" = 0 ] || exit 1

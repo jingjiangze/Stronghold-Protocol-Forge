@@ -101,3 +101,30 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 真装载门（本仓此前没有显式的一道）
+  # `npm run test` 会顺带跑到这两个文件，但它们红在 4 个矩阵里的某一条时，看上去和
+  # 「某个单测挂了」没区别；而它们回答的是**完全不同**的问题：插件到底装不装得上。
+  # 这里单独成 job：① 文件不在 = 判据失效（不是绿）；② 一条用例都没跑 = 判据失效；
+  # ③ `plugin-host.test.js` 里的 `errorCount === 0` 断言被删掉也算红 —— 那是「装载无错」的判据本身。
+  # ─────────────────────────────────────────────────────────────────────────────
+  plugin-load:
+    name: plugin-load (插件真装载 + 对局宿主无错)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install (npm ci → postinstall copies public/vendor)
+        run: npm ci --no-audit --no-fund
+
+      # 逻辑在 tools/plugin-load.mjs 里（本仓规矩：ci.yml 的每一步都要在 tools/ci.mjs 有对应实现，
+      # 把三步收成一行命令，本地跑 `node tools/ci.mjs` 时也能跑同一份判据）
+      - name: Plugin load (registry + match host, real boot)
+        run: node tools/plugin-load.mjs

@@ -1,0 +1,142 @@
+name: 管理器规格与镜像一致性
+
+# 本仓不运行管理器，只守住两件事：
+#   1. reference/ 下的镜像与引擎仓（master）的实际文件**字节一致**；
+#   2. README / SPEC / FORGE-COMPAT 里写死的判据（行数、拒绝码、上限、错误码）
+#      与真实文件**不脱节**。
+#
+# 为什么这么设：审计发现管理器对引擎是「运行时深依赖」（import 闭包 112 文件），
+# 所以本仓刻意不做 vendor、不做二次实现；一旦有人在引擎仓改了管理器而忘了同步镜像，
+# 或改了代码忘了更新规格，这里就红。
+#
+# 一条都没跑到也算红 —— 照搬既有 selftest.yml 的口径，防「什么都没跑却报绿」。
+#
+# 只读：不写任何分支（permissions: contents: read），不 push、不开 issue。
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '23 6 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: manager-integrity-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ENGINE_REPO: jingjiangze/Stronghold-Protocol-Forge
+  ENGINE_REF: master
+
+jobs:
+  mirror:
+    name: reference/ 与引擎仓字节一致
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 逐个比对镜像文件
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          # 仓库内路径 -> 引擎仓路径
+          MAP="reference/server_mods_index.js:server/mods/index.js
+          reference/server_mods_import.js:server/mods/import.js
+          reference/server_mods_inbox.js:server/mods/inbox.js
+          reference/server_mods_page.js:server/mods/page.js
+          reference/tools_mod.mjs:tools/mod.mjs
+          reference/test_mods_import.test.js:test/mods/import.test.js
+          reference/docs_MOD-MANAGER.md:docs/MOD-MANAGER.md"
+          MISS=0; DIFF=0; OK=0
+          for line in $MAP; do
+            local="${line%%:*}"; remote="${line#*:}"
+            if [ ! -f "$local" ]; then echo "::error::镜像缺失 $local"; MISS=$((MISS+1)); continue; fi
+            code=$(curl -sS -o /tmp/remote.bin -w '%{http_code}' \
+              -H "authorization: Bearer $GH_TOKEN" \
+              -H "accept: application/vnd.github.raw" \
+              "https://api.github.com/repos/$ENGINE_REPO/contents/$remote?ref=$ENGINE_REF")
+            if [ "$code" != "200" ]; then echo "::error::取不到引擎仓 $remote（HTTP $code）"; MISS=$((MISS+1)); continue; fi
+            if cmp -s "$local" /tmp/remote.bin; then
+              echo "  ✓ $remote"; OK=$((OK+1))
+            else
+              echo "::error::镜像与引擎仓不一致：$remote"; DIFF=$((DIFF+1))
+            fi
+          done
+          echo "一致 $OK / 不一致 $DIFF / 取不到 $MISS"
+          # 一条都没比对到 = 红（映射表空了或全 404，绝不能当绿）
+          if [ "$OK" -eq 0 ]; then echo "::error::一个文件都没比对成功"; exit 1; fi
+          [ "$DIFF" -eq 0 ] && [ "$MISS" -eq 0 ] || exit 1
+
+  spec:
+    name: 规格里写死的判据与真实文件一致
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 抓取引擎仓里被写死的判据
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          get() {
+            curl -sS -H "authorization: Bearer $GH_TOKEN" -H "accept: application/vnd.github.raw" \
+              "https://api.github.com/repos/$ENGINE_REPO/contents/$1?ref=$ENGINE_REF"
+          }
+          mkdir -p /tmp/eng
+          get shared/plugins/manifest.js > /tmp/eng/manifest.js
+          get server/mods/import.js > /tmp/eng/import.js
+          get server/mods/index.js > /tmp/eng/index.js
+          get server/plugins/install.js > /tmp/eng/install.js
+          wc -l /tmp/eng/*.js
+
+      - name: 断言：200 MiB 上限仍写在 PLUGIN_LIMITS 里
+        run: |
+          set -uo pipefail
+          if grep -q 'pluginBytes: 200 \* 1024 \* 1024' /tmp/eng/manifest.js; then
+            echo "✓ PLUGIN_LIMITS.pluginBytes 仍是 200 MiB"
+          else
+            echo "::error::PLUGIN_LIMITS.pluginBytes 变了 —— SPEC.md 与 FORGE-COMPAT.md 里的 200 MiB 已脱节"
+            grep -n 'pluginBytes' /tmp/eng/manifest.js || true
+            exit 1
+          fi
+
+      - name: 断言：拒绝码集合未变
+        run: |
+          set -uo pipefail
+          MISS=0
+          for code in PLUGIN_INSTALL_ZIP PLUGIN_INSTALL_SIZE PLUGIN_INSTALL_CHECK PLUGIN_INSTALL_EXISTS; do
+            if grep -q "$code" /tmp/eng/install.js; then echo "  ✓ $code"; else echo "::error::拒绝码 $code 找不到了"; MISS=$((MISS+1)); fi
+          done
+          [ "$MISS" -eq 0 ] || { echo "::error::拒绝码集合变了 —— SPEC.md 需同步"; exit 1; }
+
+      - name: 断言：SPEC.md 写的关键位置没挪
+        run: |
+          set -uo pipefail
+          # sniffArchive 必须还在 server/mods/import.js
+          grep -q 'sniffArchive' /tmp/eng/import.js || { echo "::error::sniffArchive 不在 import.js 了"; exit 1; }
+          # 两个 rescan 调用点（/mod/upload 与 /mod/fetch）必须还在
+          N=$(grep -c 'rescan' /tmp/eng/index.js || true)
+          if [ "${N:-0}" -lt 2 ]; then echo "::error::server/mods/index.js 里的 rescan 调用少于 2 处（实际 ${N:-0}）"; exit 1; fi
+          echo "✓ 关键位置未挪（sniffArchive 在，rescan ${N} 处）"
+
+      - name: 断言：README 里的仓库名与分支名仍存在
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          for r in Stronghold-Protocol-Forge Stronghold-Protocol-Forge-Mods; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' -H "authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/jingjiangze/$r")
+            [ "$code" = "200" ] && echo "  ✓ jingjiangze/$r" || { echo "::error::仓库 jingjiangze/$r 取不到（HTTP $code）"; exit 1; }
+          done
+          code=$(curl -sS -o /dev/null -w '%{http_code}' -H "authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/$ENGINE_REPO/branches/$ENGINE_REF")
+          [ "$code" = "200" ] && echo "  ✓ $ENGINE_REPO@$ENGINE_REF" || { echo "::error::分支 $ENGINE_REF 取不到（HTTP $code）"; exit 1; }

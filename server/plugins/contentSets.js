@@ -47,6 +47,8 @@ const MEMO_MAX = 32;
  *   hashInput: { app: string, sim: string, data: Record<string, string>, plugins: object[], settings: object,
  *     i18n?: Record<string, string> },
  *   kitted: string[] | null, warnings: { code: string, params: object }[],
+ *   overlays: { version: number, policy: string, keys: { table: string, key: string, source: string,
+ *     chain: { from: string, to: string, order: number }[] }[] } | null,
  *   served: Map<string, { body: Buffer, sha256: string, bytes: number }>, dataBytes: number }} ContentSet
  */
 
@@ -189,6 +191,8 @@ export function createContentSets({ registry, vanillaData, log = noopLog, maxSet
       hashInput,
       modes: pluginModes(built.modes, vanillaData),
       kitted: Array.isArray(built.kitted) ? built.kitted : null,
+      // 覆盖包的报告（docs/PLUGINS.md §10a）：哪些 key 被覆盖、被谁覆盖、写入链（last-wins）。没有覆盖时 null。
+      overlays: built.overlays && typeof built.overlays === 'object' ? built.overlays : null,
       warnings: (Array.isArray(built.warnings) ? built.warnings : []).map((w) => (w && w.code === 'PLUGIN_PATCH_OVERRIDE'
         ? { code: 'override', params: { path: `data:${w.path}`, plugins: Array.isArray(w.plugins) ? w.plugins : [] } }
         : { code: String(w?.code || 'warning'), params: { ...(w || {}) } })),
@@ -246,6 +250,11 @@ export function createContentSets({ registry, vanillaData, log = noopLog, maxSet
         // a set this server cannot make
         const code = list.find((p) => p && Object.hasOwn(ERR, p.code))?.code;
         return { error: code || ERR.PLUGIN_BLOCKED, detail: why.slice(0, 200) };
+      }
+      // 覆盖包的每次生效逐条写进装载日志（docs/PLUGINS.md §10a）：last-wins，后加载的那个插件生效；完整写入链见
+      // 这一组内容的 overlays（GET /mod/overlays.json）。
+      for (const w of Array.isArray(built.warnings) ? built.warnings : []) {
+        if (w?.code === 'PLUGIN_PATCH_OVERRIDE' && w.overlay === true) log.warn?.(`[plugins] override ${w.path}: ${w.plugins?.[0] ?? 'base'} -> ${w.plugins?.[1] ?? ''} wins`);
       }
       const k = csUrlPart(built.cs);
       set = sets.get(k) || null;

@@ -37,7 +37,9 @@
 //                required), options (enum), label } } — ≤ 32, no free text
 //   permissions  what the plugin does (PERMISSIONS); each part needs one, each permission must fit the class
 //   parts        assets, theme (cosmetic, content+) · data, operators, enemies, modes, stages, dsl (content+) — a path,
-//                a list of paths or (assets, theme) the object inline · i18n { <lang>: path } (content+) — paths are
+//                a list of paths or (assets, theme) the object inline · override { <table>: <path> } (content+) — a
+//                table fragment that merges into records the installation already has, last-wins (docs/PLUGINS.md §10a;
+//                it needs data.patch and never adds or deletes a record) · i18n { <lang>: path } (content+) — paths are
 //                inside the folder (isPackPath) and .json, the files an inline `assets` names are art, models, audio
 //                or fonts
 //   entry        { sim, meta } (script, .js) · { client } (ui: .html, required; trusted: .js) · { server } (trusted, .js)
@@ -58,6 +60,7 @@ import { issueList } from './errors.js';
 import { THEME_VAR_LIMIT, readThemeDeclaration } from './theme.js';
 import { NOTICE_LIMITS, readNotices, capCatalogueNotices } from './notices.js';
 import { readDeclaredRules } from './rules.js';
+import { RECORD_MAPS } from './dataUtils.js';
 
 /** A plugin folder's manifest file (manifest 2). */
 export const PLUGIN_MANIFEST = 'plugin.json';
@@ -154,12 +157,16 @@ export const PERMISSIONS = Object.freeze({
 /**
  * The parts of manifest 2: the classes that may carry each, how it is written, the permissions one of which it needs.
  * shape: 'inline' — a path to a .json file or the object inline; 'list' — a .json path or a list of them; 'langs' —
- * { <lang>: .json path }.
+ * { <lang>: .json path }; 'tables' — { <record table>: .json path } (the `override` part, docs/PLUGINS.md §10a).
  */
 const PARTS = Object.freeze({
   assets: { classes: ['cosmetic', 'content', 'script', 'trusted'], shape: 'inline', needs: ['assets.override', 'assets.add'] },
   theme: { classes: ['cosmetic', 'trusted'], shape: 'inline', needs: ['theme'] },
   data: { classes: ['content', 'script', 'trusted'], shape: 'list', needs: ['data.patch', 'data.add'] },
+  // 覆盖包（docs/PLUGINS.md §10a）：{ "<table>": "<file>.json" }，表名取自 RECORD_MAPS 的记录表。文件把字段合并进
+  // **已有**记录（官方 key 或前一个插件的同名记录，后加载者胜），从不新增、从不删除；新增记录仍走 data/operators。
+  // 权限用 data.patch：它改的是既有记录，不是 data.add 的新记录。冲突由装载器逐条记下（last-wins，可查）。
+  override: { classes: ['content', 'script', 'trusted'], shape: 'tables', needs: ['data.patch'] },
   operators: { classes: ['content', 'script', 'trusted'], shape: 'list', needs: ['data.add'] },
   enemies: { classes: ['content', 'script', 'trusted'], shape: 'list', needs: ['data.add'] },
   modes: { classes: ['content', 'script', 'trusted'], shape: 'list', needs: ['data.add'] },
@@ -286,7 +293,8 @@ export function appVersionMatches(range, version = APP_VERSION) {
 /**
  * @typedef {{ type: string, default: boolean | number | string, min?: number, max?: number, step?: number,
  *   options?: (string | number | boolean)[], label: Record<string, string> }} PluginSetting
- * @typedef {{ files: string[], inline?: Record<string, any>, langs?: Record<string, string>, themeVars?: Record<string, string> }} PluginPart
+ * @typedef {{ files: string[], inline?: Record<string, any>, langs?: Record<string, string>, tables?: Record<string, string>,
+ *   themeVars?: Record<string, string> }} PluginPart
  * @typedef {{ id: string, title: string, body: string, date?: string, i18n?: Record<string, { title: string, body: string }> }} PluginNotice
  * @typedef {{ manifest: number, id: string, class: string, type: string, name: string, englishName: string,
  *   names: Record<string, string>, description: Record<string, string>, version: string, app: string,
@@ -607,6 +615,21 @@ function readPart(name, v, list) {
       if (!code) { list.problem('PLUGIN_LANG_CODE', `"${name}.${k}" is not a language code`, { at: [name, k] }); continue; }
       if (json(rel, `"${name}.${k}"`, [name, k])) { part.langs[code] = /** @type {string} */ (rel); if (!part.files.includes(/** @type {string} */ (rel))) part.files.push(/** @type {string} */ (rel)); }
     }
+    return part;
+  }
+  if (spec.shape === 'tables') {
+    // 覆盖包：表名在清单里声明（哪个通道改成哪张表一目了然），文件是该表的一个记录片段（docs/PLUGINS.md §10a）。
+    if (!isObj(v)) { list.problem('PLUGIN_PART_SHAPE', `"${name}" is not { "<table>": "<file>.json" }`, { at: [name] }); return null; }
+    /** @type {PluginPart} */
+    const part = { files: [], tables: {} };
+    for (const [table, rel] of Object.entries(/** @type {Record<string, unknown>} */ (v))) {
+      if (!Object.hasOwn(RECORD_MAPS, table)) {
+        list.problem('PLUGIN_PART_SHAPE', `"${name}.${table}": a table is one of ${Object.keys(RECORD_MAPS).join(', ')}`, { at: [name, table] });
+        continue;
+      }
+      if (json(rel, `"${name}.${table}"`, [name, table])) { part.tables[table] = /** @type {string} */ (rel); if (!part.files.includes(/** @type {string} */ (rel))) part.files.push(/** @type {string} */ (rel)); }
+    }
+    if (!Object.keys(part.tables).length) list.problem('PLUGIN_PART_SHAPE', `"${name}" names no table`, { at: [name] });
     return part;
   }
   const paths = typeof v === 'string' ? [v] : v;

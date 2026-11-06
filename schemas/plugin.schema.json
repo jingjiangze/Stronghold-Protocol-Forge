@@ -1022,6 +1022,35 @@
         }
       ],
       "description": "Interaction-window JSON paths (API 2); permission offers. Declarations and card sources are checked by plugin check (PLUGINS §10b)."
+    },
+    "override": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 9,
+      "propertyNames": {
+        "enum": [
+          "chess",
+          "enemies",
+          "items",
+          "bands",
+          "garrisons",
+          "effects",
+          "waves",
+          "stages",
+          "tokens"
+        ]
+      },
+      "additionalProperties": {
+        "allOf": [
+          {
+            "$ref": "overlay.schema.json#/$defs/path"
+          },
+          {
+            "pattern": "\\.[jJ][sS][oO][nN]$"
+          }
+        ]
+      },
+      "description": "Override packs (PLUGINS §10a): { \"<record table>\": \"<file>.json\" }. The file is { \"<record id>\": { … } } and merges its fields into records the installation already has — it never adds or deletes a record, and later plugins win (last-wins, reported as a conflict chain); permission data.patch. What only the checks see: whether that record exists, and the merged record's own fields (the data checks)."
     }
   },
   "additionalProperties": false,
@@ -1070,6 +1099,7 @@
           "stages": false,
           "dsl": false,
           "i18n": false,
+          "override": false,
           "entry": {
             "properties": {
               "sim": false,
@@ -1172,6 +1202,7 @@
           "stages": false,
           "dsl": false,
           "i18n": false,
+          "override": false,
           "entry": {
             "properties": {
               "sim": false,
@@ -1332,6 +1363,11 @@
           },
           {
             "required": [
+              "override"
+            ]
+          },
+          {
+            "required": [
               "rules"
             ],
             "properties": {
@@ -1468,6 +1504,11 @@
           },
           {
             "required": [
+              "override"
+            ]
+          },
+          {
+            "required": [
               "rules"
             ],
             "properties": {
@@ -1525,6 +1566,7 @@
           "stages": false,
           "dsl": false,
           "i18n": false,
+          "override": false,
           "entry": {
             "required": [
               "client"
@@ -1700,6 +1742,11 @@
           {
             "required": [
               "offers"
+            ]
+          },
+          {
+            "required": [
+              "override"
             ]
           },
           {

@@ -11,6 +11,7 @@ import { hasOperatorTrait, validateTraitSpec } from './operatorTraits.js';
 import { compilePluginFxDsl } from './fxRecords.js';
 import { operatorFxProblems } from '../../public/js/render/vfx/pluginFormat.js';
 import { manifestTextWithoutNotices } from '../../shared/plugins/notices.js';
+import { overrideFileProblems } from '../../shared/plugins/override.js';
 
 export function readContentData(dir, manifest) {
   const documents = {}, files = {}, problems = [];
@@ -34,7 +35,7 @@ export function readContentData(dir, manifest) {
   try {
     // [ASSUMED] Pin manifest text and translation bytes too: one cs serves one immutable snapshot (DESIGN §32.5).
     read('plugin.json');
-    for (const part of ['data', 'operators', 'enemies', 'modes', 'stages', 'dsl']) for (const rel of manifest.parts[part]?.files ?? []) {
+    for (const part of ['data', 'operators', 'enemies', 'modes', 'stages', 'override', 'dsl']) for (const rel of manifest.parts[part]?.files ?? []) {
       const doc = read(rel);
       if (part === 'dsl') {
         const checked = validateDsl(doc);
@@ -47,6 +48,11 @@ export function readContentData(dir, manifest) {
         if (doc.pluginId != null && doc.pluginId !== manifest.id) throw problem('PLUGIN_DSL_PLUGIN_ID', rel, 'spec pluginId must match the host plugin');
       }
       if (part === 'data' && !(object(doc) && (doc.patch === 1 && Array.isArray(doc.ops) || doc.records === 1 && Array.isArray(doc.entries)))) throw problem('PLUGIN_CONTENT_FORMAT', rel, 'expected patch:1/ops or records:1/entries');
+      // 覆盖包：文件是该表的一个记录片段（{ "<id>": { … } }），键必须是记录 id、值必须是对象。
+      if (part === 'override') {
+        const bad = overrideFileProblems(doc, rel);
+        if (bad.length) throw bad[0];
+      }
     }
     for (const rel of Object.values(manifest.parts.i18n?.langs ?? {})) read(rel);
     // Offers and their transitive sources are immutable, hashed JSON, just like kit.spec.

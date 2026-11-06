@@ -225,7 +225,10 @@ export function mergeAuthorManifest(manifest, generated, before, documents) {
   const needed = p => p === 'dsl' ? manifest.dsl?.length || [...paths(manifest.operators), ...paths(manifest.data)].some(rel => {
     const d = JSON.parse(documents[rel]?.toString() || 'null');
     return (Array.isArray(d) ? d : d?.entries || [d]).some(r => r?.kit?.dsl || r?.trait?.dsl);
-  }) : p === 'data.patch' || p === 'data.add' ? manifest.data?.length || manifest.operators?.length || manifest.modes?.length
+  }) : p === 'data.patch' ? manifest.data?.length || manifest.operators?.length || manifest.modes?.length
+      // 覆盖包（docs/PLUGINS.md §10a）用 data.patch 改既有记录；工作台保存时不能把它当成没用的权限删掉。
+      || (manifest.override && typeof manifest.override === 'object' && Object.keys(manifest.override).length > 0)
+    : p === 'data.add' ? manifest.data?.length || manifest.operators?.length || manifest.modes?.length
     : p === 'offers' ? manifest.offers?.length : p === 'assets.add' ? manifest.assets && Object.keys(manifest.assets).length : true;
   const permissions = (manifest.permissions || []).filter(p =>
     !(before.permissions || []).includes(p) || (generated.permissions || []).includes(p) || needed(p));

@@ -146,7 +146,7 @@ classes and the content sets running at once — §11 and `docs/DEPLOY.md`.
 | `loadAfter`, `loadBefore`, `priority` | ordering hints (lists of ids; an integer within ±1000, default 0) |
 | `settings` | ≤ 32 settings: `boolean`, `integer` / `number` (`min` and `max` required, `step`), `enum` (`options`) — no free text; `default` (else `false`, `min`, the first option), `label` |
 | `permissions` | what the plugin does (§4); every part needs one, every permission must fit the class |
-| parts | `assets`, `theme` (cosmetic+) · `data`, `operators`, `enemies`, `modes`, `stages`, `dsl`, `offers` (content+) — a path, a list of paths or (`assets`, `theme`) the object inline · `i18n` `{ "<lang>": path }` (content+) |
+| parts | `assets`, `theme` (cosmetic+) · `data`, `operators`, `enemies`, `modes`, `stages`, `dsl`, `offers` (content+) — a path, a list of paths or (`assets`, `theme`) the object inline · `override` `{ "<record table>": path }` (content+; §10a) · `i18n` `{ "<lang>": path }` (content+) |
 | `entry` | `{ "sim", "meta" }` (script, `.js`) · `{ "client" }` (ui, `.html`) · `{ "server" }` (trusted, `.js`) |
 | `capabilities` | up to 8 tags (`^[a-z][a-z0-9-]{0,23}$`, duplicates dropped) the panel groups by — e.g. `["transport"]` keeps a networking plugin out of the art/gameplay shelves. A label only: an unknown tag is kept as written, and a plugin without the field behaves exactly as before |
 | `server` | `{ "modules": [{ "id", "entry", "uses", "channels", "lane" }] }` — the server modules the loader runs in the host process (`server/modHostAdapter.js`), and where a `pack.msg` channel is declared when a **plugin** (not a pack) owns one |
@@ -163,7 +163,7 @@ patches, compact operator records, modes — are specified in §10.
 |---|---|---|
 | `assets.override`, `assets.add` | cosmetic, content, script, trusted | `assets` (either) |
 | `theme` | cosmetic, trusted | `theme` |
-| `data.patch`, `data.add` | content, script, trusted | `data` (either); `operators`, `enemies`, `modes`, `stages` (`data.add`) |
+| `data.patch`, `data.add` | content, script, trusted | `data` (either); `operators`, `enemies`, `modes`, `stages` (`data.add`); `override` (`data.patch` — it replaces existing records, never adds one) |
 | `dsl` | content, script, trusted | `dsl` |
 | `offers` | content, script, trusted | `offers` (§10b; the part is data, so no code permission is needed) |
 | `sim.code`, `meta.code`, `mode.code` | script, trusted | `entry.sim`, `entry.meta` |
@@ -808,7 +808,10 @@ New record ids are ≤64 ASCII letters/digits/`_`/`-`. The plugin id replaces `-
 `item_x_…`, `band_x_…`, `garrison_x_…`, `effect_x_…`, `token_x_…` [ASSUMED prefix choices]. Two selected plugins whose
 namespaces collide are refused at composition with `PLUGIN_RECORD_ID`: `data` cannot sit beside `data-demo` (both
 prefix `data_`), and `ab-cd` collides with `ab_cd`. `ab` does not collide with `abc`. A plugin folder scanned alone is
-not refused. Whole-map writes cannot bypass record namespaces or remove existing records. The shared validator checks
+not refused. Whole-map writes cannot bypass record namespaces or remove existing records. A **new** record always lives
+in the plugin's namespace; replacing fields of an **existing** record (an official key, or one an earlier plugin made)
+is the separate `override` part of §10a — that is the only channel where a plugin names an official key, and every
+change it makes is reported with its writer. The shared validator checks
 shapes, finite numbers, references, paired forms, the default skill, official kit/effect refs, wave routes and mode
 references. One wave, and each phase of a branch, may have at most 64 spawn rows, each an integer count from 1 to 600,
 summing to at most 600. Enemy `times` keys (and keys ending in `times`, including wave overrides) stay at or below 100.
@@ -870,7 +873,7 @@ same.
 ```js
 const set = buildContentSet({ registry, ids: ['data-demo'] }); // or [{id, settings}]
 // success: {cs, vanilla, plugins:[{id,version,hash}], data, files:{rel:{sha256,bytes}}, modes, problems:[],
-//           index, settings, warnings, kitted}
+//           index, settings, warnings, kitted, overlays?}
 // refusal: {problems} only — no cs and no partial data
 const files = contentSetFiles(set); // Map<rel, {body:Buffer, sha256, bytes}>, defensive copies
 ```
@@ -887,6 +890,60 @@ Before importing Match/creating its meta registry in a content host, inject the 
 data and reset `content/support`'s cached data too. The browser uses its `data.js` shim and `loadBrowserSim` to do the
 same. Passing only `opts.data` to a Battle does not change content/support's singleton. P1b tests both the Node setup
 and the actual browser loader with a patched bond; the match host's worker entry does the same (§11).
+
+## 10a. Override packs (覆盖包)
+
+A content plugin may also **replace fields of records the installation already has**. That is the owner's request of
+2026-11-06 — 「forge 放开，但要能标注冲突，或默认新安装的插件覆盖旧插件」 — and it is one narrow, reported channel
+beside §10's namespaced writes: a new record still carries the plugin's own id prefix, while an override names an
+existing record and is tagged with every writer behind its value.
+
+```json
+{
+  "permissions": ["data.patch"],
+  "override": { "enemies": "override/enemies.json", "stages": "override/stages.json" }
+}
+```
+
+`override` is `{ "<record table>": "<file>.json" }`. The tables are the record tables of §10 that have a declared id
+prefix: `chess`, `enemies`, `items`, `bands`, `garrisons`, `effects`, `waves`, `stages`, `tokens`. The file is that
+table's record fragment, keyed by record id:
+
+```json
+{ "enemy_1009_slime": { "name": "史莱姆", "stats": { "maxHp": 2400 } } }
+```
+
+Rules:
+
+- **Existing records only.** A key the composed data (the vanilla snapshot, or an earlier plugin's same-key record) does
+  not have is refused with `PLUGIN_DATA_REFERENCE`. A new record is a `data`/`operators`/… entry in the plugin's
+  namespace — the override channel never mints a new official-looking id (an `enemy_…` no base rule would check).
+- **Merge, never delete.** Object fields merge recursively, arrays and scalars replace the whole value, and a field the
+  fragment omits keeps its value. No record and no field disappears, so `PLUGIN_RECORD_DELETE` cannot be reached here.
+  A fragment that restates the value already there is no write at all: no conflict entry, no log line.
+- **Last-wins.** Parts apply in load order (`loadAfter` / `loadBefore` / `priority`, §3). Two plugins overriding the same
+  key: the later one wins, and the earlier value is not lost silently — every effective write is a warning
+  (`PLUGIN_PATCH_OVERRIDE`) in the set (the room's 插件 panel shows it as an override), one line in the server log
+  (`[plugins] override enemies.<key>: <from> -> <to> wins`), and an entry in the report below.
+- **A reported chain.** `buildContentSet` returns `overlays: { version: 1, policy: 'last-wins', keys: [...] }`; each key
+  carries its last writer (`source`) and every step (`chain: [{ from, to, order }]`) — `from` the previous writer
+  (`"base"` for the installation's own record, or the plugin whose record it was) and `order` the plugin's 1-based
+  position in that set's load order. A chain reads `base → A → B` in order. The report is not part of `cs` (the plugin
+  bytes and the merged data already are), and a set without overrides omits the field.
+- **Read-only entry.** `GET /mod/overlays.json` composes the plugin set a **new room starts with** (the policy's
+  `default`, `plugins/config.json`) and answers the same report: `{ ok, policy: "last-wins", plugins, cs?, keys,
+  problems }`. No key is needed (the same local gate as `/mod/status.json`, §15); it runs no plugin code. A refused
+  composition answers 200 with the problems instead of an empty list.
+- **The same checks as any record.** Merged data goes through the whole validator — record shapes, references, paired
+  forms, wave budgets, numeric bounds against the official values (`PLUGIN_DATA_BOUND`) — so an override cannot write
+  what a `data` patch may not. A record's `dsl` fields are not writable through this part: an official record has none,
+  and a new operator's DSL belongs to its own record in the plugin's namespace.
+- **Another plugin's record.** Overriding a record whose id belongs to another plugin is a change to that plugin's
+  record: it needs `requires` naming that plugin, exactly like a `data` patch (§10); without it the set is refused with
+  `PLUGIN_DEPENDENCY`. `bonds`, `modes`, `config` and `backups` are not override tables — their records take part in
+  composition rules of their own (`reconcilePluginBonds`, mode inheritance), so they stay on the `data` patch channel.
+- **Identity.** The overridden tables are served and hashed like any patched table: every member's page downloads the
+  merged `data/<table>.json` and checks it against the set's `cs` (§6, §11).
 
 ## 11. Room content sets (房间内容组合, P1c)
 

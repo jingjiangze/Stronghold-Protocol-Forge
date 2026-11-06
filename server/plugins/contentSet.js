@@ -12,6 +12,7 @@ import { expandGameplayRecords, reconcilePluginBonds, reconcilePluginTokens, val
 import { expandTraitRecords, operatorTraitPatchProblems } from './operatorTraits.js';
 import { expandFxRecords } from './fxRecords.js';
 import { object, own, clone, problem, RECORD_MAPS, recordId, namespaceCollisions } from '../../shared/plugins/dataUtils.js';
+import { applyOverrideTable } from '../../shared/plugins/override.js';
 import { buildRecordOverlay, walkOverlay, getPath, applyRecordOverlay } from '../../shared/i18nData.js';
 import { computeGroundPaths, computeDeployTiles } from '../sim/groundPaths.js';
 import { officialKit } from '../sim/content/index.js';
@@ -229,7 +230,21 @@ function composeContentSet({ registry, ids = [], checkDataOnly = false }) {
   // Install the vanilla snapshot before expand/validate so a DSL literal uses the real cap, not the floor.
   rememberOfficialBounds(base.data);
   const problems = [], warnings = [], writes = new Map(), prepById = new Map();
-  for (const p of plugins) {
+  // 覆盖包（docs/PLUGINS.md §10a）：`overrides` 记每个被覆盖的 key 的写入链，`noteOverride` 是唯一的记账点。
+  // from 是该 key 在上一次写入时的来源：另一个覆盖包、创建它的插件（data 通道新增的记录），或 'base'（安装自带）。
+  // 同一插件覆盖自己刚建的记录不算冲突（它是这个插件自己的数据）。
+  const overrides = new Map();
+  const noteOverride = (table, key, pluginId, order, existedBefore) => {
+    const at = `${table}.${key}`, prev = overrides.get(at);
+    const from = prev ? prev.source : (existedBefore ? (owners.get(at) ?? 'base') : pluginId);
+    if (from === pluginId) return;
+    const entry = prev ?? { table, key, source: 'base', chain: [] };
+    entry.chain.push({ from, to: pluginId, order });
+    entry.source = pluginId;
+    overrides.set(at, entry);
+    warnings.push({ code: 'PLUGIN_PATCH_OVERRIDE', path: at, plugins: [from, pluginId], order, overlay: true });
+  };
+  for (const [index, p] of plugins.entries()) {
     settings[p.id] = normalizeSettings(p.manifest.settings, selected.find(v => v.id === p.id)?.settings);
     const before = data;
     for (const part of ['data', 'operators', 'enemies', 'stages', 'modes']) for (const rel of p.manifest.parts[part]?.files ?? []) {
@@ -258,6 +273,20 @@ function composeContentSet({ registry, ids = [], checkDataOnly = false }) {
       problems.push(...r.problems.map(e => ({ ...e, plugin: p.id, file: rel })));
       data = r.data;
     }
+    // 覆盖包：清单声明过哪张表，就把那个文件合并进**已有**记录（官方 key 或前一个插件的记录，后加载者胜）。
+    // 非 override 通道的新记录仍走上面 writesAllowed 的命名空间校验——这条放行只属于这里，且只覆盖既有 key。
+    for (const [table, rel] of Object.entries(p.manifest.parts.override?.tables ?? {})) {
+      if (!p.manifest.permissions.includes('data.patch')) {
+        problems.push({ ...problem('PLUGIN_CONTENT_PERMISSION', rel, 'the override part needs the data.patch permission'), plugin: p.id });
+        continue;
+      }
+      const doc = p.content?.documents?.[rel];
+      if (!object(doc)) { problems.push({ ...problem('PLUGIN_CONTENT_FORMAT', rel, 'the override file is not in the plugin snapshot'), plugin: p.id }); continue; }
+      const r = applyOverrideTable(data, table, doc);
+      problems.push(...r.problems.map(e => ({ ...e, plugin: p.id, file: rel })));
+      data = r.data;
+      for (const w of r.writes) noteOverride(w.table, w.key, p.id, index + 1, !!object(before?.[table]) && own(before[table], w.key));
+    }
     problems.push(...writesAllowed(before, data, p, owners));
     problems.push(...dslWriterProblems(before, data, p, owners));
     problems.push(...potDownProblems(before, data, p));
@@ -266,6 +295,12 @@ function composeContentSet({ registry, ids = [], checkDataOnly = false }) {
     if (prep.specs.length) prepById.set(p.id, prep.specs);
   }
   if (problems.length) return { problems };
+  // 冲突报告（docs/PLUGINS.md §10a）：每个被覆盖的 key 一条，chain 是从 base（或第一个写入者）开始到最后一个写入者的
+  // 写入链。它是装载顺序（order 从 1 起）+ 值的函数，不进 cs（cs 已经由同一次组合的插件字节与数据定下）。
+  const overlayKeys = [...overrides.values()]
+    .sort((a, b) => (a.table < b.table ? -1 : a.table > b.table ? 1 : a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+    .map(e => ({ table: e.table, key: e.key, source: e.source, chain: e.chain.map(c => ({ ...c })) }));
+  const overlays = overlayKeys.length ? { version: 1, policy: 'last-wins', keys: overlayKeys } : null;
   if (prepById.size) {
     const table = {};
     for (const [id, specs] of prepById) {
@@ -384,6 +419,8 @@ function composeContentSet({ registry, ids = [], checkDataOnly = false }) {
   }
   const set = deepFreeze({ cs, vanilla, ...(code ? { code } : {}), plugins: plugins.map(p => ({ id: p.id, version: p.manifest.version, hash: p.content.hash })),
     data, files, ...(scripts.length ? {scripts, execution} : {}), ...(rules ? { rules } : {}), modes: Object.values(data.config.modes), problems: [], warnings, index, settings, bounds: boundsSnap,
+    // 覆盖包的报告（docs/PLUGINS.md §10a）：当前哪些 key 被覆盖、被谁覆盖、写入链；没有覆盖时不带这个字段。
+    ...(overlays ? { overlays } : {}),
     kitted: [...KITTED_CHARS, ...Object.keys(data.backups.units).filter(id => !own(base.data.backups.units, id))],
     // PLUGIN API v2 (docs/PLUGINS.md §10b): the interaction windows the set declares, tagged with their plugin. Data
     // only and already checked by the registry; a set without one omits the field, so nothing downstream changes.

@@ -17,6 +17,7 @@ import { sendError, sendJson } from '../http/common.js';
 import { studioAllowed } from '../studio/gate.js';
 import { loadStudioKey, sameKey } from '../studio/key.js';
 import { fetchHttps, readDownloadAllow } from '../plugins/install.js';
+import { buildContentSet } from '../plugins/contentSet.js';
 import { importArchive } from './import.js';
 import { startInbox } from './inbox.js';
 import { modPage } from './page.js';
@@ -98,6 +99,24 @@ function statusRows(registry, pluginsDir, inboxPath) {
 }
 
 /**
+ * 覆盖包的报告（docs/PLUGINS.md §10a）：把「新房间默认开的那组插件」按装载顺序组合一次，回答「哪些官方记录被覆盖、
+ * 被谁覆盖、链条是什么」。read-only、无副作用（C1 的组合只读快照，不执行脚本）；组合失败时照样答 200，`problems` 里写原因。
+ * @param {any} registry @param {string[]} ids the policy's `default`
+ */
+function overrideReport(registry, ids) {
+  const base = { policy: 'last-wins', plugins: ids };
+  if (!registry) return { ok: true, ...base, keys: [], problems: [] };
+  let built;
+  try { built = buildContentSet({ registry, ids }); } catch (e) {
+    return { ok: false, ...base, keys: [], problems: [{ code: 'PLUGIN_CONTENT_FORMAT', path: '', message: String(e?.message || e).slice(0, 200) }] };
+  }
+  const problems = (Array.isArray(built.problems) ? built.problems : []).slice(0, 20)
+    .map((p) => ({ code: String(p?.code || 'PLUGIN'), path: String(p?.path || ''), message: String(p?.message || '').slice(0, 200) }));
+  const keys = built.overlays && Array.isArray(built.overlays.keys) ? built.overlays.keys : [];
+  return { ok: problems.length === 0, ...base, ...(typeof built.cs === 'string' ? { cs: built.cs } : {}), keys, problems };
+}
+
+/**
  * @param {{ root: string, pluginsDir: string, dataDir: string, registry?: any, vanilla?: object|null, log?: any,
  *   inboxDir?: string, autoInbox?: boolean, fetch?: typeof fetch, platform?: { status: () => any } | null }} opts
  */
@@ -149,6 +168,16 @@ export function createMods({ root, pluginsDir, dataDir, registry = null, vanilla
       if (rawPath === '/mod/status.json') {
         if (method !== 'GET') { sendError(req, res, 405, '不支持的请求方法 · Method not allowed'); return; }
         sendJson(req, res, 200, { ok: true, inbox: inboxPath, platform: platform ? platform.status() : { enabled: false }, ...statusRows(registry, pluginsDir, inboxPath) });
+        return;
+      }
+
+      // 覆盖包的可查入口（docs/PLUGINS.md §10a）：哪些官方记录被覆盖、被谁覆盖、写入链（base → A → B）。
+      // 只读、不要钥匙（与 status.json 同一条门：本机或局域网）。
+      if (rawPath === '/mod/overlays.json') {
+        if (method !== 'GET') { sendError(req, res, 405, '不支持的请求方法 · Method not allowed'); return; }
+        const policy = readPolicy(pluginsDir);
+        const ids = (Array.isArray(policy.default) ? policy.default : []).filter((x) => typeof x === 'string');
+        sendJson(req, res, 200, overrideReport(registry, ids));
         return;
       }
 
